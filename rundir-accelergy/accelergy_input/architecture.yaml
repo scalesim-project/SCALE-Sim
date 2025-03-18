@@ -4,7 +4,7 @@ architecture:
       technology: 40nm
     local:
     - attributes:
-        bank_depth: 65536
+        bank_depth: 10485760
         memory_depth: bank_depth * n_banks
         memory_width: 32
         n_banks: 1
@@ -12,7 +12,7 @@ architecture:
       class: smartbuffer_SRAM
       name: weights_glb
     - attributes:
-        bank_depth: 65536
+        bank_depth: 10485760
         memory_depth: bank_depth * n_banks
         memory_width: 32
         n_banks: 1
@@ -20,7 +20,7 @@ architecture:
       class: smartbuffer_SRAM
       name: ifmap_glb
     - attributes:
-        bank_depth: 65536
+        bank_depth: 10485760
         memory_depth: bank_depth * n_banks
         memory_width: 32
         n_banks: 1
@@ -66,5 +66,5 @@ architecture:
           width: 1
         class: regfile
         name: psum_spad
-      name: PE[0..1023]
+      name: PE[0..16383]
   version: 0.3
