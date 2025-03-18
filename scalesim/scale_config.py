@@ -83,15 +83,26 @@ class scale_config:
         self.df = config.get(section, 'Dataflow')
 
         layout_section = 'layout'
-        self.using_ifmap_custom_layout = config.getboolean(layout_section, 'IfmapCustomLayout')
-        self.using_filter_custom_layout = config.getboolean(layout_section, 'FilterCustomLayout')
-        self.ifmap_sram_bank_bandwidth = int(config.get(layout_section, 'IfmapSRAMBankBandwidth'))
-        self.ifmap_sram_bank_num = int(config.get(layout_section, 'IfmapSRAMBankNum'))
-        self.ifmap_sram_bank_port = int(config.get(layout_section, 'IfmapSRAMBankPort'))
-        self.filter_sram_bank_bandwidth = int(config.get(layout_section, 'FilterSRAMBankBandwidth'))
-        self.filter_sram_bank_num = int(config.get(layout_section, 'FilterSRAMBankNum'))
-        self.filter_sram_bank_port = int(config.get(layout_section, 'FilterSRAMBankPort'))
-        
+
+        if config.has_section('layout'):
+            self.using_ifmap_custom_layout = config.getboolean(layout_section, 'IfmapCustomLayout')
+            self.using_filter_custom_layout = config.getboolean(layout_section, 'FilterCustomLayout')
+            self.ifmap_sram_bank_bandwidth = int(config.get(layout_section, 'IfmapSRAMBankBandwidth'))
+            self.ifmap_sram_bank_num = int(config.get(layout_section, 'IfmapSRAMBankNum'))
+            self.ifmap_sram_bank_port = int(config.get(layout_section, 'IfmapSRAMBankPort'))
+            self.filter_sram_bank_bandwidth = int(config.get(layout_section, 'FilterSRAMBankBandwidth'))
+            self.filter_sram_bank_num = int(config.get(layout_section, 'FilterSRAMBankNum'))
+            self.filter_sram_bank_port = int(config.get(layout_section, 'FilterSRAMBankPort'))
+        else:
+            self.using_ifmap_custom_layout = False
+            self.using_filter_custom_layout = False
+            self.ifmap_sram_bank_bandwidth = 10
+            self.ifmap_sram_bank_num = 10
+            self.ifmap_sram_bank_port = 2
+            self.filter_sram_bank_bandwidth = 10
+            self.filter_sram_bank_num = 10
+            self.filter_sram_bank_port = 2
+
         # Anand: ISSUE #2. Patch
         if self.use_user_bandwidth:
             self.bandwidths = [int(x.strip())
