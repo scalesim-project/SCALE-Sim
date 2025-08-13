@@ -1,15 +1,25 @@
-# Buffer to stage the data to be written
+"""
+The `write_buffer` class simulates the memory operations of the OFMAP SRAM for a double-buffered
+write system in systolic array-based computations.
+"""
 # TODO: Verification Pending
 import time
 import math
 import numpy as np
-#import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scalesim.memory.write_port import write_port
 
 
 class write_buffer:
+    """
+    Class which runs the memory simulation of the OFMAP SRAM.
+    """
+    #
     def __init__(self):
+        """
+        __init__ method.
+        """
         # Buffer properties: User specified
         self.total_size_bytes = 128
         self.word_size = 1
@@ -32,7 +42,7 @@ class write_buffer:
         # Helper data structures for faster execution
         self.line_idx = 0
         self.current_line = np.ones((1, 1)) * -1
-        self.max_cache_lines = 2 ** 10              # TODO: This is arbitrary, check if this can be tuned
+        self.max_cache_lines = 2 ** 10  # TODO: This is arbitrary, check if this can be tuned
         self.trace_matrix_cache = np.zeros((1, 1))
 
         # Access counts
@@ -59,6 +69,9 @@ class write_buffer:
                    total_size_bytes=128, word_size=1, active_buf_frac=0.9,
                    backing_buf_bw=100
                    ):
+        """
+        Method to set the ofmap memory simulation parameters for housekeeping.
+        """
         self.total_size_bytes = total_size_bytes
         self.word_size = word_size
 
@@ -75,6 +88,9 @@ class write_buffer:
 
     #
     def reset(self):
+        """
+        Method to reset the write buffer parameters.
+        """
         self.total_size_bytes = 128
         self.word_size = 1
         self.active_buf_frac = 0.9
@@ -83,8 +99,6 @@ class write_buffer:
         self.req_gen_bandwidth = 100
 
         self.free_space = self.total_size_elems
-        self.active_buf_contents = []
-        self.drain_buf_contents = []
         self.drain_end_cycle = 0
 
         self.trace_matrix = np.zeros((1, 1))
@@ -99,6 +113,9 @@ class write_buffer:
 
     #
     def store_to_trace_mat_cache(self, elem):
+        """
+        Method to add the incoming element to the trace matrix cache.
+        """
         if elem == -1:
             return
 
@@ -117,7 +134,11 @@ class write_buffer:
                 self.trace_matrix_cache = self.current_line
                 self.trace_matrix_cache_empty = False
             else:
-                self.trace_matrix_cache = np.concatenate((self.trace_matrix_cache, self.current_line), axis=0)
+                self.trace_matrix_cache = np.concatenate((
+                                                          self.trace_matrix_cache,
+                                                          self.current_line
+                                                         ),
+                                                         axis=0)
 
             self.current_line = np.ones((1,1)) * -1
             self.line_idx = 0
@@ -127,14 +148,23 @@ class write_buffer:
 
     #
     def append_to_trace_mat(self, force=False):
-        if force:   # This forces the contents for self.current_line and self.trace_matrix cache to be dumped
+        """
+        Method to append to the trace matrix cache.
+        """
+        if force:
+            # This forces the contents for self.current_line and self.trace_matrix
+            # cache to be dumped
             if not self.line_idx == 0:
                 #if self.trace_matrix_cache.shape == (1,1):
                 if self.trace_matrix_cache_empty:
                     self.trace_matrix_cache = self.current_line
                     self.trace_matrix_cache_empty = False
                 else:
-                    self.trace_matrix_cache = np.concatenate((self.trace_matrix_cache, self.current_line), axis=0)
+                    self.trace_matrix_cache = np.concatenate((
+                                                              self.trace_matrix_cache,
+                                                              self.current_line
+                                                             ),
+                                                             axis=0)
 
                 self.current_line = np.ones((1,1)) * -1
                 self.line_idx = 0
@@ -157,12 +187,17 @@ class write_buffer:
 
     #
     def service_writes(self, incoming_requests_arr_np, incoming_cycles_arr_np):
-        assert incoming_cycles_arr_np.shape[0] == incoming_requests_arr_np.shape[0], 'Cycles and requests do not match'
+        """
+        Method to service write requests coming from systolic array. Logic: Assuming no miss, keep
+        adding to the active buffer. Once the active buffer is full, drain a part of it to the DRAM.
+        """
+        assert incoming_cycles_arr_np.shape[0] == incoming_requests_arr_np.shape[0], \
+                                                  'Cycles and requests do not match'
         out_cycles_arr = []
         offset = 0
 
-        DEBUG_num_drains = 0
-        DEBUG_append_to_trace_times = []
+        # DEBUG_num_drains = 0
+        # DEBUG_append_to_trace_times = []
 
         for i in tqdm(range(incoming_requests_arr_np.shape[0]), disable=True):
             row = incoming_requests_arr_np[i]
@@ -184,6 +219,8 @@ class write_buffer:
                 elif self.free_space < (self.total_size_elems - self.drain_buf_size):
                     self.append_to_trace_mat(force=True)
                     self.drain_end_cycle = self.empty_drain_buf(empty_start_cycle=current_cycle)
+                    # TODO sarbartha
+                    #current_cycle = self.drain_end_cycle
 
             out_cycles_arr.append(current_cycle)
 
@@ -199,12 +236,16 @@ class write_buffer:
 
     #
     def empty_drain_buf(self, empty_start_cycle=0):
+        """
+        Method to drain the drain buffer once the active buffer is full.
+        """
 
         lines_to_fill_dbuf = int(math.ceil(self.drain_buf_size / self.req_gen_bandwidth))
         self.drain_buf_end_line_id = self.drain_buf_start_line_id + lines_to_fill_dbuf
         self.drain_buf_end_line_id = min(self.drain_buf_end_line_id, self.trace_matrix.shape[0])
 
-        requests_arr_np = self.trace_matrix[self.drain_buf_start_line_id: self.drain_buf_end_line_id, :]
+        requests_arr_np = \
+                    self.trace_matrix[self.drain_buf_start_line_id: self.drain_buf_end_line_id, :]
         num_lines = requests_arr_np.shape[0]
 
         data_sz_to_drain = num_lines * requests_arr_np.shape[1]
@@ -225,7 +266,7 @@ class write_buffer:
         else:
             self.cycles_vec = np.concatenate((self.cycles_vec, serviced_cycles_arr), axis=0)
 
-        service_end_cycle = serviced_cycles_arr[-1][0]
+        service_end_cycle = np.amax(serviced_cycles_arr)
         self.free_space += data_sz_to_drain
 
         self.drain_buf_start_line_id = self.drain_buf_end_line_id
@@ -233,10 +274,13 @@ class write_buffer:
 
     #
     def empty_all_buffers(self, cycle):
+        """
+        Method to drain all of the active buffer.
+        """
         self.append_to_trace_mat(force=True)
 
         if self.trace_matrix_empty:
-           return
+            return
 
         while self.drain_buf_start_line_id < self.trace_matrix.shape[0]:
             self.drain_end_cycle = self.empty_drain_buf(empty_start_cycle=cycle)
@@ -244,33 +288,48 @@ class write_buffer:
 
     #
     def get_trace_matrix(self):
+        """
+        Method to get the write buffer trace matrix. It contains addresses requsted by the systolic
+        array and the cycles (first column) at which the requests are made.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return
 
-        trace_matrix = np.concatenate((self.cycles_vec, self.trace_matrix), axis=1)
+        trace_matrix = np.column_stack((self.cycles_vec, self.trace_matrix))
 
         return trace_matrix
 
     #
     def get_free_space(self):
+        """
+        Method to get free space of the write buffer.
+        """
         return self.free_space
 
     #
     def get_num_accesses(self):
+        """
+        Method to get number of accesses of the write buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
         return self.num_access
 
     #
     def get_external_access_start_stop_cycles(self):
+        """
+        Method to get start and stop cycles of the write buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
-        start_cycle = self.cycles_vec[0][0]
-        end_cycle = self.cycles_vec[-1][0]
-
+        start_cycle = np.amin(self.cycles_vec)
+        end_cycle = np.amax(self.cycles_vec)
         return start_cycle, end_cycle
 
     #
     def print_trace(self, filename):
+        """
+        Method to write the write buffer trace matrix to a file.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return

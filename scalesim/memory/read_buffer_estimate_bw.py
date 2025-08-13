@@ -1,3 +1,8 @@
+"""
+The 'ReadBufferEstimateBw' class simulates a double-buffered memory read buffer in estimate
+bandwidth mode designed for systolic array computations.
+"""
+
 import math
 import numpy as np
 
@@ -5,7 +10,14 @@ from scalesim.memory.read_port import read_port
 
 
 class ReadBufferEstimateBw:
+    """
+    Class which service the estimate bandwidth mode in the read buffer.
+    """
+    #
     def __init__(self):
+        """
+        __init__ method.
+        """
         # Buffer parameters
         self.word_size = 1
         self.active_buf_frac = 0.5
@@ -50,11 +62,17 @@ class ReadBufferEstimateBw:
         self.params_set_flag = False
         self.active_buffer_prefetch_done = False
         self.trace_valid = False
+        self.use_ramulator_trace = False
 
     #
     def set_params(self, backing_buf_obj,
                    total_size_bytes=1, word_size=1, active_buf_frac=0.9,
-                   hit_latency=1, backing_buf_default_bw=1):
+                   hit_latency=1, backing_buf_default_bw=1,
+                   use_ramulator_trace = False):
+        """
+        Method to set the ifmap/filter double buffered memory simulation parameters for estimate
+        bandwidth mode.
+        """
 
         self.total_size_bytes = total_size_bytes
         self.word_size = word_size
@@ -84,16 +102,22 @@ class ReadBufferEstimateBw:
         self.read_buffer_set_end_id = self.num_sets_active_buffer - 1
         self.last_prefetch_start_cycle = -2
         self.last_prefetch_end_cycle = -1  # TODO: Check what the correct value is
+        self.use_ramulator_trace = use_ramulator_trace
 
         #
         self.params_set_flag = True
 
     #
     def service_reads(self, incoming_requests_arr_np, incoming_cycles_arr):
+        """
+        Method to service read requests coming from systolic array in estimate bandwidth mode.
+        """
         assert self.params_set_flag, 'Parameters are not set yet'
-        assert incoming_cycles_arr.shape[0] == incoming_requests_arr_np.shape[0], 'Incoming cycles and requests dont match'
+        assert incoming_cycles_arr.shape[0] == incoming_requests_arr_np.shape[0],\
+               'Incoming cycles and requests dont match'
 
-        outcycles = incoming_cycles_arr + self.hit_latency  # In estimate mode, operation is stall free.
+        outcycles = incoming_cycles_arr + self.hit_latency
+        # In estimate mode, operation is stall free.
         # Therefore its always a hit
 
         # The following to track requests and maintain proper state of the buffer
@@ -114,6 +138,9 @@ class ReadBufferEstimateBw:
 
     #
     def manage_prefetches(self, cycle, addr):
+        """
+        Method to manage prefetches in estimate bandwidth mode.
+        """
 
         # If this is a new address, otherwise its a hit
         if self.check_hit(addr):
@@ -129,16 +156,19 @@ class ReadBufferEstimateBw:
                 self.elems_current_set = 0
                 self.current_set_id += 1
 
-                if self.current_set_id == self.read_buffer_set_end_id + 1:  # This should be prefetched
+                # This should be prefetched
+                if self.current_set_id == self.read_buffer_set_end_id + 1:
                     if not self.active_buffer_prefetch_done:
                         self.prefetch_bandwidth = self.default_bandwidth
-                        self.last_prefetch_end_cycle = self.first_request_rcvd_cycle - 1 - self.backing_buffer.get_latency()
+                        self.last_prefetch_end_cycle = \
+                            self.first_request_rcvd_cycle - 1 - self.backing_buffer.get_latency()
 
                         cycles_needed = (self.num_sets_prefetch_buffer * self.num_items_per_set) \
                                         / self.prefetch_bandwidth
                         cycles_needed = math.ceil(cycles_needed)
 
-                        self.last_prefetch_start_cycle = self.last_prefetch_end_cycle - cycles_needed + 1
+                        self.last_prefetch_start_cycle = \
+                            self.last_prefetch_end_cycle - cycles_needed + 1
 
                         self.prefetch()
                         self.prefetch_buffer_set_start_id =self.read_buffer_set_end_id + 1
@@ -148,13 +178,14 @@ class ReadBufferEstimateBw:
 
                     else:
                         elems_to_prefetch = self.num_sets_prefetch_buffer * self.num_items_per_set
-                        cycles_needed = self.last_prefetch_end_cycle - self.last_prefetch_start_cycle + 1
+                        cycles_needed = \
+                            self.last_prefetch_end_cycle - self.last_prefetch_start_cycle + 1
                         self.prefetch_bandwidth = math.ceil(elems_to_prefetch / cycles_needed)
                         self.prefetch()
                         self.prefetch_buffer_set_start_id += self.num_sets_prefetch_buffer
                         self.prefetch_buffer_set_end_id += self.num_sets_prefetch_buffer
-                    
-                    #Solving memory leak by discarding sets that are no longer in use
+
+                    # Solving memory leak by discarding sets that are no longer in use
                     i = self.read_buffer_set_start_id
                     for j in range(self.num_sets_prefetch_buffer):
                         self.list_of_sets[i+j] = None
@@ -167,6 +198,9 @@ class ReadBufferEstimateBw:
 
     #
     def check_hit(self, addr):
+        """
+        Method to check if the address is hit or miss in the active read buffer.
+        """
         assert self.params_set_flag, 'Parameters are not set yet'
 
         start_set_idx = self.read_buffer_set_start_id
@@ -183,6 +217,10 @@ class ReadBufferEstimateBw:
 
     #
     def complete_all_prefetches(self):
+        """
+        Method to complete all the prefetches in estimate bandwidth mode. Prefetch first the active
+        buffer if not done before and then keep prefetching prefetch buffers.
+        """
         assert self.params_set_flag, 'Parameters are not set yet'
 
         current_set_elems = list(self.current_set)
@@ -216,6 +254,11 @@ class ReadBufferEstimateBw:
 
     #
     def prefetch(self):
+        """
+        Method to do a new prefetch. In a new prefetch, some portion of the original data needs to
+        be deleted to accomodate the prefetched data In this case we overwrite some data in the
+        active buffer with the prefetched data and then create a new prefetch request.
+        """
         assert self.params_set_flag, 'Parameters are not set yet'
 
         if not self.active_buffer_prefetch_done:
@@ -241,14 +284,16 @@ class ReadBufferEstimateBw:
             for _ in range(delta):
                 all_addresses += [-1]
 
-        prefetch_requests = np.asarray(all_addresses).reshape((cycles_needed, self.prefetch_bandwidth))
+        prefetch_requests = np.asarray(all_addresses).reshape((cycles_needed,
+                                                               self.prefetch_bandwidth))
 
         cycles_arr = np.zeros((cycles_needed,1))
         for i in range(cycles_arr.shape[0]):
             cycles_arr[i][0] = self.last_prefetch_start_cycle + i
 
-        response_cycles_arr = self.backing_buffer.service_reads(incoming_cycles_arr=cycles_arr,
-                                                                incoming_requests_arr_np=prefetch_requests)
+        response_cycles_arr = \
+            self.backing_buffer.service_reads(incoming_cycles_arr=cycles_arr,
+                                              incoming_requests_arr_np=prefetch_requests)
 
         # Create / add elements to the trace matrix
         this_prefetch_traces = np.concatenate((response_cycles_arr, prefetch_requests), axis=1)
@@ -272,11 +317,18 @@ class ReadBufferEstimateBw:
 
     #
     def get_latency(self):
+        """
+        Method to get hit latency of the read estimate buffer.
+        """
         assert self.params_set_flag, 'Parameters are not valid'
         return self.hit_latency
 
     #
     def get_trace_matrix(self):
+        """
+        Method to get the read estimate buffer trace matrix. It contains addresses requsted by the
+        systolic array and the cycles (first column) at which the requests are made.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return
@@ -285,15 +337,24 @@ class ReadBufferEstimateBw:
 
     #
     def get_hit_latency(self):
+        """
+        Method to get hit latency of the read estimate buffer.
+        """
         return self.hit_latency
 
     #
     def get_num_accesses(self):
+        """
+        Method to get number of accesses of the read estimate buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
         return self.num_access
 
     #
     def get_external_access_start_stop_cycles(self):
+        """
+        Method to get start and stop cycles of the read estimate buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
         start_cycle = self.trace_matrix[0][0]
         end_cycle = self.trace_matrix[-1][0]
@@ -302,10 +363,11 @@ class ReadBufferEstimateBw:
 
     #
     def print_trace(self, filename):
+        """
+        Method to write the read estimate buffer trace matrix to a file.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return
 
         np.savetxt(filename, self.trace_matrix, fmt='%s', delimiter=",")
-
-

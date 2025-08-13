@@ -42,6 +42,10 @@ If you are running from sources for the first time and do not have all the depen
 
 ```$ pip3 install -r <scale_sim_repo_root>/requirements.txt```
 
+### *Using Sparsity in SCALE-Sim*
+
+Sparsity refers to the presence of many zero or empty values in a dataset, matrix, or model, making it computationally efficient. For a deeper dive into sparsity and its usage, refer to the ```README_Sparsity.md``` file.
+
 ## Tool inputs
 
 SCALE-Sim uses two input files to run, a configuration file and a topology file.
@@ -156,3 +160,4 @@ Maintainers and Advisors
 Past contributors
 * Vineet Nadella
 * Sachit Kuhar
+* Nikhil Chandra

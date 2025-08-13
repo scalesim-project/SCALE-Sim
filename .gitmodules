@@ -1,0 +1,6 @@
+[submodule "ramulator"]
+	path = ramulator
+	url = https://github.com/CMU-SAFARI/ramulator.git
+[submodule "submodules/ramulator"]
+	path = submodules/ramulator
+	url = https://github.com/CMU-SAFARI/ramulator.git

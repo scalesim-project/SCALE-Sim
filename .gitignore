@@ -12,3 +12,17 @@ topologies/*.zip
 */.DS_Store
 */*/.DS_Store
 */*/*/.DS_Store
+
+log_bankconflict*
+log_*
+scale_example_run*
+run_test.sh
+run_test2.sh
+run_debug.sh
+run_benchmark.sh
+test
+test_benchmark*
+result_parser.py
+test*
+configs_test
+benchmark_results

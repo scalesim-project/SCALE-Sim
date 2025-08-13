@@ -1,4 +1,6 @@
-# Double buffer read memory implementation
+"""
+Double buffer read memory implementation
+"""
 # TODO: Verification Pending
 import math
 import numpy as np
@@ -8,12 +10,21 @@ from scalesim.memory.read_port import read_port
 
 
 class read_buffer:
+    """
+    Class which runs the memory simulation of double buffered ifmap/filter SRAM. The double
+    buffering helps to hide the DRAM latency when the SRAM is servicing requests from the systolic
+    array using one of the buffers while the other buffer prefetches from the DRAM.
+    """
+    #
     def __init__(self):
+        """
+        __init__ method.
+        """
         # Buffer properties: User specified
         self.total_size_bytes = 128
-        self.word_size = 1                      # Bytes
+        self.word_size = 1    # Bytes
         self.active_buf_frac = 0.9
-        self.hit_latency = 1                    # Cycles after which a request is served if already in the buffer
+        self.hit_latency = 1  # Cycles after which a request is served if already in the buffer
 
         # Buffer properties: Calculated
         self.total_size_elems = math.floor(self.total_size_bytes / self.word_size)
@@ -25,7 +36,7 @@ class read_buffer:
         self.req_gen_bandwidth = 100            # words per cycle
 
         # Status of the buffer
-        self.hashed_buffer = dict()
+        self.hashed_buffer = {}
         self.num_lines = 0
         self.num_active_buf_lines = 1
         self.num_prefetch_buf_lines = 1
@@ -34,7 +45,7 @@ class read_buffer:
 
         # Variables to enable prefetching
         self.fetch_matrix = np.ones((1, 1))
-        self.last_prefect_cycle = -1
+        self.last_prefetch_cycle = -1
         self.next_line_prefetch_idx = 0
         self.next_col_prefetch_idx = 0
 
@@ -48,12 +59,19 @@ class read_buffer:
         self.active_buf_full_flag = False
         self.hashed_buffer_valid = False
         self.trace_valid = False
+        self.use_ramulator_trace = False
+        self.enable_layout_evaluation = False
 
     #
     def set_params(self, backing_buf_obj,
                    total_size_bytes=1, word_size=1, active_buf_frac=0.9,
-                   hit_latency=1, backing_buf_bw=1
+                   hit_latency=1, backing_buf_bw=1, num_bank=1, num_port=2,
+                   enable_layout_evaluation=False, use_ramulator_trace = False
                    ):
+        """
+        Method to set the ifmap/filter double buffered memory simulation parameters for
+        housekeeping.
+        """
 
         self.total_size_bytes = total_size_bytes
         self.word_size = word_size
@@ -62,16 +80,29 @@ class read_buffer:
         self.active_buf_frac = round(active_buf_frac, 2)
         self.hit_latency = hit_latency
 
-        self.backing_buffer = backing_buf_obj
-        self.req_gen_bandwidth = backing_buf_bw
-
         # Calculate these based on the values provided
         self.total_size_elems = math.floor(self.total_size_bytes / self.word_size)
         self.active_buf_size = int(math.ceil(self.total_size_elems * self.active_buf_frac))
         self.prefetch_buf_size = self.total_size_elems - self.active_buf_size
 
+        self.backing_buffer = backing_buf_obj
+        self.req_gen_bandwidth = backing_buf_bw
+
+        # Layout modeling
+        self.num_bank = num_bank
+        self.num_port = num_port # number of ports per bank
+        self.bw_per_bank = self.req_gen_bandwidth // self.num_bank # bandwidth per bank
+        self.enable_layout_evaluation = enable_layout_evaluation
+        assert self.bw_per_bank * self.num_bank == self.req_gen_bandwidth, f"overall bandwidth must be divisible by total number of banks, number of banks = {self.num_bank}, bandwidth of each as {self.bw_per_bank}, total bandwidth = {self.req_gen_bandwidth}"
+
+        # Ramulator trace
+        self.use_ramulator_trace = use_ramulator_trace
+
     #
     def reset(self): # TODO: check if all resets are working propoerly
+        """
+        Method to reset the read buffer parameters.
+        """
         # Buffer properties: User specified
         self.total_size_bytes = 128
         self.word_size = 1  # Bytes
@@ -88,13 +119,13 @@ class read_buffer:
         self.req_gen_bandwidth = 100  # words per cycle
 
         # Status of the buffer
-        self.hashed_buffer = dict()
+        self.hashed_buffer = {}
         self.active_buffer_set_limits = []
         self.prefetch_buffer_set_limits = []
 
         # Variables to enable prefetching
         self.fetch_matrix = np.ones((1, 1))
-        self.last_prefect_cycle = -1
+        self.last_prefetch_cycle = -1
         self.next_line_prefetch_idx = 0
         self.next_col_prefetch_idx = 0
 
@@ -108,9 +139,13 @@ class read_buffer:
         self.active_buf_full_flag = False
         self.hashed_buffer_valid = False
         self.trace_valid = False
+        self.use_ramulator_trace = False
 
     #
     def set_fetch_matrix(self, fetch_matrix_np):
+        """
+        Method to set the fetch matrix responsible for prefetching from the DRAM.
+        """
         # The operand matrix determines what to pre-fetch into both active and prefetch buffers
         # In 'user' mode, this will be set in the set_params
 
@@ -130,13 +165,20 @@ class read_buffer:
 
             self.fetch_matrix[dest_row][dest_col] = fetch_matrix_np[src_row][src_col]
 
-        # Once the fetch matrices are set, populate the data structure for fast lookups and servicing
+        # Once the fetch matrices are set, populate the data structure for faster lookups and
+        # servicing
         self.prepare_hashed_buffer()
 
     #
     def prepare_hashed_buffer(self):
+        # layout modeling: hashed_buffer is being modified to serve as on-chip buffer.
+        """
+        Method to convert the fetch matrix into a hashed buffer for fast lookups.
+        """
         elems_per_set = math.ceil(self.total_size_elems / 100)
-
+        if self.enable_layout_evaluation:
+            elems_per_set = self.req_gen_bandwidth
+        
         prefetch_rows = self.fetch_matrix.shape[0]
         prefetch_cols = self.fetch_matrix.shape[1]
 
@@ -181,77 +223,161 @@ class read_buffer:
 
     #
     def active_buffer_hit(self, addr):
+        """
+        Method to check if the address is hit or miss in the active read buffer.
+        """
         assert self.active_buf_full_flag, 'Active buffer is not ready yet'
 
         start_id, end_id = self.active_buffer_set_limits
-        if start_id < end_id:
-            for line_id in range(start_id, end_id):
-                this_set = self.hashed_buffer[line_id]      # O(1) --> accessing hash
-                if addr in this_set:                        # Checking in a set(), O(1) lookup
-                    return True
+        if self.enable_layout_evaluation:
+          if start_id < end_id:
+              for line_id in range(start_id, end_id):
+                  this_set = self.hashed_buffer[line_id]      # O(1) --> accessing hash
+                  if addr in this_set:                        # Checking in a set(), O(1) lookup
+                      return line_id, list(this_set).index(addr)
 
+          else:
+              for line_id in range(start_id, self.num_lines):
+                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
+                  if addr in this_set:  # Checking in a set(), O(1) lookup
+                      return line_id, list(this_set).index(addr)
+
+              for line_id in range(end_id):
+                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
+                  if addr in this_set:  # Checking in a set(), O(1) lookup
+                      return line_id, list(this_set).index(addr)
+          # Fixing for ISSUE #14
+          # return True
+          return -1, -1
         else:
-            for line_id in range(start_id, self.num_lines):
-                this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
-                if addr in this_set:  # Checking in a set(), O(1) lookup
-                    return True
+          if start_id < end_id:
+              for line_id in range(start_id, end_id):
+                  this_set = self.hashed_buffer[line_id]      # O(1) --> accessing hash
+                  if addr in this_set:                        # Checking in a set(), O(1) lookup
+                      return True
 
-            for line_id in range(end_id):
-                this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
-                if addr in this_set:  # Checking in a set(), O(1) lookup
-                    return True
-        # Fixing for ISSUE #14
-        # return True
-        return False
+          else:
+              for line_id in range(start_id, self.num_lines):
+                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
+                  if addr in this_set:  # Checking in a set(), O(1) lookup
+                      return True
+
+              for line_id in range(end_id):
+                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
+                  if addr in this_set:  # Checking in a set(), O(1) lookup
+                      return True
+          # Fixing for ISSUE #14
+          # return True
+          return False
 
     #
-    def service_reads(self, incoming_requests_arr_np,   # 2D array with the requests
-                            incoming_cycles_arr):       # 1D vector with the cycles at which req arrived
+    def service_reads(self,
+                      incoming_requests_arr_np,   # 2D array with the requests
+                      incoming_cycles_arr):       # 1D vector with the cycles at which req arrived
+        """
+        Method to service read requests coming from systolic array. Logic: Always check if an addr
+        is in active buffer. If hit, return with hit latency Else, make the contents of prefetch
+        buffer as active and then check Continue making new prefetches until there is a hit.
+        """
         # Service the incoming read requests
         # returns a cycles array corresponding to the requests buffer
         # Logic: Always check if an addr is in active buffer.
         #        If hit, return with hit latency
         #        Else, make the contents of prefetch buffer as active and then check
         #              finish till an ongoing prefetch is done before reassiging prefetch buffer
-
+        dram_stall_cycles = 0
         if not self.active_buf_full_flag:
             start_cycle = incoming_cycles_arr[0][0]
-            self.prefetch_active_buffer(start_cycle=start_cycle)    # Needs to use the entire operand matrix
-                                                                    # keeping in mind the tile order and everything
+            # Needs to use the entire operand matrix
+            # keeping in mind the tile order and everything
+            dram_stall_cycles = self.prefetch_active_buffer(start_cycle=start_cycle)
 
         out_cycles_arr = []
         offset = self.hit_latency
-        # for cycle, request_line in tqdm(zip(incoming_cycles_arr, incoming_requests_arr_np)):
-        for i in tqdm(range(incoming_requests_arr_np.shape[0]), disable=True):
-            cycle = incoming_cycles_arr[i]
-            # Fixing for ISSUE #14
-            # request_line = set(incoming_requests_arr_np[i]) #shaves off a few seconds
-            request_line = incoming_requests_arr_np[i]
+        if self.enable_layout_evaluation:
+          for i in tqdm(range(incoming_requests_arr_np.shape[0]), disable=True):
+              cycle = incoming_cycles_arr[i]
+              # Fixing for ISSUE #14
+              # request_line = set(incoming_requests_arr_np[i]) #shaves off a few seconds
+              request_line = incoming_requests_arr_np[i]
 
-            for addr in request_line:
-                if addr == -1:
-                    continue
+              concurrent_line_addr = [[] for _ in range(self.num_bank)] # bank conflict modeling
+              for addr in request_line:
+                  if addr == -1:
+                      continue
 
-                # if addr not in self.active_buffer_contents: #this is super slow!!!
-                # Fixing for ISSUE #14
-                # if not self.active_buffer_hit(addr):  # --> While loop ensures multiple prefetches if needed
-                while not self.active_buffer_hit(addr):
-                    self.new_prefetch()
-                    potential_stall_cycles = self.last_prefect_cycle - (cycle + offset)
-                    # Offset increments if there were potential stalls
-                    if potential_stall_cycles > 0:
-                        offset += potential_stall_cycles
-                   
+                  # if addr not in self.active_buffer_contents: #this is super slow!!!
+                  # Fixing for ISSUE #14
+                  # if not self.active_buffer_hit(addr):  # --> While loop ensures multiple prefetches if needed
+                  line_addr, column_addr = self.active_buffer_hit(addr)
+                  while line_addr == -1:
+                      self.new_prefetch()
+                      potential_stall_cycles = self.last_prefetch_cycle - (cycle + offset)
 
-            out_cycles = cycle + offset
-            out_cycles_arr.append(out_cycles)
+                      if potential_stall_cycles > 0:
+                          offset += potential_stall_cycles
+                      line_addr, column_addr = self.active_buffer_hit(addr)
+                  
+                  # Layout Modeling 1 -- data mapping to multiple bank 
+                  # The 2D array is interleaved mapped to multiple banks. 
+                  # e.g. (interleave mapping) addr 0 -> bank 0; addr 1 -> bank 1; addr 2 -> bank 2 ...
+                  # instead of (contiguous mapping) addr 0,...,lines in a bank - 1 -> bank 0.
+                  # because data access in compiled layout turns to be contiguious, which accesses the continuous addresses.
+                  # In (contiguous mapping), such multi-bank mapping would result in more bank conflict slowdown.
+                  bank_id = column_addr // self.bw_per_bank
+                  assert bank_id < self.num_bank, f"bank id = {bank_id} for column_addr = {column_addr} needs to be smaller than total number of bank = {self.num_bank}"
+                  if line_addr not in concurrent_line_addr[bank_id]:
+                      concurrent_line_addr[bank_id].append(line_addr)
+              max_line_request_among_all_banks = 0
+              for bank_id in range(self.num_bank):
+                  max_line_request_among_all_banks = max(len(concurrent_line_addr[bank_id]), max_line_request_among_all_banks)
+              offset += math.ceil(max_line_request_among_all_banks/self.num_port) - 1
+              if self.use_ramulator_trace == True:
+                  out_cycles = cycle + offset + dram_stall_cycles
+              else:
+                  out_cycles = cycle + offset
+              out_cycles_arr.append(out_cycles)
 
-        out_cycles_arr_np = np.asarray(out_cycles_arr).reshape((len(out_cycles_arr), 1))
+          out_cycles_arr_np = np.asarray(out_cycles_arr).reshape((len(out_cycles_arr), 1))
 
-        return out_cycles_arr_np
+          return out_cycles_arr_np
+        
+        else:
+          for i in tqdm(range(incoming_requests_arr_np.shape[0]), disable=True):
+              cycle = incoming_cycles_arr[i]
+              # Fixing for ISSUE #14
+              # request_line = set(incoming_requests_arr_np[i]) #shaves off a few seconds
+              request_line = incoming_requests_arr_np[i]
+
+              for addr in request_line:
+                  if addr == -1:
+                      continue
+
+                  # if addr not in self.active_buffer_contents: #this is super slow!!!
+                  # Fixing for ISSUE #14
+                  # if not self.active_buffer_hit(addr):  # --> While loop ensures multiple prefetches if needed
+                  while not self.active_buffer_hit(addr):
+                      self.new_prefetch()
+                      potential_stall_cycles = self.last_prefetch_cycle - (cycle + offset)
+                      offset += potential_stall_cycles        # Offset increments if there were potential stalls
+                      if potential_stall_cycles > 0:
+                          offset += potential_stall_cycles
+                    
+              if self.use_ramulator_trace == True:
+                  out_cycles = cycle + offset + dram_stall_cycles
+              else:
+                  out_cycles = cycle + offset
+              out_cycles_arr.append(out_cycles)
+
+          out_cycles_arr_np = np.asarray(out_cycles_arr).reshape((len(out_cycles_arr), 1))
+
+          return out_cycles_arr_np
 
     #
     def prefetch_active_buffer(self, start_cycle):
+        """
+        Method to prefetch the active read buffer before servicing individual memory requests.
+        """
         # Depending on size of the active buffer, calculate the number of lines from op mat to fetch
         # Also, calculate the cycles arr for requests
 
@@ -280,20 +406,24 @@ class read_buffer:
         # TODO: Tally and check if this agrees with the contents of the hashed buffer
 
         # 2. Preparing the cycles array
-        #    The start_cycle variable ensures that all the requests have been made before any incoming reads came
+        #    The start_cycle variable ensures that all the requests have been made before any
+        #    incoming reads came
         cycles_arr = np.zeros((num_lines, 1))
         for i in range(cycles_arr.shape[0]):
-            cycles_arr[i][0] = -1 * (num_lines - start_cycle - (i - self.backing_buffer.get_latency()))
+            cycles_arr[i][0] = \
+                -1 * (num_lines - start_cycle - (i - self.backing_buffer.get_latency()))
 
         # 3. Send the request and get the response cycles count
-        response_cycles_arr = self.backing_buffer.service_reads(incoming_cycles_arr=cycles_arr,
-                                                                incoming_requests_arr_np=prefetch_requests)
+        response_cycles_arr = \
+            self.backing_buffer.service_reads(incoming_cycles_arr=cycles_arr,
+                                              incoming_requests_arr_np=prefetch_requests)
 
         # 4. Update the variables
-        self.last_prefect_cycle = int(response_cycles_arr[-1][0])
+        #self.last_prefetch_cycle = int(response_cycles_arr[-1][0])
+        self.last_prefetch_cycle = int(max(response_cycles_arr))
 
         # Update the trace matrix
-        self.trace_matrix = np.concatenate((response_cycles_arr, prefetch_requests), axis=1)
+        self.trace_matrix = np.column_stack((response_cycles_arr, prefetch_requests))
         self.trace_valid = True
 
         # Set active buffer contents
@@ -309,14 +439,22 @@ class read_buffer:
 
         # Set the line to be prefetched next
         # The module operator is to ensure that the indices wrap around
-        if requested_data_size > self.active_buf_size:  # Some elements in the current idx is left out in this case
+        if requested_data_size > self.active_buf_size:
+            # Some elements in the current idx is left out in this case
             self.next_line_prefetch_idx = num_lines % self.fetch_matrix.shape[0]
         else:
             self.next_line_prefetch_idx = (num_lines + 1) % self.fetch_matrix.shape[0]
 
+        return (self.last_prefetch_cycle - cycles_arr[-1][0] - 1)   
     #
     def new_prefetch(self):
-        # In a new prefetch, some portion of the original data needs to be deleted to accomodate the prefetched data
+        """
+        Method to do a new prefetch. In a new prefetch, some portion of the original data needs to
+        be deleted to accomodate the prefetched data In this case we overwrite some data in the
+        active buffer with the prefetched data and then create a new prefetch request.
+        """
+        # In a new prefetch, some portion of the original data needs to be deleted to accomodate the
+        # prefetched data.
         # In this case we overwrite some data in the active buffer with the prefetched data
         # And then create a new prefetch request
         # Also return when the prefetched data was made available
@@ -345,8 +483,9 @@ class read_buffer:
             last_idx = self.fetch_matrix.shape[0]
             prefetch_requests = self.fetch_matrix[start_idx:,:]
 
-            new_end_idx = min(end_idx - last_idx, start_idx)    # In case the entire array is engulfed
-            prefetch_requests = np.concatenate((prefetch_requests, self.fetch_matrix[:new_end_idx,:]))
+            new_end_idx = min(end_idx - last_idx, start_idx) # In case the entire array is engulfed
+            prefetch_requests = \
+                np.concatenate((prefetch_requests, self.fetch_matrix[:new_end_idx,:]))
         else:
             prefetch_requests = self.fetch_matrix[start_idx:end_idx, :]
 
@@ -366,19 +505,20 @@ class read_buffer:
         cycles_arr = np.zeros((num_lines, 1))
         for i in range(cycles_arr.shape[0]):
             # Fixing ISSUE #14
-            # cycles_arr[i][0] = self.last_prefect_cycle + i
-            cycles_arr[i][0] = self.last_prefect_cycle + i + 1
+            # cycles_arr[i][0] = self.last_prefetch_cycle + i
+            cycles_arr[i][0] = self.last_prefetch_cycle + i + 1
 
         # 4. Send the request
-        response_cycles_arr = self.backing_buffer.service_reads(incoming_cycles_arr=cycles_arr,
-                                                                incoming_requests_arr_np=prefetch_requests)
+        response_cycles_arr = \
+            self.backing_buffer.service_reads(incoming_cycles_arr=cycles_arr,
+                                              incoming_requests_arr_np=prefetch_requests)
 
         # 5. Update the variables
-        self.last_prefect_cycle = response_cycles_arr[-1][0]
+        self.last_prefetch_cycle = np.amax(response_cycles_arr)
+        #assert response_cycles_arr.shape == cycles_arr.shape, \
+        #       'The request and response cycles dims do not match'
 
-        assert response_cycles_arr.shape == cycles_arr.shape, 'The request and response cycles dims do not match'
-
-        this_prefetch_trace = np.concatenate((response_cycles_arr, prefetch_requests), axis=1)
+        this_prefetch_trace = np.column_stack((response_cycles_arr, prefetch_requests))
         self.trace_matrix = np.concatenate((self.trace_matrix, this_prefetch_trace), axis=0)
 
         # Set the line to be prefetched next
@@ -391,6 +531,10 @@ class read_buffer:
 
     #
     def get_trace_matrix(self):
+        """
+        Method to get the read buffer trace matrix. It contains addresses requsted by the systolic
+        array and the cycles (first column) at which the requests are made.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return
@@ -399,27 +543,42 @@ class read_buffer:
 
     #
     def get_hit_latency(self):
+        """
+        Method to get hit latency of the read buffer.
+        """
         return self.hit_latency
 
     #
     def get_latency(self):
+        """
+        Method to get hit latency of the read buffer.
+        """
         return self.hit_latency
 
     #
     def get_num_accesses(self):
+        """
+        Method to get number of accesses of the read buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
         return self.num_access
 
     #
     def get_external_access_start_stop_cycles(self):
+        """
+        Method to get start and stop cycles of the read buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
-        start_cycle = self.trace_matrix[0][0]
-        end_cycle = self.trace_matrix[-1][0]
+        start_cycle = np.amin(self.trace_matrix[:,0])
+        end_cycle = np.amax(self.trace_matrix[:,0])
 
         return start_cycle, end_cycle
 
     #
     def print_trace(self, filename):
+        """
+        Method to write the read buffer trace matrix to a file.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return
