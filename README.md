@@ -3,13 +3,24 @@
 <!-- [![Documentation Status](https://readthedocs.org/projects/scale-sim-project/badge/?version=latest)](https://scale-sim-project.readthedocs.io/en/latest/?badge=latest) -->
 
 SCALE Sim is a simulator for systolic array based accelerators for Convolution, Feed Forward, and any layer that uses GEMMs.
-This is a refreshed version of the simulator with feature enhancements, restructured code to aid feature additions, and ease of distribution.
 
-![scalesim v3 overview](https://github.com/scalesim-project/SCALE-Sim/blob/main/documentation/resources/v3_overview.png "scalesim v3 overview")
+## Features of v2
 
-<!-- The previous version of the simulator can be found [here](https://github.com/scalesim-project/scale-sim-v2). -->
+SCALE-Sim v2 includes following features:
 
-## Features
+1. Simulation of both GEMM and convolution (as im2col) operations
+2. Analytical compute cycles validated by RTL simulation
+3. Separate double-buffered memory modeling for Input, Filter and Output matrices
+4. Multi-Fidelity: Bandwidth calculation mode (CALC) and Stall cycle calculation/Use user bandwidth mode (USER)
+5. Save cycle-accurate SRAM and DRAM traces for separately for Input, Filter and Output
+
+![scalesim overview](https://github.com/scalesim-project/scale-sim-v2/blob/doc/anand/readme/documentation/resources/scalesim-overview.png "scalesim overview")
+
+The previous version (ARM) of the simulator is a legacy version that can be found [here](https://github.com/ARM-software/SCALE-Sim) and is no longer maintained.
+
+
+
+## Features of v3
 
 SCALE-Sim v3 includes several advanced features:
 
@@ -18,6 +29,12 @@ SCALE-Sim v3 includes several advanced features:
 3. **Accelergy Integration**: Energy and power estimation capabilities
 4. **Layout Support**: Advanced memory layout configurations
 5. **Multi-core Support**: Support for multi-core simulations
+
+![scalesim v3 features](https://github.com/scalesim-project/SCALE-Sim/blob/main/documentation/resources/v3_overview.png "scalesim v3 features")
+
+<!-- The previous version of the simulator can be found [here](https://github.com/scalesim-project/scale-sim-v2). -->
+
+
 
 ## Getting started in 30 seconds
 
@@ -150,11 +167,11 @@ For detailed information about layout features and usage, refer to the documenta
 
 ## Detailed Documentation
 
-Detailed documentation about the tool can be found **here (TBD)**. You can refer to the SCALE-Sim v3 paper (to be presented at ISPASS'25):
+Detailed documentation about the tool can be found **here (TBD)**. You can refer to the SCALE-Sim v3 paper (to be published at ISPASS'25):
 
 Raj, R., Banerjee, S., Chandra, N., Wan, Z., Tong, J., Samajdhar, A., & Krishna, T.; **"SCALE-Sim v3: A modular cycle-accurate systolic accelerator simulator for end-to-end system analysis."** arXiv preprint arXiv:2504.15377 (2025) [\[pdf\]](https://arxiv.org/abs/2504.15377)
 
-We also recommend referring to the following papers for insights on SCALE-Sim's potential.
+We also recommend referring to the following papers for previous versions of SCALE-Sim.
 
 [1] Samajdar, A., Zhu, Y., Whatmough, P., Mattina, M., & Krishna, T.;  **"Scale-sim: Systolic cnn accelerator simulator."** arXiv preprint arXiv:1811.02883 (2018). [\[pdf\]](https://arxiv.org/abs/1811.02883)
 
@@ -172,6 +189,22 @@ If you found this tool useful, please use the following bibtex to cite us
   pages={186--200},
   year={2025},
   organization={IEEE}
+}
+
+@inproceedings{samajdar2020systematic,
+  title={A systematic methodology for characterizing scalability of DNN accelerators using SCALE-sim},
+  author={Samajdar, Ananda and Joseph, Jan Moritz and Zhu, Yuhao and Whatmough, Paul and Mattina, Matthew and Krishna, Tushar},
+  booktitle={2020 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
+  pages={58--68},
+  year={2020},
+  organization={IEEE}
+}
+
+@article{samajdar2018scale,
+  title={SCALE-Sim: Systolic CNN Accelerator Simulator},
+  author={Samajdar, Ananda and Zhu, Yuhao and Whatmough, Paul and Mattina, Matthew and Krishna, Tushar},
+  journal={arXiv preprint arXiv:1811.02883},
+  year={2018}
 }
 
 ```
@@ -199,18 +232,22 @@ email, or any other method with the owners of this repository before making a ch
 
 ## Developers
 
-Dev and maintainers:
-* Ritik Raj - Lead developer (@ritikraj7)
-* Sarbartha Banerjee - Ramulator feature (@iamsarbartha)
-* Nikhil Chandra - Sparsity feature (@NikhilChandraNcbs)
-* Zishen Wan - Accelergy feature (@zishenwan)
-* Jianming Tong - SRAM Layout feature (@JianmingTONG)
+Dev/Maintainer:
+* Ritik Raj (@ritikraj7)
+
 
 Advisors
 * Ananda Samajdar (@AnandS09)
 * Tushar Krishna
 
-Previous Contributers/Collaborators
+v3 Contributers/Collaborators
+* Sarbartha Banerjee - Ramulator feature (@iamsarbartha)
+* Nikhil Chandra - Sparsity feature (@NikhilChandraNcbs)
+* Zishen Wan - Accelergy feature (@zishenwan)
+* Jianming Tong - SRAM Layout feature (@JianmingTONG)
+
+
+v2 Contributers/Collaborators
 * Jan Moritz Joseph (@jmjos)
 * Yuhao Zhu
 * Paul Whatmough
