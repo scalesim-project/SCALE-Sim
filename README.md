@@ -1,50 +1,54 @@
-# Systolic CNN AcceLErator Simulator (SCALE Sim) v2
+# Systolic CNN AcceLErator Simulator (SCALE-Sim) 
 
-[![Documentation Status](https://readthedocs.org/projects/scale-sim-project/badge/?version=latest)](https://scale-sim-project.readthedocs.io/en/latest/?badge=latest)
+<!-- [![Documentation Status](https://readthedocs.org/projects/scale-sim-project/badge/?version=latest)](https://scale-sim-project.readthedocs.io/en/latest/?badge=latest) -->
 
 SCALE Sim is a simulator for systolic array based accelerators for Convolution, Feed Forward, and any layer that uses GEMMs.
 This is a refreshed version of the simulator with feature enhancements, restructured code to aid feature additions, and ease of distribution.
 
-![scalesim overview](https://github.com/scalesim-project/scale-sim-v2/blob/doc/anand/readme/documentation/resources/scalesim-overview.png "scalesim overview")
+![scalesim v3 overview](https://github.com/scalesim-project/SCALE-Sim/blob/main/documentation/resources/v3_overview.png "scalesim v3 overview")
 
-The previous version of the simulator can be found [here](https://github.com/ARM-software/SCALE-Sim).
+<!-- The previous version of the simulator can be found [here](https://github.com/scalesim-project/scale-sim-v2). -->
+
+## Features
+
+SCALE-Sim v3 includes several advanced features:
+
+1. **Sparsity Support**: Layer-wise and row-wise sparsity support for efficient neural network execution
+2. **Ramulator Integration**: Detailed memory model integration for evaluating DRAM performance
+3. **Accelergy Integration**: Energy and power estimation capabilities
+4. **Layout Support**: Advanced memory layout configurations
+5. **Multi-core Support**: Support for multi-core simulations
 
 ## Getting started in 30 seconds
 
 ### *Installing the package*
 
-Getting started is simple! SCALE-Sim is completely written in python and is available both as a package and could be run from source.
+Getting started is simple! SCALE-Sim is completely written in python and could be installed from source.
 
 You can install SCALE-Sim in your environment using the following command
 
-```$ pip3 install scalesim```
+```$ pip3 install <path-to-scalesim-v3-folder>```
 
-Alternatively you can install the package from the source as well
+If you are a developer that will modify scale-sim during your usage, please install it with `-e` flag, which will create a symbolic link instead of replicating scalesim in your environment, thus modification of scale-sim code can be syncronized simultaneously
 
-```$ python3 setup.py install```
+```$ pip3 install -e <path-to-scalesim-v3-folder>```
 
 ### *Launching a run*
 
-SCALE-Sim can be run by using the ```scale.py``` script from the repository and providing the paths to the architecture configuration, and the topology descriptor csv file.
+After installing SCALE-Sim, it can be run by using the ```scalesim.scale``` and providing the paths to the architecture configuration, and the topology descriptor csv file.
 
-```$ python3 scale.py -c <path_to_config_file> -t <path_to_topology_file> -p <path_to_output_log_dir>```
-
-Try it now in this jupyter [notebook](https://github.com/scalesim-project/scalesim-tutorial-materials/blob/main/scaledemo.ipynb).
+```$ python3 -m scalesim.scale -c <path_to_config_file> -t <path_to_topology_file> -p <path_to_output_log_dir>```
 
 ### *Running from source*
 
 The above method uses the installed package for running the simulator.
 In cases where you would like to run directly from the source, the following command should be used instead.
 
-```$ python3 <scale_sim_repo_root>/scalesim/scale.py -c <path_to_config_file> -t <path_to_topology_file>```
+```$ PYTHONPATH=$PYTHONPATH:<scale_sim_repo_root> python3 <scale_sim_repo_root>/scalesim/scale.py -c <path_to_config_file> -t <path_to_topology_file>```
 
 If you are running from sources for the first time and do not have all the dependencies installed, please install them first  using the following command.
 
 ```$ pip3 install -r <scale_sim_repo_root>/requirements.txt```
-
-### *Using Sparsity in SCALE-Sim*
-
-Sparsity refers to the presence of many zero or empty values in a dataset, matrix, or model, making it computationally efficient. For a deeper dive into sparsity and its usage, refer to the ```README_Sparsity.md``` file.
 
 ## Tool inputs
 
@@ -90,9 +94,65 @@ There are three summary logs:
 
 In addition cycle accurate SRAM/DRAM access logs are also dumped and could be accesses at ```<outputs_dir>/<run_name>/``` eg `<run_dir>/../scalesim_outputs/<run_name>`
 
+## Advanced Features
+
+### *Using Multi-core feature*
+
+SCALE-Sim v3 introduces **multi-core simulation capabilities** to address the limitations of its predecessor, SCALE-Sim v2, which could only model single-core systolic arrays. This feature allows comprehensive modeling of modern AI accelerators equipped with multiple tensor cores, enabling researchers to simulate advanced workloads and optimize performance. For detailed setup and usage instructions, refer to the ```multi-core/README.md``` file.
+
+### *Using Sparsity feature*
+
+SCALE-Sim v3 introduces advanced support for layer-wise and row-wise sparsity. For detailed information about sparsity features and usage, refer to the ```README_Sparsity.md``` file.
+
+Key features include:
+- Layer-wise sparsity with customizable configurations
+- Row-wise sparsity with N:M ratio support
+- Support for different sparse representations (CSR, CSC, Blocked ELLPACK)
+- Detailed sparsity reports and metrics
+
+### *Using Ramulator feature*
+
+SCALE-sim v3 integrates a detailed memory model with the systolic array computation. Users can evaluate:
+- Stall cycles due to data load from memory
+- Bank conflicts
+- Different memory types (DDR3, DDR4, etc.)
+- Various memory configurations (channels, rows, etc.)
+
+For detailed setup and usage instructions, refer to the ```README_ramulator.md``` file.
+
+### *Using Accelergy feature*
+
+SCALE-Sim v3 integrates with Accelergy for energy and power estimation. This feature allows:
+- Energy estimation of systolic array architectures
+- Power analysis
+- Integration with CACTI and Aladdin plugins for accurate estimation
+
+For setup and usage instructions, refer to the ```README_accelergy.md``` file.
+
+### *Using Layout feature*
+
+SCALE-Sim v3 supports advanced memory layout configurations for on-chip buffers. The layout feature enables:
+
+- **Custom Data Organization**: Specify different data layouts for ifmap, filter, and ofmap tensors
+- **Bank Conflict Evaluation**: Model realistic memory access patterns and bank conflicts
+- **Multi-bank Support**: Configure number of memory banks and ports per bank
+- **Layout Specification**: Define layouts through three key parameters:
+  - `intraline_factor`: Specifies elements per line for each dimension
+  - `intraline_order`: Controls dimension ordering within a line
+  - `interline_order`: Controls dimension ordering across lines
+
+Layout configurations can be specified in the architecture configuration file using parameters like:
+- `OnChipMemoryBanks`: Total number of on-chip memory banks
+- `OnChipMemoryBankPorts`: Number of ports per bank
+- `IfmapCustomLayout`/`FilterCustomLayout`: Enable custom layouts for tensors
+
+For detailed information about layout features and usage, refer to the documentation in the ```README_layout.md``` file.
+
 ## Detailed Documentation
 
-Detailed documentation about the tool can be found [here](https://scale-sim-project.readthedocs.io/en/latest/).
+Detailed documentation about the tool can be found **here (TBD)**. You can refer to the SCALE-Sim v3 paper (to be presented at ISPASS'25):
+
+Raj, R., Banerjee, S., Chandra, N., Wan, Z., Tong, J., Samajdhar, A., & Krishna, T.; **"SCALE-Sim v3: A modular cycle-accurate systolic accelerator simulator for end-to-end system analysis."** arXiv preprint arXiv:2504.15377 (2025) [\[pdf\]](https://arxiv.org/abs/2504.15377)
 
 We also recommend referring to the following papers for insights on SCALE-Sim's potential.
 
@@ -105,21 +165,15 @@ We also recommend referring to the following papers for insights on SCALE-Sim's 
 If you found this tool useful, please use the following bibtex to cite us
 
 ```
-@article{samajdar2018scale,
-  title={SCALE-Sim: Systolic CNN Accelerator Simulator},
-  author={Samajdar, Ananda and Zhu, Yuhao and Whatmough, Paul and Mattina, Matthew and Krishna, Tushar},
-  journal={arXiv preprint arXiv:1811.02883},
-  year={2018}
-}
-
-@inproceedings{samajdar2020systematic,
-  title={A systematic methodology for characterizing scalability of DNN accelerators using SCALE-sim},
-  author={Samajdar, Ananda and Joseph, Jan Moritz and Zhu, Yuhao and Whatmough, Paul and Mattina, Matthew and Krishna, Tushar},
-  booktitle={2020 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
-  pages={58--68},
-  year={2020},
+@inproceedings{raj2025scale,
+  title={SCALE-Sim v3: A modular cycle-accurate systolic accelerator simulator for end-to-end system analysis},
+  author={Raj, Ritik and Banerjee, Sarbartha and Chandra, Nikhil and Wan, Zishen and Tong, Jianming and Samajdhar, Ananda and Krishna, Tushar},
+  booktitle={2025 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
+  pages={186--200},
+  year={2025},
   organization={IEEE}
 }
+
 ```
 
 ## Contributing to the project
@@ -137,27 +191,30 @@ email, or any other method with the owners of this repository before making a ch
    variables, exposed ports, useful file locations and container parameters.
 3. Add a tutorial how to use your new feature in form of a jupyter notebook to the documentation, as well. This makes sure that others can use your code!
 4. Add test cases to our unit test system for your contribution.
-5. Increase the version numbers in any example’s files and the README.md to the new version that this
+5. Increase the version numbers in any example's files and the README.md to the new version that this
    Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/). Add your changes to the CHANGELOG.md. Address the issue numbers that you are solving.
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you
+6. You may merge the Pull Request in once you have the sign-off of two other developers, or if you
    do not have permission to do that, you may request the second reviewer to merge it for you.
 
 
 ## Developers
 
-Main devs:
+Dev and maintainers:
+* Ritik Raj - Lead developer (@ritikraj7)
+* Sarbartha Banerjee - Ramulator feature (@iamsarbartha)
+* Nikhil Chandra - Sparsity feature (@NikhilChandraNcbs)
+* Zishen Wan - Accelergy feature (@zishenwan)
+* Jianming Tong - SRAM Layout feature (@JianmingTONG)
+
+Advisors
 * Ananda Samajdar (@AnandS09)
-* Jan Moritz Joseph (@jmjos)
-
-Contributers:
-* Ritik Raj (@ritikraj7)
-
-Maintainers and Advisors
-* Yuhao Zhu
-* Paul Whatmough
 * Tushar Krishna
 
-Past contributors
+Previous Contributers/Collaborators
+* Jan Moritz Joseph (@jmjos)
+* Yuhao Zhu
+* Paul Whatmough
 * Vineet Nadella
 * Sachit Kuhar
-* Nikhil Chandra
+
+

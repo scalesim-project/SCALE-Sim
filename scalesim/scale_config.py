@@ -37,6 +37,16 @@ class scale_config:
         self.num_bank = 1
         self.num_port = 2
 
+        # Layout flags with default values
+        self.using_ifmap_custom_layout = False
+        self.ifmap_sram_bank_bandwidth = 10
+        self.ifmap_sram_bank_num = 10
+        self.ifmap_sram_bank_port = 2
+        self.using_filter_custom_layout = False
+        self.filter_sram_bank_bandwidth = 10
+        self.filter_sram_bank_num = 10
+        self.filter_sram_bank_port = 2
+
         self.valid_df_list = ['os', 'ws', 'is']
 
         self.sparsity_support = False
