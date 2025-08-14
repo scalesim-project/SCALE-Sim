@@ -1,14 +1,17 @@
-# Systolic CNN AcceLErator Simulator (SCALE-Sim) 
+# SystoliC AcceLErator Simulator (SCALE-Sim) 
 
 <!-- [![Documentation Status](https://readthedocs.org/projects/scale-sim-project/badge/?version=latest)](https://scale-sim-project.readthedocs.io/en/latest/?badge=latest) -->
 
-SCALE Sim is a simulator for systolic array based accelerators for Convolution, Feed Forward, and any layer that uses GEMMs.
+SCALE-Sim is a simulator for systolic array based accelerators supporting Deep Neural Network layers such as Convolution, Fully Connected, and any layer that uses GEMMs (e.g., Attention).
 
-## Features of v2
+
+## Features of SCALE-sim Releases
+
+### Features of v2
 
 SCALE-Sim v2 includes following features:
 
-1. Simulation of both GEMM and convolution (as im2col) operations
+1. Simulation of GEMM and convolution (as im2col) operations
 2. Analytical compute cycles validated by RTL simulation
 3. Separate double-buffered memory modeling for Input, Filter and Output matrices
 4. Multi-Fidelity: Bandwidth calculation mode (CALC) and Stall cycle calculation/Use user bandwidth mode (USER)
@@ -16,13 +19,11 @@ SCALE-Sim v2 includes following features:
 
 ![scalesim overview](https://github.com/scalesim-project/scale-sim-v2/blob/doc/anand/readme/documentation/resources/scalesim-overview.png "scalesim overview")
 
-The previous version (ARM) of the simulator is a legacy version that can be found [here](https://github.com/ARM-software/SCALE-Sim) and is no longer maintained.
+Note: **SCALE-sim v1** (developed with ARM) is a legacy version that can be found [here](https://github.com/ARM-software/SCALE-Sim) and is no longer maintained.
 
+### Features of v3
 
-
-## Features of v3
-
-SCALE-Sim v3 includes several advanced features:
+SCALE-Sim v3 includes several advanced features over v2:
 
 1. **Sparsity Support**: Layer-wise and row-wise sparsity support for efficient neural network execution
 2. **Ramulator Integration**: Detailed memory model integration for evaluating DRAM performance
