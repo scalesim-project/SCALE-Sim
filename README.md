@@ -169,13 +169,15 @@ For detailed information about layout features and usage, refer to the documenta
 
 Detailed documentation about the tool can be found **here (TBD)**. You can refer to the SCALE-Sim v3 paper (to be published at ISPASS'25):
 
-Raj, R., Banerjee, S., Chandra, N., Wan, Z., Tong, J., Samajdhar, A., & Krishna, T.; **"SCALE-Sim v3: A modular cycle-accurate systolic accelerator simulator for end-to-end system analysis."** arXiv preprint arXiv:2504.15377 (2025) [\[pdf\]](https://arxiv.org/abs/2504.15377)
+Raj, R., Banerjee, S., Chandra, N., Wan, Z., Tong, J., Samajdhar, A., & Krishna, T.; **"SCALE-Sim v3: A modular cycle-accurate systolic accelerator simulator for end-to-end system analysis."** arXiv preprint arXiv:2504.15377 (2025) [\[pdf\]](https://ieeexplore.ieee.org/document/11096402)
 
 We also recommend referring to the following papers for previous versions of SCALE-Sim.
 
-[1] Samajdar, A., Zhu, Y., Whatmough, P., Mattina, M., & Krishna, T.;  **"Scale-sim: Systolic cnn accelerator simulator."** arXiv preprint arXiv:1811.02883 (2018). [\[pdf\]](https://arxiv.org/abs/1811.02883)
+[1] Samajdar, A., Joseph, J. M., Zhu, Y., Whatmough, P., Mattina, M., & Krishna, T.; **"A systematic methodology for characterizing scalability of DNN accelerators using SCALE-sim"**. In 2020 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS). [\[pdf\]](https://ieeexplore.ieee.org/document/9238602)
 
-[2] Samajdar, A., Joseph, J. M., Zhu, Y., Whatmough, P., Mattina, M., & Krishna, T.; **"A systematic methodology for characterizing scalability of DNN accelerators using SCALE-sim"**. In 2020 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS). [\[pdf\]](https://cpb-us-w2.wpmucdn.com/sites.gatech.edu/dist/c/332/files/2020/03/scalesim_ispass2020.pdf)
+[2] Samajdar, A., Zhu, Y., Whatmough, P., Mattina, M., & Krishna, T.;  **"Scale-sim: Systolic cnn accelerator simulator."** arXiv preprint arXiv:1811.02883 (2018). [\[pdf\]](https://arxiv.org/abs/1811.02883)
+
+
 
 ## Citing this work
 
