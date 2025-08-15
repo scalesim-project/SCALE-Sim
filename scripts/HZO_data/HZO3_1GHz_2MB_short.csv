@@ -1,0 +1,4 @@
+OPT_type,Capacity(MB),area(mm^2),Dynamic Write Energy per access(pJ),Dynamic Read Energy per access(pJ),Leakage Power (mW)
+ReadEDP,2.0,0.262,88.047,13.813,2.012,
+ReadLatency,2.0,0.491,31.765,26.983,24.471
+WriteEDP,2.0,0.478,25.105,20.322,25.302
