@@ -11,13 +11,13 @@ import numpy as np
 # # =========================
 
 # memory capacities in kb
-filter_double_buffer_capacity = 256 #kb
-ifmap_double_buffer_capacity = 1536 #kb
-ofmap_double_buffer_capacity = 1536 #kb
-checkpointing_double_buffer_capacity = 32 #kb based on the largest output layer size
+filter_double_buffer_capacity = 4096 #kb
+ifmap_double_buffer_capacity = 8192 #kb
+ofmap_double_buffer_capacity = 8192 #kb
+checkpointing_double_buffer_capacity = 1024 #kb based on the largest output layer size
 
 # clock frequency in Hz
-clock_frequency = 20000000 #20MHz
+clock_frequency = 10000000 #10MHz
 period = 1 / clock_frequency
 
 # # =========================
@@ -27,10 +27,9 @@ period = 1 / clock_frequency
 # locate the current file directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # path to scalesim output file
-scalesim_output_file = os.path.join(current_dir, '../edgeTPU_experiment_results/edgeTPU_ws/DETAILED_ACCESS_REPORT.csv')
+scalesim_output_file = os.path.join(current_dir, '../edgeTPU_fitMobileNet_experiment_results/edgeTPU_ws_MobileNet/DETAILED_ACCESS_REPORT.csv')
 # path to HZO data file
-hzo_data_file = os.path.join(current_dir, 'HZO_data/combined_64KB&512KB.csv')
-model_file = os.path.join(current_dir, '../topologies/MLperf_tiny/vww.csv')
+hzo_data_file = os.path.join(current_dir, 'HZO_data/combined_ResNet50_Allmemcapacity.csv')
 
 # read scalesim output file and extract timing and read/write counts
 scalesim_df = pd.read_csv(scalesim_output_file)
@@ -48,11 +47,12 @@ hzo_df = pd.read_csv(hzo_data_file)
 hzo_df['OPT target'] = hzo_df['Source'].str.split('_').str[2]
 hzo_3_df = hzo_df[hzo_df['MemoryCellInputFile'] == ' data/cell_cfgs/FeFET_HZO_15_3_9.cell']
 hzo_5_df = hzo_df[hzo_df['MemoryCellInputFile'] == ' data/cell_cfgs/FeFET_HZO_15_5_9.cell']
-hzo_3_weight_df = hzo_3_df[hzo_3_df['Capacity (KB)'] == 512]
-hzo_5_weight_df = hzo_5_df[hzo_5_df['Capacity (KB)'] ==  512]
-hzo_3_checkpoint_df = hzo_3_df[hzo_3_df['Capacity (KB)'] == 64]
-hzo_5_checkpoint_df = hzo_5_df[hzo_5_df['Capacity (KB)'] == 64]
+hzo_3_weight_df = hzo_3_df[hzo_3_df['Capacity (MB)'] == 8]
+hzo_5_weight_df = hzo_5_df[hzo_5_df['Capacity (MB)'] ==  8]
+hzo_3_checkpoint_df = hzo_3_df[hzo_3_df['Capacity (MB)'] == 2]
+hzo_5_checkpoint_df = hzo_5_df[hzo_5_df['Capacity (MB)'] == 2]
 
+print(hzo_3_weight_df)
 # # =========================
 # # Area Calculation
 # # =========================
@@ -74,6 +74,11 @@ df_3_w_area = area_prep(hzo_3_weight_df, "HZO 3 Weight Buffer Area (mm^2)")
 df_5_w_area = area_prep(hzo_5_weight_df, "HZO 5 Weight Buffer Area (mm^2)")
 df_3_c_area = area_prep(hzo_3_checkpoint_df, "HZO 3 Checkpointing Buffer Area (mm^2)")
 df_5_c_area = area_prep(hzo_5_checkpoint_df, "HZO 5 Checkpointing Buffer Area (mm^2)")
+
+print(df_3_w_area)
+print(df_5_w_area)
+print(df_3_c_area)
+print(df_5_c_area)
 
 weight_buffer_area_df = reduce(
     lambda left, right: pd.merge(left, right, on="OPT target", how="outer"),

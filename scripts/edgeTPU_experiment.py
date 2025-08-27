@@ -3,9 +3,12 @@ import os
 
 absolute_dir_path = os.path.dirname(os.path.realpath(__file__))
 
-topology = absolute_dir_path + "/../topologies/MLperf_tiny/vww.csv"
-config = absolute_dir_path + "/../configs/edgeTPU.cfg"
-logpath = absolute_dir_path + "/../edgeTPU_experiment_results"
+# topology = absolute_dir_path + "/../topologies/MLperf_tiny/vww.csv"
+# config = absolute_dir_path + "/../configs/edgeTPU.cfg"
+# logpath = absolute_dir_path + "/../edgeTPU_experiment_results"
+topology = absolute_dir_path + "/../topologies/conv_nets/mobilenet.csv"
+config = absolute_dir_path + "/../configs/edgeTPU_fitMobileNet.cfg"
+logpath = absolute_dir_path + "/../edgeTPU_fitMobileNet_experiment_results"
 # inp_type = absolute_dir_path + "/conv"
 
 # make sure logpath exists
