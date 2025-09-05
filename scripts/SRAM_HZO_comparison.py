@@ -10,10 +10,10 @@ import numpy as np
 # # Constants / Parameters
 # # =========================
 
-# memory capacities in kb
-filter_double_buffer_capacity = 2048 #kb
-ifmap_double_buffer_capacity = 8192 #kb
-ofmap_double_buffer_capacity = 8192 #kb
+# # memory capacities in kb
+# filter_double_buffer_capacity = 2048 #kb
+# ifmap_double_buffer_capacity = 8192 #kb
+# ofmap_double_buffer_capacity = 8192 #kb
 
 # clock frequency in Hz
 clock_frequency = 20000000 #20MHz
@@ -52,8 +52,8 @@ sram_best_df = sram_df[sram_df['MemoryCellInputFile'] == ' data/cell_cfgs/SRAM_b
 sram_worst_df = sram_df[sram_df['MemoryCellInputFile'] == ' data/cell_cfgs/SRAM_worst_case.cell']
 sram_best_weight_df = sram_best_df[sram_best_df['Capacity (MB)'] == 4]
 sram_worst_weight_df = sram_worst_df[sram_worst_df['Capacity (MB)'] == 4]
-sram_best_io_df = sram_best_df[sram_best_df['Capacity (MB)'] == 32]
-sram_worst_io_df = sram_worst_df[sram_worst_df['Capacity (MB)'] == 32]
+sram_best_io_df = sram_best_df[sram_best_df['Capacity (MB)'] == 2]
+sram_worst_io_df = sram_worst_df[sram_worst_df['Capacity (MB)'] == 2]
 
 # read scalesim output file and extract relevant data
 scalesim_df = pd.read_csv(scalesim_output_file)
@@ -99,7 +99,7 @@ bars1 = ax.bar(x - width/2, df_sram_best_io_area['SRAM 32MB Area (mm^2)'], width
 bars2 = ax.bar(x + width/2, df_sram_worst_io_area['SRAM 32MB Area (mm^2)'], width, label='Worst Case SRAM Area', color='r')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Area (mm^2)')
-ax.set_title('IO buffer (32MB)')
+ax.set_title('IO buffer (2MB)')
 ax.set_xticks(x)
 ax.set_xticklabels(df_sram_best_io_area['OPT target'], rotation=45)
 ax.legend()
@@ -153,7 +153,7 @@ bars1 = ax.bar(x - width/2, df_sram_best_io_dynamic_Read['SRAM 32MB Dynamic Read
 bars2 = ax.bar(x + width/2, df_sram_worst_io_dynamic_Read['SRAM 32MB Dynamic Read Energy (pJ)'], width, label='Worst Case SRAM Dynamic Read Energy', color='r')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Dynamic Read Energy (pJ)')
-ax.set_title('IO buffer (32MB)')
+ax.set_title('IO buffer (2MB)')
 ax.set_xticks(x)
 ax.set_xticklabels(df_sram_best_io_dynamic_Read['OPT target'], rotation=45)
 ax.legend()
@@ -200,7 +200,7 @@ bars1 = ax.bar(x - width/2, df_sram_best_io_dynamic_Write['SRAM 32MB Dynamic Wri
 bars2 = ax.bar(x + width/2, df_sram_worst_io_dynamic_Write['SRAM 32MB Dynamic Write Energy (pJ)'], width, label='Worst Case SRAM Dynamic Write Energy', color='r')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Dynamic Write Energy (pJ)')
-ax.set_title('IO buffer (32MB)')
+ax.set_title('IO buffer (2MB)')
 ax.set_xticks(x)
 ax.set_xticklabels(df_sram_best_io_dynamic_Write['OPT target'], rotation=45)
 ax.legend()
@@ -243,7 +243,7 @@ bars1 = ax.bar(x - width/2, df_sram_best_io_dynamic_energy['Dynamic Energy per I
 bars2 = ax.bar(x + width/2, df_sram_worst_io_dynamic_energy['Dynamic Energy per Inference (mJ)'], width, label='Worst Case SRAM Dynamic Energy per Inference', color='r')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Dynamic Energy per Inference (mJ)')
-ax.set_title('IO buffer (32MB)')
+ax.set_title('IO buffer (2MB)')
 ax.set_xticks(x)
 ax.set_xticklabels(df_sram_best_io_dynamic_energy['OPT target'], rotation=45)
 ax.legend()
@@ -387,7 +387,7 @@ bars1 = ax.bar(x - width/2, latency_df['SRAM 32MB Best Static Energy per Inferen
 bars2 = ax.bar(x + width/2, latency_df['SRAM 32MB Worst Static Energy per Inference (mJ)'], width, label='Worst Case SRAM Static Energy per Inference', color='r')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Static Energy per Inference (mJ)')
-ax.set_title('IO buffer (32MB)')
+ax.set_title('IO buffer (2MB)')
 ax.set_xticks(x)
 ax.set_xticklabels(df_sram_best_io_static_power['OPT target'], rotation=45)
 ax.legend()
@@ -464,7 +464,7 @@ bars1 = ax.bar(x - width/2, total_energy_df['IO Best Dynamic (mJ)'] + total_ener
 bars2 = ax.bar(x + width/2, total_energy_df['IO Worst Dynamic (mJ)'] + total_energy_df['SRAM 32MB Worst Static Energy per Inference (mJ)'], width, label='Worst Case SRAM Total Energy per Inference', color='r')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Total Energy per Inference (mJ)')
-ax.set_title('IO buffer (32MB)')
+ax.set_title('IO buffer (2MB)')
 ax.set_xticks(x)
 ax.set_xticklabels(total_energy_df['OPT target'], rotation=45)
 ax.legend()
