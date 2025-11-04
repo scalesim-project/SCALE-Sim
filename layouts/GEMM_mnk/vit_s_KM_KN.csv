@@ -1,0 +1,6 @@
+Layer name, IFMAP Height Intraline Factor, IFMAP Width Intraline Factor, Filter Height Intraline Factor, Filter Width Intraline Factor, Channel Intraline Factor, Num Filter Intraline Factor, IFMAP Height Intraline Order, IFMAP Width Intraline Order, Channel Intraline Order, IFMAP Height Interline Order, IFMAP Width Interline Order, Channel Interline Order, Num Filter Intraline Order, Channel Intraline Order, Filter Height Intraline Order, Filter Width Intraline Order, Num Filter Interline Order, Channel Interline Order, Filter Height Interline Order, Filter Width Interline Order, 
+L0,128,8,1,8,1,128,2,1,0,5,4,3,3,0,1,2,7,4,5,6,
+L1,128,8,1,8,1,128,2,1,0,5,4,3,3,0,1,2,7,4,5,6,
+L2,128,8,1,16,1,64,2,1,0,5,4,3,3,0,1,2,7,4,5,6,
+L3,128,8,1,8,1,128,2,1,0,5,4,3,3,0,1,2,7,4,5,6,
+L4,128,8,1,8,1,128,2,1,0,5,4,3,3,0,1,2,7,4,5,6,

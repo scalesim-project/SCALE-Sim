@@ -1,0 +1,28 @@
+====================================================
+******************* SCALE SIM **********************
+====================================================
+Array Size: 	128x128
+SRAM IFMAP (kB): 	256
+SRAM Filter (kB): 	256
+SRAM OFMAP (kB): 	256
+Dataflow: 	Output Stationary
+topology file path: 	topologies/conv_nets/test.csv
+layout file path: 	layouts/conv_nets/test.csv
+Bandwidth: 	64
+Working in USE USER BANDWIDTH mode.
+====================================================
+self.using_ifmap_custom_layout -- True
+
+Running Layer 0
+ifmap_intraline_factor=[2, 2, 16]
+ifmap_intraline_order=[0, 1, 2]
+ifmap_interline_order=[4, 5, 3]
+finalized shape = (2, 16, 2, 4, 4, 12)
+Compute cycles: 67359
+Stall cycles: 61414
+Overall utilization: 1.50%
+Mapping efficiency: 19.53%
+Average IFMAP DRAM BW: 64.000 words/cycle
+Average Filter DRAM BW: 63.974 words/cycle
+Average OFMAP DRAM BW: 64.000 words/cycle
+************ SCALE SIM Run Complete ****************

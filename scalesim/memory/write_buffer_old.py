@@ -1,4 +1,6 @@
-# Buffer to stage the data to be written
+"""
+Buffer to stage the data to be written
+"""
 # TODO: Verification Pending
 import math
 import numpy as np
@@ -7,7 +9,13 @@ from scalesim.memory.write_port import write_port
 
 
 class write_buffer:
+    """
+    Class which runs the memory simulation of the OFMAP SRAM.
+    """
     def __init__(self):
+        """
+        __init__ method.
+        """
         # Buffer properties: User specified
         self.total_size_bytes = 128
         self.word_size = 1
@@ -51,6 +59,9 @@ class write_buffer:
                    total_size_bytes=128, word_size=1, active_buf_frac=0.9,
                    backing_buf_bw=100
                    ):
+        """
+        Method to set the ofmap memory simulation parameters for housekeeping.
+        """
         self.total_size_bytes = total_size_bytes
         self.word_size = word_size
 
@@ -67,6 +78,9 @@ class write_buffer:
 
     #
     def reset(self):
+        """
+        Method to reset the write buffer parameters.
+        """
         self.total_size_bytes = 128
         self.word_size = 1
         self.active_buf_frac = 0.9
@@ -88,7 +102,11 @@ class write_buffer:
 
     #
     def service_writes(self, incoming_requests_arr_np, incoming_cycles_arr_np):
-        assert incoming_cycles_arr_np.shape[0] == incoming_requests_arr_np.shape[0], 'Cycles and requests do not match'
+        """
+        Method to service write requests coming from systolic array.
+        """
+        assert incoming_cycles_arr_np.shape[0] == incoming_requests_arr_np.shape[0], \
+               'Cycles and requests do not match'
         out_cycles_arr = []
 
         offset = 0
@@ -139,6 +157,9 @@ class write_buffer:
 
     #
     def empty_drain_buf(self, empty_start_cycle=0):
+        """
+        Method to drain the drain buffer once the active buffer is full.
+        """
 
         data_sz_to_drain = min(len(self.drain_buf_contents), self.drain_buf_size)
 
@@ -172,6 +193,9 @@ class write_buffer:
 
     #
     def drain_active_buf(self):
+        """
+        Method to transfer all elements from the active buffer to the drain buffer.
+        """
         while len(self.active_buf_contents) > 0:
             for i in range(self.drain_buf_size):
                 elem = self.active_buf_contents[i]
@@ -182,6 +206,9 @@ class write_buffer:
 
     #
     def empty_all_buffers(self, cycle):
+        """
+        Method to drain all of the active buffer.
+        """
         if self.state == 0:
             self.drain_end_cycle = self.empty_drain_buf(empty_start_cycle=cycle)
             self.state = 1
@@ -190,6 +217,9 @@ class write_buffer:
 
     #
     def get_trace_matrix(self):
+        """
+        Method to get the write buffer trace matrix.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return
@@ -198,15 +228,24 @@ class write_buffer:
 
     #
     def get_free_space(self):
+        """
+        Method to get free space of the write buffer.
+        """
         return self.free_space
 
     #
     def get_num_accesses(self):
+        """
+        Method to get number of accesses of the write buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
         return self.num_access
 
     #
     def get_external_access_start_stop_cycles(self):
+        """
+        Method to get start and stop cycles of the write buffer if trace_valid flag is set.
+        """
         assert self.trace_valid, 'Traces not ready yet'
         start_cycle = self.trace_matrix[0][0]
         end_cycle = self.trace_matrix[-1][0]
@@ -215,6 +254,9 @@ class write_buffer:
 
     #
     def print_trace(self, filename):
+        """
+        Method to write the write buffer trace matrix to a file.
+        """
         if not self.trace_valid:
             print('No trace has been generated yet')
             return

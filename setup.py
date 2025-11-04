@@ -9,19 +9,19 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name='scalesim',
-    version='2.0.2',
+    version='3.0.0',
     description='Systolic CNN AcceLerator Simulator',
     long_description=README,
     long_description_content_type="text/markdown",
-    author='anands09, jmj, tushar, vnadella',
-    author_email='anandsamajdar@gatech.edu',
+    author='ritikraj7, anands09, tushar',
+    author_email='ritik.raj@gatech.edu',
     maintainer='SynergyLab, GT',
     maintainer_email='ritik.raj@gatech.edu',
-    url='https://github.com/scalesim-project/scale-sim-v2',
+    url='https://github.com/scalesim-project/SCALE-Sim',
     license="MIT",
     packages=find_packages(),
     include_package_data=False,                                 # The include_package_data argument controls whether non-code files are copied when your package is installed
-    install_requires=["numpy","configparser","absl-py", "tqdm", "pandas"],
+    install_requires=["numpy","configparser","absl-py", "tqdm", "pandas", "setuptools", "matplotlib", "cython", "numba"],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
