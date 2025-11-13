@@ -366,10 +366,16 @@ class systolic_compute_os:
         inter_fold_gap_prefix = self.T  - 1
         inter_fold_gap_prefix_mat = np.ones((inter_fold_gap_prefix, self.arr_col)) * -1
 
+        # print(f"inter_fold_gap_prefix:{inter_fold_gap_prefix}")
+        # print(f"shape of inter_fold_gap_prefix_mat:{inter_fold_gap_prefix_mat.shape}")
+        # print(f"shape of self.ofmap_op_mat:{self.ofmap_op_mat.shape}")
+
         # Debug messages
         #print('DEBUG: create_ifmap_demand_mat()')
         pbar = tqdm(total=self.col_fold * self.row_fold, disable=True)
 
+        # print(f"Sr,Sc:{self.Sr},{self.Sc}")
+        # print(f"self.col_fold,self.row_fold:{self.col_fold},{self.row_fold}")
         for fc in range(self.col_fold):
             for fr in range(self.row_fold):
                 row_start_id = fr * self.arr_row
@@ -380,9 +386,28 @@ class systolic_compute_os:
                 col_end_idx = min(col_start_id + self.arr_col, self.Sc)
                 col_delta = self.arr_col - (col_end_idx - col_start_id)
 
+        #         if fr == 1 and fc == 1:
+        #             print(f"example for id")
+        #             print(f"row_start_id:{row_start_id}")
+        #             print(f"row_end_idx:{row_end_idx}")
+        #             print(f"row_delta:{row_delta}")
+        #             print(f"col_start_id:{col_start_id}")
+        #             print(f"col_end_idx:{col_end_idx}")
+        #             print(f"col_delta:{col_delta}")
+        #             print()
+
                 this_fold_demand = \
                     self.ofmap_op_mat[row_start_id: row_end_idx, col_start_id: col_end_idx]
                 self.ofmap_writes += this_fold_demand.shape[0] * this_fold_demand.shape[1]
+
+        #         if fr == 1 and fc == 1:
+        #             print(f"example for this_fold_demand")
+        #             print(f"shape of this_fold_demand:{this_fold_demand.shape}")
+        #             print(f"left top elements of this_fold_demand:")
+        #             print(this_fold_demand[0:4,0:4])
+        #             print(f"left bottom elements of this_fold_demand:")
+        #             print(this_fold_demand[-4:,0:4])
+        #             print()
 
                 # Adding null requests when there is under utilization ie. no mapping along a few
                 # rows or cols
@@ -400,6 +425,15 @@ class systolic_compute_os:
                 # If the outputs are streamed out from the top edge instead, then this step is not
                 # needed.
                 this_fold_demand = np.flip(this_fold_demand, 0)
+                if fr == 1 and fc == 1:
+                    print(f"example for flipped this_fold_demand")
+                    print(f"shape of this_fold_demand:{this_fold_demand.shape}")
+                    print(f"left top elements of this_fold_demand:")
+                    print(this_fold_demand[0:4,0:4])
+                    print(f"left bottom elements of this_fold_demand:")
+                    print(this_fold_demand[-4:,0:4])
+                    print()
+
                 self.ofmap_writes += this_fold_demand.shape[0] + this_fold_demand.shape[1]
 
                 # Now add the prefix matrix
@@ -407,6 +441,11 @@ class systolic_compute_os:
                 # and the OFMAPS are not ready
                 this_fold_demand = np.concatenate((inter_fold_gap_prefix_mat, this_fold_demand),
                                                   axis=0)
+                
+        #         if fr == 1 and fc == 1:
+        #             print(f"example for this_fold_demand after concatenate")
+        #             print(f"shape of this_fold_demand:{this_fold_demand.shape}")
+        #             print()
 
                 # Calculate the mapping efficiency
                 row_used = min(self.arr_row, row_end_idx - row_start_id)
@@ -414,16 +453,32 @@ class systolic_compute_os:
                 mac_used = row_used * col_used
                 mapping_eff_this_fold = mac_used / (self.arr_row * self.arr_col)
 
+        #         if fr == 1 and fc == 1:
+        #             print("example for mapping efficiency")
+        #             print(f"row_used:{row_used}")
+        #             print(f"col_used:{col_used}")
+        #             print(f"mac_used:{mac_used}")
+
                 cycles_this_fold = this_fold_demand.shape[0] + this_fold_demand.shape[1] - 1
                 compute_cycles_this_fold = mac_used * self.T
                 compute_util_this_fold = \
                     compute_cycles_this_fold / (self.arr_row * self.arr_col * cycles_this_fold)
+                
+        #         if fr == 1 and fc == 1:
+        #             print(f"cycles_this_fold:{cycles_this_fold}")
+        #             print(f"compute_cycles_this_fold:{compute_cycles_this_fold}")
+        #             print(f"compute_util_this_fold:{compute_util_this_fold}")
 
                 self.mapping_efficiency_per_fold.append(mapping_eff_this_fold)
                 self.compute_utility_per_fold.append(compute_util_this_fold)
 
                 # Add skew to the OFMAP demand matrix to reflect systolic pipeline fill
                 this_fold_demand = skew_matrix(this_fold_demand)
+
+        #         if fr == 1 and fc == 1:
+        #             print(f"example for this_fold_demand after skewed")
+        #             print(f"shape of this_fold_demand:{this_fold_demand.shape}")
+        #             print()
 
                 if fr == 0 and fc == 0:
                     self.ofmap_demand_matrix = this_fold_demand
@@ -432,6 +487,8 @@ class systolic_compute_os:
                         np.concatenate((self.ofmap_demand_matrix, this_fold_demand), axis=0)
 
                 pbar.update(1)
+        
+        # print(f"shape of ofmap_demand_matrix final:{self.ofmap_demand_matrix.shape}")
 
         pbar.close()
         # TODO: cleanup

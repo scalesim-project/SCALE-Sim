@@ -92,6 +92,10 @@ class simulator:
 
         self.top_path = report_path
 
+        total_cycles_all_layers = 0
+        total_comp_cycles = 0
+        total_stall_cycles = 0
+
         # 2. Run each layer
         # TODO: This is parallelizable
         for single_layer_obj in self.single_layer_sim_object_list:
@@ -107,6 +111,11 @@ class simulator:
                 total_cycles = comp_items[0]
                 comp_cycles = comp_items[1]
                 stall_cycles = comp_items[2]
+
+                total_cycles_all_layers += total_cycles
+                total_comp_cycles += comp_cycles
+                total_stall_cycles += stall_cycles
+
                 util = comp_items[3]
                 mapping_eff = comp_items[4]
                 print('Total cycles: ' + str(total_cycles))
@@ -158,6 +167,8 @@ class simulator:
         self.all_layer_run_done = True
 
         self.generate_reports()
+
+        return (total_cycles_all_layers, total_comp_cycles, total_stall_cycles)
 
     #
     def generate_reports(self):

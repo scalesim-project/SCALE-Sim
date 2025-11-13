@@ -251,15 +251,34 @@ class double_buffered_scratchpad:
         ofmap_serviced_cycles = []
 
         pbar_disable = not self.verbose
+        # print(f"ofmap_lines:{ofmap_lines}")
+        # print(f"shape of ifmap:{ifmap_demand_mat.shape}")
+        # print(f"shape of filter:{filter_demand_mat.shape}")
+        # print(f"shape of ofmap:{ofmap_demand_mat.shape}")
         for i in tqdm(range(ofmap_lines), disable=pbar_disable):
 
             cycle_arr = np.zeros((1,1)) + i + self.stall_cycles
 
+        #     if i == 1:
+        #         print("example of cycle_arr")
+        #         print(f"cycle_arr:{cycle_arr}")
+        #         print()
+
             ifmap_demand_line = ifmap_demand_mat[i, :].reshape((1,ifmap_demand_mat.shape[1]))
+        #     if i == 1:
+        #         print("example of ifmap_demand_line")
+        #         print(f"ifmap_demand_line:{ifmap_demand_line}")
             ifmap_cycle_out = \
                 self.ifmap_buf.service_reads(incoming_requests_arr_np=ifmap_demand_line,
                                              incoming_cycles_arr=cycle_arr)
+        #     if i == 1:
+        #         print(f"ifmap_cycle_out:{ifmap_cycle_out}")
+        #         print()
+
             ifmap_serviced_cycles += [ifmap_cycle_out[0]]
+        #     if i == 1:
+        #         print(f"ifmap_serviced_cycles:{ifmap_serviced_cycles}")
+        #         print()
             ifmap_stalls = ifmap_cycle_out[0] - cycle_arr[0] - ifmap_hit_latency
 
             filter_demand_line = filter_demand_mat[i, :].reshape((1, filter_demand_mat.shape[1]))

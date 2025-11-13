@@ -59,4 +59,37 @@ if __name__ == '__main__':
                  layout=layout,
                  input_type_gemm=GEMM_INPUT
                  )
+    
+    import time
+    import os
+
+    start_time = time.time()
+
     s.run_scale(top_path=logpath)
+
+    end_time = time.time()
+    total_runtime = end_time - start_time
+
+    time_log_dir = "./results/bagel"
+    os.makedirs(time_log_dir, exist_ok=True)
+
+    time_log_file = os.path.join(time_log_dir, "time_result.log")
+
+    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+    with open(time_log_file, "a") as f:
+        f.write(f"=== SCALE-Sim Execution Time Log ===\n")
+        f.write(f"Timestamp: {current_time}\n")
+        f.write(f"Topology: {topology}\n")
+        f.write(f"Layout: {layout}\n") 
+        f.write(f"Config: {config}\n")
+        f.write(f"Input Type: {inp_type}\n")
+        f.write(f"Save Trace: {save_trace}\n")
+        f.write(f"Total Runtime: {total_runtime:.4f} seconds\n")
+        f.write(f"Total Runtime: {total_runtime/60:.2f} minutes\n")
+        f.write(f"{'='*50}\n\n")
+    
+    # 在终端也显示运行时间
+    print(f"\n=== Execution Completed ===")
+    print(f"Total Runtime: {total_runtime:.4f} seconds ({total_runtime/60:.2f} minutes)")
+    print(f"Time log saved to: {time_log_file}")

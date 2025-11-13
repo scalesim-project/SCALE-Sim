@@ -123,7 +123,7 @@ class scalesim:
             verbosity=self.verbose_flag,
             save_trace=save_trace
         )
-        self.run_once()
+        return self.run_once()
 
     #
     def run_once(self):
@@ -146,7 +146,7 @@ class scalesim:
         #    save_trace=save_trace,
         #    verbosity=self.verbose_flag
         #)
-        self.runner.run()
+        total_results = self.runner.run()
         self.run_done_flag = True
 
         #self.runner.generate_all_logs()
@@ -154,6 +154,8 @@ class scalesim:
 
         if self.verbose_flag:
             print("************ SCALE SIM Run Complete ****************")
+
+        return total_results
 
     #
     def print_run_configs(self):

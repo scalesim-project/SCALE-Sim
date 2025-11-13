@@ -1,0 +1,11 @@
+{
+    "kv_cache_init": 3254,
+    "gen_text_len": 229,
+    "gen_image_step": 50,
+    "config": "./configs/google.cfg",
+    "log_path": "./results",
+    "result_path": "./results/bagel/results_sample_20_google.log",
+    "image_len": 3193,
+    "text_len": 242,
+    "sample_rate": 20
+}
