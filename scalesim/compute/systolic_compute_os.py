@@ -425,14 +425,14 @@ class systolic_compute_os:
                 # If the outputs are streamed out from the top edge instead, then this step is not
                 # needed.
                 this_fold_demand = np.flip(this_fold_demand, 0)
-                if fr == 1 and fc == 1:
-                    print(f"example for flipped this_fold_demand")
-                    print(f"shape of this_fold_demand:{this_fold_demand.shape}")
-                    print(f"left top elements of this_fold_demand:")
-                    print(this_fold_demand[0:4,0:4])
-                    print(f"left bottom elements of this_fold_demand:")
-                    print(this_fold_demand[-4:,0:4])
-                    print()
+                # if fr == 1 and fc == 1:
+                #     print(f"example for flipped this_fold_demand")
+                #     print(f"shape of this_fold_demand:{this_fold_demand.shape}")
+                #     print(f"left top elements of this_fold_demand:")
+                #     print(this_fold_demand[0:4,0:4])
+                #     print(f"left bottom elements of this_fold_demand:")
+                #     print(this_fold_demand[-4:,0:4])
+                #     print()
 
                 self.ofmap_writes += this_fold_demand.shape[0] + this_fold_demand.shape[1]
 

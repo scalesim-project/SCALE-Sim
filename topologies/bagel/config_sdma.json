@@ -2,10 +2,10 @@
     "kv_cache_init": 3254,
     "gen_text_len": 229,
     "gen_image_step": 50,
-    "config": "./configs/bagel/base.cfg",
-    "config_comp": "./configs/bagel/base_compute.cfg",
+    "config": "./configs/bagel/s_dma.cfg",
+    "config_comp": "./configs/bagel/s_dma.cfg",
     "log_path": "./results",
-    "result_path": "./results/bagel/results_base.log",
+    "result_path": "./results/bagel/results_sdma_GEdit.log",
     "image_len": 3193,
     "text_len": 242,
     "sample_rate": 20,
@@ -18,5 +18,8 @@
     "activate_rate": 0.5,
     "array_height": 32,
     "array_width": 64,
+    "sparsity": 0.5,
+    "text_gen_finished_flag": "True",
+    "text_gen_cycles": 0,
     "tile": 64
 }

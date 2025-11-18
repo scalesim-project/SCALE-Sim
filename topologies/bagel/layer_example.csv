@@ -1,2 +1,2 @@
-Layer,M,N,K,FFN_up,
-FFN_up,1378,18944,3584,
+Layer,M,N,K,
+FFN_up,1, 2048, 2048,

@@ -63,21 +63,21 @@ if __name__ == '__main__':
     import time
     import os
 
-    start_time = time.time()
+    # start_time = time.time()
 
     s.run_scale(top_path=logpath)
 
-    end_time = time.time()
-    total_runtime = end_time - start_time
+    # end_time = time.time()
+    # total_runtime = end_time - start_time
 
-    time_log_dir = "./results/bagel"
-    os.makedirs(time_log_dir, exist_ok=True)
+    # time_log_dir = "./results/bagel"
+    # os.makedirs(time_log_dir, exist_ok=True)
 
-    time_log_file = os.path.join(time_log_dir, "time_result.log")
+    # time_log_file = os.path.join(time_log_dir, "time_result.log")
 
-    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-    with open(time_log_file, "a") as f:
+    """with open(time_log_file, "a") as f:
         f.write(f"=== SCALE-Sim Execution Time Log ===\n")
         f.write(f"Timestamp: {current_time}\n")
         f.write(f"Topology: {topology}\n")
@@ -92,4 +92,4 @@ if __name__ == '__main__':
     # 在终端也显示运行时间
     print(f"\n=== Execution Completed ===")
     print(f"Total Runtime: {total_runtime:.4f} seconds ({total_runtime/60:.2f} minutes)")
-    print(f"Time log saved to: {time_log_file}")
+    print(f"Time log saved to: {time_log_file}")"""
