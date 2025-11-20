@@ -50,7 +50,7 @@ class Bagel_sim():
     def read_from_json(self, cfg_path=None):
         if cfg_path is None:
             base = os.path.dirname(__file__)
-            cfg_path = os.path.join(base, "topologies", "bagel", "config_ours_MM.json")
+            cfg_path = os.path.join(base, "topologies", "bagel", "config_ours.json")
         
         try:
             with open(cfg_path, "r", encoding="utf-8") as f:
@@ -387,9 +387,11 @@ class Bagel_sim():
         kv_low_prec_self_attn = int(self.image_input_len * self.low_precise_self_attn)
         kv_low_prec_attn = kv_remain_cross_attn + kv_low_prec_self_attn
         kv_high_prec_attn = self.image_input_len - kv_low_prec_self_attn
-        kv_normal = max(kv_low_prec_attn, kv_high_prec_attn)
-        kv_without_img = max(int((self.kv_cache_without_img + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
-        kv_without_text = max(int((self.kv_cache_without_text + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
+        # kv_normal = max(kv_low_prec_attn, kv_high_prec_attn)
+        kv_normal = int((kv_remain_cross_attn + self.image_input_len) / 2)
+        # kv_without_img = max(int((self.kv_cache_without_img + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
+        kv_without_img = int(((self.kv_cache_without_img + self.gen_text_len) * self.sparsity_cross_attn + self.image_input_len) / 2)
+        kv_without_text = int(((self.kv_cache_without_text + self.gen_text_len) * self.sparsity_cross_attn + self.image_input_len) / 2)
         
         kv_configs = [
             ("full_cache", kv_normal),
@@ -475,7 +477,7 @@ class Bagel_sim():
             self.run_gen_text()
         
         # 运行图像生成
-        # self.run_gen_image()
+        self.run_gen_image()
         
         # 记录最终结果
         end_time = datetime.now()

@@ -3,7 +3,7 @@
     "gen_text_len": 229,
     "gen_image_step": 30,
     "config_fp16": "./configs/bagel/ours_fp16.cfg",
-    "config_int8": "./configs/bagel/ours_int8.cfg",
+    "config_int8": "./configs/bagel/ours_int4_m.cfg",
     "config_int4": "./configs/bagel/ours_int4.cfg",
     "log_path": "./results",
     "result_path": "./results/janus/results_ours_MM.log",

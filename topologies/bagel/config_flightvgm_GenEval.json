@@ -1,11 +1,11 @@
 {
     "kv_cache_init": 48,
     "gen_text_len": 229,
-    "gen_image_step": 30,
+    "gen_image_step": 50,
     "config": "./configs/bagel/flightvgm.cfg",
     "config_comp": "./configs/bagel/flightvgm.cfg",
     "log_path": "./results",
-    "result_path": "./results/janus/results_flightvgm_GenEval.log",
+    "result_path": "./results/bagel/results_flightvgm_GenEval.log",
     "image_len": 0,
     "text_len": 48,
     "sample_rate": 20,

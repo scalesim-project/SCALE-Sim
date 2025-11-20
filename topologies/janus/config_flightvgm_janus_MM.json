@@ -1,7 +1,7 @@
 {
     "kv_cache_init": 1426,
     "gen_text_len": 229,
-    "gen_image_step": 50,
+    "gen_image_step": 30,
     "config": "./configs/bagel/flightvgm.cfg",
     "config_comp": "./configs/bagel/flightvgm.cfg",
     "log_path": "./results",

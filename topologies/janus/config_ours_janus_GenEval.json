@@ -6,7 +6,7 @@
     "config_int8": "./configs/bagel/ours_int8.cfg",
     "config_int4": "./configs/bagel/ours_int4.cfg",
     "log_path": "./results",
-    "result_path": "./results/janus/results_ours_GenEval.log",
+    "result_path": "./results/janus/results_ours_GenEval_balenced.log",
     "image_len": 0,
     "text_len": 48,
     "sample_rate": 20,

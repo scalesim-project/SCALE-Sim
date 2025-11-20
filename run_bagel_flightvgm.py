@@ -119,21 +119,22 @@ class Bagel_sim():
         if is_gen_text:
             if part in ['all', 'qkv']:
                 operations.extend([
-                    ("Qmap", layer_input, self.dim, self.dim),
-                    ("Kmap", layer_input, self.num_head_kv * self.head_dim, self.dim),
-                    ("Vmap", layer_input, self.num_head_kv * self.head_dim, self.dim),
+                    ("QKVmap", layer_input, self.tile, self.dim)
                 ])
         
             # Multi-head attention操作
-            if part in ['all', 'attn']:
+            if part in ['all', 'attn_qk']:
                 operations.extend([
-                    (f"Head_QKT", layer_input, kv_len, self.head_dim),
-                    (f"Head_SFMXxV", layer_input, self.head_dim, kv_len),
+                    (f"Head_QKT", layer_input, self.tile, self.head_dim)
                 ])
-            
+            if part in ['all', 'attn_sfmxv']:
+                operations.extend([
+                    (f"Head_SFMXxV", layer_input, self.tile, kv_len)
+                ])
+
             if part in ['all', 'omap']:
                 # 输出映射
-                operations.append(("Omap", layer_input, self.dim, self.dim))
+                operations.append(("Omap", layer_input, self.tile, self.dim))
         
             if part in ['all', 'ffn_up']:
                 operations.append(("FFN_up", layer_input, self.tile, self.dim))
@@ -224,11 +225,13 @@ class Bagel_sim():
         text_start_cycles = self.total_cycles_all
 
         self._append_to_log(f"Text generation - Start qkv mapping")
-        input_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='qkv', config=self.config)
+        input_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='qkv', config=self.config)
+        input_cycles = input_tile_cycles * (self.dim + self.num_head_kv * self.head_dim * 2) / self.tile
         self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
 
         self._append_to_log(f"Text generation - Start output mapping")
-        output_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='omap', config=self.config)
+        output_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='omap', config=self.config)
+        output_cycles = output_tile_cycles * self.dim / self.tile
         self._append_to_log(f"Text generation - End output mapping, total cycles:{output_cycles}")
 
         self._append_to_log(f"Text generation - Start FFN up")
@@ -254,8 +257,12 @@ class Bagel_sim():
 
             results_this_iter = 0
             results_this_iter += input_cycles
-            attn_single_cycles = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn', config=self.config)
-            attn_cycles = attn_single_cycles * self.num_head_q
+            attn_qk_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_qk', config=self.config)
+            attn_qk_single_cycle = attn_qk_tile_single_cycle * kv_len / self.tile
+            attn_sfmxv_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_sfmxv', config=self.config)
+            attn_sfmxv_single_cycle = attn_sfmxv_tile_single_cycle * self.head_dim / self.tile
+            attn_single_cycle = attn_qk_single_cycle + attn_sfmxv_single_cycle
+            attn_cycles = attn_single_cycle * self.num_head_q
             results_this_iter += attn_cycles
             results_this_iter += output_cycles
             results_this_iter += ffn_up_cycles

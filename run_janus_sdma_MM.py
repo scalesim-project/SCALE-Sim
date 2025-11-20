@@ -12,21 +12,20 @@ class Bagel_sim():
         self.kv_cache_without_text = None
         self.gen_text_len = None
         self.gen_image_step = None
-        self.config_fp16 = "./configs/scale.cfg"
-        self.config_int8 = "./configs/scale.cfg"
-        self.config_int4 = "./configs/scale.cfg"
+        self.config = "./configs/scale.cfg"
+        self.config_comp = "./configs/scale.cfg"
         self.log_path = "./results"
         self.result_path = "./results/bagel"
-        self.num_layer = 28
+        self.num_layer = 24
         self.text_input_len = 1
         self.image_input_len = 1378
         self.text_attn = 2
         self.vae_attn = 1376
-        self.num_head_kv = 4
-        self.num_head_q = 28
-        self.dim = 3584
+        self.num_head_kv = 16
+        self.num_head_q = 16
+        self.dim = 2048
         self.head_dim = 128
-        self.upshape = 18944
+        self.upshape = 5632
         self.tile = 64
         self.total_cycles_all = 0
         self.sample_rate = 10
@@ -39,18 +38,14 @@ class Bagel_sim():
         self.active_rate = 0.5
         self.array_height = 0
         self.array_width = 0
-        self.array_width_half = 0
-        self.sparsity_cross_attn = 0
-        self.low_precise_self_attn = 0
-        self.image_only_sim = 0
-        self.text_only_sim = 0
+        self.sparsity = 0.5
         self.text_gen_finished_flag = False
         self.text_gen_cycles = 0
 
     def read_from_json(self, cfg_path=None):
         if cfg_path is None:
             base = os.path.dirname(__file__)
-            cfg_path = os.path.join(base, "topologies", "bagel", "config_ours_MM.json")
+            cfg_path = os.path.join(base, "topologies", "janus", "config_sdma_janus_MM.json")
         
         try:
             with open(cfg_path, "r", encoding="utf-8") as f:
@@ -65,9 +60,8 @@ class Bagel_sim():
         self.kv_cache_init = cfg.get("kv_cache_init")
         self.gen_text_len = cfg.get("gen_text_len")
         self.gen_image_step = cfg.get("gen_image_step")
-        self.config_fp16 = cfg.get("config_fp16")
-        self.config_int8 = cfg.get("config_int8")
-        self.config_int4 = cfg.get("config_int4")
+        self.config = cfg.get("config")
+        self.config_comp = cfg.get("config_comp")
         self.log_path = cfg.get("log_path")
         self.result_path = cfg.get("result_path")
         image_len = cfg.get("image_len")
@@ -85,13 +79,8 @@ class Bagel_sim():
         self.active_rate = cfg.get("activate_rate")
         self.array_height = cfg.get("array_height")
         self.array_width = cfg.get("array_width")
-        self.array_width_half = cfg.get("array_width_half")
-
-        self.sparsity_cross_attn = cfg.get("sparsity_cross_attn")
-        self.low_precise_self_attn = cfg.get("low_precise_self_attn")
-        self.image_only_sim = cfg.get("image_only_sim")
-        self.text_only_sim = cfg.get("text_only_sim")
-
+        self.sparsity = cfg.get("sparsity")
+    
         text_flag = cfg.get("text_gen_finished_flag", 'False')
         if text_flag == "True":
             self.text_gen_finished_flag = True
@@ -233,22 +222,22 @@ class Bagel_sim():
         text_start_cycles = self.total_cycles_all
 
         self._append_to_log(f"Text generation - Start qkv mapping")
-        input_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='qkv', config=self.config_int8)
+        input_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='qkv', config=self.config)
         input_cycles = input_tile_cycles * (self.dim + self.num_head_kv * self.head_dim * 2) / self.tile
         self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
 
         self._append_to_log(f"Text generation - Start output mapping")
-        output_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='omap', config=self.config_int8)
+        output_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='omap', config=self.config)
         output_cycles = output_tile_cycles * self.dim / self.tile
         self._append_to_log(f"Text generation - End output mapping, total cycles:{output_cycles}")
 
         self._append_to_log(f"Text generation - Start FFN up")
-        ffn_up_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_up', config=self.config_int8)
+        ffn_up_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_up', config=self.config)
         ffn_up_cycles = ffn_up_tile_cycles * self.upshape / self.tile
         self._append_to_log(f"Text generation - End FFN up, total cycles:{ffn_up_cycles}")
 
         self._append_to_log(f"Text generation - Start FFN down")
-        ffn_down_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_down', config=self.config_int8)
+        ffn_down_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_down', config=self.config)
         ffn_down_cycles = ffn_down_tile_cycles * self.dim / self.tile
         self._append_to_log(f"Text generation - End FFN down, total cycles:{ffn_down_cycles}")
 
@@ -265,9 +254,9 @@ class Bagel_sim():
 
             results_this_iter = 0
             results_this_iter += input_cycles
-            attn_qk_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_qk', config=self.config_int8)
+            attn_qk_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_qk', config=self.config)
             attn_qk_single_cycle = attn_qk_tile_single_cycle * kv_len / self.tile
-            attn_sfmxv_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_sfmxv', config=self.config_int8)
+            attn_sfmxv_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_sfmxv', config=self.config)
             attn_sfmxv_single_cycle = attn_sfmxv_tile_single_cycle * self.head_dim / self.tile
             attn_single_cycle = attn_qk_single_cycle + attn_sfmxv_single_cycle
             attn_cycles = attn_single_cycle * self.num_head_q
@@ -286,9 +275,10 @@ class Bagel_sim():
         text_total_cycles = self.total_cycles_all - text_start_cycles
         self._append_to_log(f"=========== Text Generation Completed, total cycles: {text_total_cycles}, total seconds: {text_total_cycles/500000000} ===========")
 
-    def run_sim_once_comp(self, kv_length=0, is_gen_text=False, part='all', which_ffn = 'full_cache'):
+    def run_sim_once_comp(self, kv_length=0, is_gen_text=False, part='all', sparsity=1, image_input=0):
         cycle_result = 0
-        layer_input = self.text_input_len if is_gen_text else self.image_input_len
+        layer_input = self.text_input_len if is_gen_text else image_input
+        kv_length = kv_length * sparsity
         if part in ['all', 'prefetch']:
             size_a = layer_input * self.dim
             size_b = self.dim * self.dim
@@ -313,7 +303,7 @@ class Bagel_sim():
 
             cycle_result += Qmap_cycles
 
-            KVmap_row_fold = math.ceil(self.vae_attn/self.array_height)
+            KVmap_row_fold = math.ceil(layer_input/self.array_height)
             KVmap_col_fold = math.ceil(self.num_head_kv * self.head_dim/self.array_width)
             KVmap_cycle_each_fold = self.dim + self.array_height + self.array_width - 2
             KVmap_cycles = KVmap_cycle_each_fold * KVmap_col_fold * KVmap_row_fold
@@ -324,15 +314,15 @@ class Bagel_sim():
         # Multi-head attention操作
         if part in ['all', 'attn']:
             QKT_row_fold = math.ceil(layer_input/self.array_height)
-            QKT_col_fold = math.ceil(kv_length/self.array_width_half)
-            QKT_cycle_each_fold = self.head_dim + self.array_height + self.array_width_half - 2
+            QKT_col_fold = math.ceil(kv_length/self.array_width)
+            QKT_cycle_each_fold = self.head_dim + self.array_height + self.array_width - 2
             QKT_cycles = QKT_cycle_each_fold * QKT_col_fold * QKT_row_fold
 
             cycle_result += QKT_cycles
 
             SFMXxV_row_fold = math.ceil(layer_input/self.array_height)
-            SFMXxV_col_fold = math.ceil(self.head_dim/self.array_width_half)
-            SFMXxV_cycle_each_fold = kv_length + self.array_height + self.array_width_half - 2
+            SFMXxV_col_fold = math.ceil(self.head_dim/self.array_width)
+            SFMXxV_cycle_each_fold = kv_length + self.array_height + self.array_width - 2
             SFMXxV_cycles = SFMXxV_cycle_each_fold * SFMXxV_col_fold * SFMXxV_row_fold
 
             cycle_result += SFMXxV_cycles
@@ -348,13 +338,7 @@ class Bagel_sim():
     
 
         if part in ['all', 'ffn_up']:
-            if which_ffn == 'without_img':
-                layer = layer_input * (1 - self.text_only_sim)
-            elif which_ffn == 'without_text':
-                layer = layer_input * (1 - self.image_only_sim)
-            else:
-                layer = layer_input
-            FFN_up_row_fold = math.ceil(layer/self.array_height)
+            FFN_up_row_fold = math.ceil(layer_input/self.array_height)
             FFN_up_col_fold = math.ceil(self.upshape/self.array_width)
             FFN_up_cycle_each_fold = self.dim + self.array_height + self.array_width - 2
             FFN_up_cycles = FFN_up_cycle_each_fold * FFN_up_col_fold * FFN_up_row_fold
@@ -381,59 +365,54 @@ class Bagel_sim():
         self._append_to_log(f"=========== Image Generation Started (total steps: {self.gen_text_len}) ===========")
         image_start_cycles = self.total_cycles_all
 
-        # 三个不同KV配置的图像生成
-        kv_cross_attn = self.kv_cache_init + self.gen_text_len
-        kv_remain_cross_attn = int(kv_cross_attn * self.sparsity_cross_attn)
-        kv_low_prec_self_attn = int(self.image_input_len * self.low_precise_self_attn)
-        kv_low_prec_attn = kv_remain_cross_attn + kv_low_prec_self_attn
-        kv_high_prec_attn = self.image_input_len - kv_low_prec_self_attn
-        kv_normal = max(kv_low_prec_attn, kv_high_prec_attn)
-        kv_without_img = max(int((self.kv_cache_without_img + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
-        kv_without_text = max(int((self.kv_cache_without_text + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
-        
+        input_normal = self.kv_cache_init + self.gen_text_len + self.image_input_len
+       # 三个不同KV配置的图像生成
         kv_configs = [
-            ("full_cache", kv_normal),
-            ("without_img", kv_without_img),
-            ("without_text", kv_without_text)
+            ("full_cache", self.kv_cache_init + self.gen_text_len + self.image_input_len, input_normal),
+            ("without_text", self.image_input_len, self.image_input_len)
         ]
 
         total_image_cycles = 0
 
         self._append_to_log(f"Image generation - Start prefetching")
-        prefetch_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='prefetch')
+        prefetch_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='prefetch', sparsity=self.sparsity, image_input=input_normal)
         self._append_to_log(f"Image generation - End prefetching, total cycles:{prefetch_cycles}")
 
-        self._append_to_log(f"Image generation - Start qkv mapping")
-        input_cycles_text = self.run_sim_once(kv_length=0, is_gen_text=False, part='qkv', config=self.config_int8)
-        input_cycles_image = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='qkv')
-        input_cycles = input_cycles_text + input_cycles_image
-        self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
-
-        self._append_to_log(f"Image generation - Start output mapping")
-        output_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='omap')
-        self._append_to_log(f"Image generation - End output mapping, total cycles:{output_cycles}")
-
-        self._append_to_log(f"Image generation - Start FFN down")
-        ffn_down_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='ffn_down')
-        self._append_to_log(f"Image generation - End FFN down, total cycles:{ffn_down_cycles}")
-
         self._append_to_log(f"Image generation - Start draining")
-        drain_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='drain')
+        drain_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='drain', sparsity=self.sparsity)
         self._append_to_log(f"Image generation - End draining, total cycles:{drain_cycles}")
 
         total_image_cycles += prefetch_cycles
 
-        for config_name, kv_len in kv_configs:
+        for config_name, kv_len, input_len in kv_configs:
             self._append_to_log(f"Image generation - {config_name} config started (kv_len: {kv_len})")
             config_cycles_iter = 0
+            self._append_to_log(f"Image generation - Start qkv mapping")
+            input_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='qkv', sparsity=self.sparsity, image_input=input_len)
+            self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
             config_cycles_iter += input_cycles
-            attn_single_cycles = self.run_sim_once_comp(kv_length=kv_len, is_gen_text=False, part='attn')
+
+            self._append_to_log(f"Image generation - Start attn")
+            attn_single_cycles = self.run_sim_once_comp(kv_length=kv_len, is_gen_text=False, part='attn', sparsity=self.sparsity, image_input=input_len)
             attn_cycles = attn_single_cycles * self.num_head_q
+            self._append_to_log(f"Image generation - End attn, total cycles:{attn_cycles}")
             config_cycles_iter += attn_cycles
+
+            self._append_to_log(f"Image generation - Start output mapping")
+            output_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='omap', sparsity=self.sparsity, image_input=input_len)
+            self._append_to_log(f"Image generation - End output mapping, total cycles:{output_cycles}")
             config_cycles_iter += output_cycles
-            ffn_up_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='ffn_up',which_ffn=config_name)
+
+            self._append_to_log(f"Image generation - Start FFN up")
+            ffn_up_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='ffn_up',sparsity=self.sparsity, image_input=input_len)
+            self._append_to_log(f"Image generation - End FFN up, total cycles:{ffn_up_cycles}")
             config_cycles_iter += ffn_up_cycles
+
+            self._append_to_log(f"Image generation - Start FFN down")
+            ffn_down_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='ffn_down', image_input=input_len)
+            self._append_to_log(f"Image generation - End FFN down, total cycles:{ffn_down_cycles}")
             config_cycles_iter += ffn_down_cycles
+            
             config_cycles = config_cycles_iter * self.num_layer
             total_image_cycles += config_cycles
             
@@ -482,7 +461,7 @@ class Bagel_sim():
         duration = (end_time - start_time).total_seconds()
         
         self._append_to_log("=" * 50)
-        self._append_to_log(f"FINAL RESULT - Total Cycles: {self.total_cycles_all}, Total seconds: {self.total_cycles_all/500000000}")
+        self._append_to_log(f"FINAL RESULT - Total Cycles: {self.total_cycles_all}, total seconds: {self.total_cycles_all/500000000}")
         self._append_to_log(f"Simulation Duration: {duration:.2f} seconds")
         self._append_to_log("======= Bagel Model Simulation Completed =======")
         

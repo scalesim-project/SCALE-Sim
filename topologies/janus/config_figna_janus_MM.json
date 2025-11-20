@@ -1,7 +1,7 @@
 {
     "kv_cache_init": 1426,
     "gen_text_len": 229,
-    "gen_image_step": 50,
+    "gen_image_step": 30,
     "config_fp16": "./configs/bagel/figna_fp16.cfg",
     "config_int4": "./configs/bagel/figna_int4.cfg",
     "log_path": "./results",
