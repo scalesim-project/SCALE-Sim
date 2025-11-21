@@ -1,7 +1,0 @@
-Layer,M,N,K,
-Qmap_text,2,3584,3584,
-Kmap_text,2,512,3584,
-Vmap_text,2,512,3584,
-Qmap_vae,1376,3584,3584,
-Kmap_vae,1376,512,3584,
-Vmap_vae,1376,512,3584,

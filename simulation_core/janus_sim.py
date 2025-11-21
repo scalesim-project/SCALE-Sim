@@ -5,28 +5,40 @@ import math
 from datetime import datetime
 from scalesim.scale_sim import scalesim
 
-class Bagel_sim():
-    def __init__(self):
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+class Janus_sim():
+    def __init__(self, hardware_type="ours", task="GenEdit"):
+        """
+        Args:
+            hardware_type: 'ours', 'sdma', 'flightvgm', 'figna', 'base' and so on
+            task: 'GenEdit', 'GenEval', 'MM'
+            config_file: if you want to use a custom config file, please specify the path
+        """
+        self.hardware_type = hardware_type
+        self.task = task
+
         self.kv_cache_init = None
         self.kv_cache_without_img = None
         self.kv_cache_without_text = None
         self.gen_text_len = None
         self.gen_image_step = None
-        self.config_fp16 = "./configs/scale.cfg"
-        self.config_int8 = "./configs/scale.cfg"
-        self.config_int4 = "./configs/scale.cfg"
-        self.log_path = "./results"
-        self.result_path = "./results/bagel"
-        self.num_layer = 28
+        self.config_comp0 = os.path.join(PROJECT_ROOT, "configs", "scale.cfg")
+        self.config_comp1 = os.path.join(PROJECT_ROOT, "configs", "scale.cfg")
+        self.config_comm0 = os.path.join(PROJECT_ROOT, "configs", "scale.cfg")
+        self.config_comm1 = os.path.join(PROJECT_ROOT, "configs", "scale.cfg")
+        self.log_path = os.path.join(PROJECT_ROOT, "results")
+        self.result_path = os.path.join(PROJECT_ROOT, "results", "bagel")
+        self.num_layer = 24
         self.text_input_len = 1
         self.image_input_len = 1378
         self.text_attn = 2
         self.vae_attn = 1376
-        self.num_head_kv = 4
-        self.num_head_q = 28
-        self.dim = 3584
+        self.num_head_kv = 16
+        self.num_head_q = 16
+        self.dim = 2048
         self.head_dim = 128
-        self.upshape = 18944
+        self.upshape = 5632
         self.tile = 64
         self.total_cycles_all = 0
         self.sample_rate = 10
@@ -40,17 +52,19 @@ class Bagel_sim():
         self.array_height = 0
         self.array_width = 0
         self.array_width_half = 0
-        self.sparsity_cross_attn = 0
+        self.sparsity_kv = 0.5
+        self.sparsity_cross_attn = 1
         self.low_precise_self_attn = 0
         self.image_only_sim = 0
         self.text_only_sim = 0
         self.text_gen_finished_flag = False
         self.text_gen_cycles = 0
 
+
     def read_from_json(self, cfg_path=None):
         if cfg_path is None:
             base = os.path.dirname(__file__)
-            cfg_path = os.path.join(base, "topologies", "bagel", "config_ours_MM.json")
+            cfg_path = os.path.join(PROJECT_ROOT, "topologies", "janus", "config.json")
         
         try:
             with open(cfg_path, "r", encoding="utf-8") as f:
@@ -65,45 +79,59 @@ class Bagel_sim():
         self.kv_cache_init = cfg.get("kv_cache_init")
         self.gen_text_len = cfg.get("gen_text_len")
         self.gen_image_step = cfg.get("gen_image_step")
-        self.config_fp16 = cfg.get("config_fp16")
-        self.config_int8 = cfg.get("config_int8")
-        self.config_int4 = cfg.get("config_int4")
-        self.log_path = cfg.get("log_path")
-        self.result_path = cfg.get("result_path")
-        image_len = cfg.get("image_len")
-        text_len = cfg.get("text_len")
+        
+        if self.hardware_type == 'base' or self.hardware_type == 'flightvgm' or self.hardware_type == 'sdma':
+            self.config_comp1 = cfg.get("config", self.config_comp1)
+            self.config_comp2 = cfg.get("config", self.config_comp2)
+            self.config_comm0 = cfg.get("config", self.config_comm0)
+            self.config_comm1 = cfg.get("config", self.config_comm1)
+        elif self.hardware_type == 'ours':
+            self.config_comp0 = cfg.get("config_fp16", self.config_comp0)
+            self.config_comp1 = cfg.get("config_int4", self.config_comp1)
+            self.config_comm0 = cfg.get("config_int8", self.config_comm0)
+            self.config_comm1 = cfg.get("config_int8", self.config_comm1)
+        elif self.hardware_type == 'figna':
+            self.config_comp0 = cfg.get("config_fp16", self.config_comp0)
+            self.config_comp1 = cfg.get("config_int4", self.config_comp1)
+            self.config_comm0 = cfg.get("config_int4", self.config_comm0)
+            self.config_comm1 = cfg.get("config_fp16", self.config_comm1)
+        
+        self.log_path = cfg.get("log_path", self.log_path)
+        self.result_path = cfg.get("result_path", self.result_path)
+        image_len = cfg.get("image_len", self.image_input_len)
+        text_len = cfg.get("text_len", self.text_input_len)
         self.kv_cache_without_img = self.kv_cache_init - image_len
         self.kv_cache_without_text = self.kv_cache_init - text_len
-        self.sample_rate = cfg.get("sample_rate")
-        self.sample_rate = cfg.get("ifmapbufsz")
-        self.ifmapbufsz = cfg.get("ifmapbufsz")
-        self.filterbufsz = cfg.get("filterbufsz")
-        self.ofmapbufsz = cfg.get("ofmapbufsz")
-        self.ifmapbw = cfg.get("ifmapbw")
-        self.filterbw = cfg.get("filterbw")
-        self.ofmapbw = cfg.get("ofmapbw")
-        self.active_rate = cfg.get("activate_rate")
-        self.array_height = cfg.get("array_height")
-        self.array_width = cfg.get("array_width")
-        self.array_width_half = cfg.get("array_width_half")
+        self.sample_rate = cfg.get("sample_rate", self.sample_rate)
+        self.ifmapbufsz = cfg.get("ifmapbufsz", self.ifmapbufsz)
+        self.filterbufsz = cfg.get("filterbufsz", self.filterbufsz)
+        self.ofmapbufsz = cfg.get("ofmapbufsz", self.ofmapbufsz)
+        self.ifmapbw = cfg.get("ifmapbw", self.ifmapbw)
+        self.filterbw = cfg.get("filterbw", self.filterbw)
+        self.ofmapbw = cfg.get("ofmapbw", self.ofmapbw)
+        self.active_rate = cfg.get("activate_rate", self.active_rate)
+        self.array_height = cfg.get("array_height", self.array_height)
+        self.array_width = cfg.get("array_width", self.array_width)
+        self.array_width_half = cfg.get("array_width_half", self.array_width)
 
-        self.sparsity_cross_attn = cfg.get("sparsity_cross_attn")
-        self.low_precise_self_attn = cfg.get("low_precise_self_attn")
-        self.image_only_sim = cfg.get("image_only_sim")
-        self.text_only_sim = cfg.get("text_only_sim")
+        self.sparsity_kv = cfg.get("sparsity", self.sparsity_kv)
+        self.sparsity_cross_attn = cfg.get("sparsity_cross_attn", self.sparsity_cross_attn)
+        self.low_precise_self_attn = cfg.get("low_precise_self_attn", self.low_precise_self_attn)
+        self.image_only_sim = cfg.get("image_only_sim", self.image_only_sim)
+        self.text_only_sim = cfg.get("text_only_sim", self.text_only_sim)
 
         text_flag = cfg.get("text_gen_finished_flag", 'False')
         if text_flag == "True":
             self.text_gen_finished_flag = True
         else:
             self.text_gen_finished_flag = False
-        
+
         self.text_gen_cycles = cfg.get("text_gen_cycles", 0)
-        self.tile = cfg.get("tile")
+        self.tile = cfg.get("tile", self.tile)
 
     def build_topologies(self, kv_len=0, is_gen_text=True, part='all'):
         """
-        生成Bagel模型单层拓扑结构，并保存到相应的csv文件中
+        生成Janus模型单层拓扑结构，并保存到相应的csv文件中
 
         Args:
         kv_len: KV cache长度，影响attention矩阵大小
@@ -111,7 +139,7 @@ class Bagel_sim():
         part: 指定生成哪个部分
         """
         # 创建输出目录
-        output_dir = os.path.join(os.path.dirname(__file__), "topologies", "bagel")
+        output_dir = os.path.join(PROJECT_ROOT, "topologies", "bagel")
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, "layer.csv")
         
@@ -199,7 +227,7 @@ class Bagel_sim():
             verbose=True,
             config=config,
             topology=topology_path,
-            layout="./layouts/GEMM_mnk/vit_l_KM_KN.csv",
+            layout=os.path.join(PROJECT_ROOT, "layouts", "GEMM_mnk", "vit_l_KM_KN.csv"),
             input_type_gemm=True
         )
 
@@ -233,22 +261,22 @@ class Bagel_sim():
         text_start_cycles = self.total_cycles_all
 
         self._append_to_log(f"Text generation - Start qkv mapping")
-        input_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='qkv', config=self.config_int8)
+        input_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='qkv', config=self.config_comm0)
         input_cycles = input_tile_cycles * (self.dim + self.num_head_kv * self.head_dim * 2) / self.tile
         self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
 
         self._append_to_log(f"Text generation - Start output mapping")
-        output_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='omap', config=self.config_int8)
+        output_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='omap', config=self.config_comm0)
         output_cycles = output_tile_cycles * self.dim / self.tile
         self._append_to_log(f"Text generation - End output mapping, total cycles:{output_cycles}")
 
         self._append_to_log(f"Text generation - Start FFN up")
-        ffn_up_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_up', config=self.config_int8)
+        ffn_up_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_up', config=self.config_comm0)
         ffn_up_cycles = ffn_up_tile_cycles * self.upshape / self.tile
         self._append_to_log(f"Text generation - End FFN up, total cycles:{ffn_up_cycles}")
 
         self._append_to_log(f"Text generation - Start FFN down")
-        ffn_down_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_down', config=self.config_int8)
+        ffn_down_tile_cycles = self.run_sim_once(kv_length=0, is_gen_text=True, part='ffn_down', config=self.config_comm0)
         ffn_down_cycles = ffn_down_tile_cycles * self.dim / self.tile
         self._append_to_log(f"Text generation - End FFN down, total cycles:{ffn_down_cycles}")
 
@@ -265,9 +293,9 @@ class Bagel_sim():
 
             results_this_iter = 0
             results_this_iter += input_cycles
-            attn_qk_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_qk', config=self.config_int8)
+            attn_qk_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_qk', config=self.config_comm1)
             attn_qk_single_cycle = attn_qk_tile_single_cycle * kv_len / self.tile
-            attn_sfmxv_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_sfmxv', config=self.config_int8)
+            attn_sfmxv_tile_single_cycle = self.run_sim_once(kv_length=kv_len, is_gen_text=True, part='attn_sfmxv', config=self.config_comm1)
             attn_sfmxv_single_cycle = attn_sfmxv_tile_single_cycle * self.head_dim / self.tile
             attn_single_cycle = attn_qk_single_cycle + attn_sfmxv_single_cycle
             attn_cycles = attn_single_cycle * self.num_head_q
@@ -286,18 +314,18 @@ class Bagel_sim():
         text_total_cycles = self.total_cycles_all - text_start_cycles
         self._append_to_log(f"=========== Text Generation Completed, total cycles: {text_total_cycles}, total seconds: {text_total_cycles/500000000} ===========")
 
-    def run_sim_once_comp(self, kv_length=0, is_gen_text=False, part='all', which_ffn = 'full_cache'):
+    def run_sim_once_comp(self, kv_len=0, is_gen_text=False, part='all', which_ffn = 'full_cache', image_input=0):
         cycle_result = 0
-        layer_input = self.text_input_len if is_gen_text else self.image_input_len
+        layer_input = self.text_input_len if is_gen_text else image_input
         if part in ['all', 'prefetch']:
-            size_a = layer_input * self.dim
+            size_a = self.text_attn * self.dim
             size_b = self.dim * self.dim
             if size_a > self.active_rate * self.ifmapbufsz * 1024:
                 prefetch_cycles_a = self.active_rate * self.ifmapbufsz * 1024 / self.ifmapbw
             else:
                 prefetch_cycles_a = size_a / self.ifmapbw
 
-            if size_b > self.active_rate * self.filterbufsz *1024:
+            if size_b > self.active_rate * self.filterbufsz * 1024:
                 prefetch_cycles_b = self.active_rate * self.filterbufsz * 1024 / self.filterbw
             else:
                 prefetch_cycles_b = size_b / self.filterbw
@@ -306,7 +334,7 @@ class Bagel_sim():
             cycle_result += prefetch_cycles
 
         if part in ['all', 'qkv']:
-            Qmap_row_fold = math.ceil(layer_input/self.array_height)
+            Qmap_row_fold = math.ceil(self.vae_attn/self.array_height)
             Qmap_col_fold = math.ceil(self.dim/self.array_width)
             Qmap_cycle_each_fold = self.dim + self.array_height + self.array_width - 2
             Qmap_cycles = Qmap_cycle_each_fold * Qmap_col_fold * Qmap_row_fold
@@ -324,7 +352,7 @@ class Bagel_sim():
         # Multi-head attention操作
         if part in ['all', 'attn']:
             QKT_row_fold = math.ceil(layer_input/self.array_height)
-            QKT_col_fold = math.ceil(kv_length/self.array_width_half)
+            QKT_col_fold = math.ceil(kv_len/self.array_width_half)
             QKT_cycle_each_fold = self.head_dim + self.array_height + self.array_width_half - 2
             QKT_cycles = QKT_cycle_each_fold * QKT_col_fold * QKT_row_fold
 
@@ -332,7 +360,7 @@ class Bagel_sim():
 
             SFMXxV_row_fold = math.ceil(layer_input/self.array_height)
             SFMXxV_col_fold = math.ceil(self.head_dim/self.array_width_half)
-            SFMXxV_cycle_each_fold = kv_length + self.array_height + self.array_width_half - 2
+            SFMXxV_cycle_each_fold = kv_len + self.array_height + self.array_width_half - 2
             SFMXxV_cycles = SFMXxV_cycle_each_fold * SFMXxV_col_fold * SFMXxV_row_fold
 
             cycle_result += SFMXxV_cycles
@@ -378,62 +406,84 @@ class Bagel_sim():
 
 
     def run_gen_image(self):
-        self._append_to_log(f"=========== Image Generation Started (total steps: {self.gen_text_len}) ===========")
+        self._append_to_log(f"=========== Image Generation Started (total steps: {self.gen_image_step}) ===========")
         image_start_cycles = self.total_cycles_all
 
-        # 三个不同KV配置的图像生成
-        kv_cross_attn = self.kv_cache_init + self.gen_text_len
-        kv_remain_cross_attn = int(kv_cross_attn * self.sparsity_cross_attn)
-        kv_low_prec_self_attn = int(self.image_input_len * self.low_precise_self_attn)
-        kv_low_prec_attn = kv_remain_cross_attn + kv_low_prec_self_attn
-        kv_high_prec_attn = self.image_input_len - kv_low_prec_self_attn
-        kv_normal = max(kv_low_prec_attn, kv_high_prec_attn)
-        kv_without_img = max(int((self.kv_cache_without_img + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
-        kv_without_text = max(int((self.kv_cache_without_text + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
+        kv_normal_full = self.kv_cache_init + self.gen_text_len + self.image_input_len
+        kv_without_text_full = self.image_input_len
+
+        if self.hardware_type == "ours":
+            kv_cross_attn = self.kv_cache_init + self.gen_text_len
+            kv_remain_cross_attn = int(kv_cross_attn * self.sparsity_cross_attn)
+            kv_low_prec_self_attn = int(self.image_input_len * self.low_precise_self_attn)
+            kv_low_prec_attn = kv_remain_cross_attn + kv_low_prec_self_attn
+            kv_high_prec_attn = self.image_input_len - kv_low_prec_self_attn
+            kv_normal = max(kv_low_prec_attn, kv_high_prec_attn)
+            kv_without_text = max(int((self.kv_cache_without_text + self.gen_text_len) * self.sparsity_cross_attn) + kv_low_prec_self_attn, kv_high_prec_attn)
+
+        elif self.hardware_type == "ours_balenced":
+            kv_cross_attn = self.kv_cache_init + self.gen_text_len
+            kv_remain_cross_attn = int(kv_cross_attn * self.sparsity_cross_attn)
+            kv_normal = int((kv_remain_cross_attn + self.image_input_len) / 2)
+            kv_without_text = int(((self.kv_cache_without_text + self.gen_text_len) * self.sparsity_cross_attn + self.image_input_len) / 2)
+        
+        elif self.hardware_type == "sdma":
+            kv_normal = int(kv_normal_full * self.sparsity_kv)
+            kv_without_text = int(kv_without_text_full * self.sparsity_kv)
+
+        else:
+            kv_normal = kv_normal_full
+            kv_without_text = kv_without_text_full
+
+        input_normal = self.kv_cache_init + self.gen_text_len + self.image_input_len
+        input_img_only = self.image_input_len
         
         kv_configs = [
-            ("full_cache", kv_normal),
-            ("without_img", kv_without_img),
-            ("without_text", kv_without_text)
+            ("full_cache", kv_normal, input_normal),
+            ("without_text", kv_without_text, input_img_only)
         ]
 
         total_image_cycles = 0
 
         self._append_to_log(f"Image generation - Start prefetching")
-        prefetch_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='prefetch')
+        prefetch_cycles = self.run_sim_once_comp(kv_len=0, is_gen_text=False, part='prefetch', image_input=input_normal)
         self._append_to_log(f"Image generation - End prefetching, total cycles:{prefetch_cycles}")
 
-        self._append_to_log(f"Image generation - Start qkv mapping")
-        input_cycles_text = self.run_sim_once(kv_length=0, is_gen_text=False, part='qkv', config=self.config_int8)
-        input_cycles_image = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='qkv')
-        input_cycles = input_cycles_text + input_cycles_image
-        self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
-
-        self._append_to_log(f"Image generation - Start output mapping")
-        output_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='omap')
-        self._append_to_log(f"Image generation - End output mapping, total cycles:{output_cycles}")
-
-        self._append_to_log(f"Image generation - Start FFN down")
-        ffn_down_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='ffn_down')
-        self._append_to_log(f"Image generation - End FFN down, total cycles:{ffn_down_cycles}")
-
         self._append_to_log(f"Image generation - Start draining")
-        drain_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='drain')
+        drain_cycles = self.run_sim_once_comp(kv_len=0, is_gen_text=False, part='drain')
         self._append_to_log(f"Image generation - End draining, total cycles:{drain_cycles}")
 
         total_image_cycles += prefetch_cycles
 
-        for config_name, kv_len in kv_configs:
+        for config_name, kv_len, input_len in kv_configs:
             self._append_to_log(f"Image generation - {config_name} config started (kv_len: {kv_len})")
             config_cycles_iter = 0
+            self._append_to_log(f"Image generation - Start qkv mapping")
+            input_cycles = self.run_sim_once_comp(kv_len=0, is_gen_text=False, part='qkv', image_input=input_len)
+            self._append_to_log(f"Text generation - End qkv mapping, total cycles:{input_cycles}")
             config_cycles_iter += input_cycles
-            attn_single_cycles = self.run_sim_once_comp(kv_length=kv_len, is_gen_text=False, part='attn')
+
+            self._append_to_log(f"Image generation - Start attn")
+            attn_single_cycles = self.run_sim_once_comp(kv_len=kv_len, is_gen_text=False, part='attn', image_input=input_len)
             attn_cycles = attn_single_cycles * self.num_head_q
+            self._append_to_log(f"Image generation - End attn, total cycles:{attn_cycles}")
             config_cycles_iter += attn_cycles
+
+            self._append_to_log(f"Image generation - Start output mapping")
+            output_cycles = self.run_sim_once_comp(kv_len=0, is_gen_text=False, part='omap', image_input=input_len)
+            self._append_to_log(f"Image generation - End output mapping, total cycles:{output_cycles}")
             config_cycles_iter += output_cycles
-            ffn_up_cycles = self.run_sim_once_comp(kv_length=0, is_gen_text=False, part='ffn_up',which_ffn=config_name)
+
+            self._append_to_log(f"Image generation - Start FFN up")
+            ffn_up_cycles = self.run_sim_once_comp(kv_len=0, is_gen_text=False, part='ffn_up',which_ffn=config_name, image_input=input_len)
+            self._append_to_log(f"Image generation - End FFN up, total cycles:{ffn_up_cycles}")
             config_cycles_iter += ffn_up_cycles
+
+            self._append_to_log(f"Image generation - Start FFN down")
+            ffn_down_cycles = self.run_sim_once_comp(kv_len=0, is_gen_text=False, part='ffn_down', image_input=input_len)
+            self._append_to_log(f"Image generation - End FFN down, total cycles:{ffn_down_cycles}")
             config_cycles_iter += ffn_down_cycles
+            
             config_cycles = config_cycles_iter * self.num_layer
             total_image_cycles += config_cycles
             
@@ -465,6 +515,7 @@ class Bagel_sim():
         # 重置总周期数
         self.total_cycles_all = 0
         
+        # 运行文本生成
         if self.text_gen_finished_flag:
             self._append_to_log(f"=========== Text Generation Started (total steps: {self.gen_text_len}) ===========")
             text_total_cycles = self.text_gen_cycles
@@ -474,38 +525,17 @@ class Bagel_sim():
             # 运行文本生成
             self.run_gen_text()
         
-        # 运行图像生成
-        # self.run_gen_image()
+        if self.task == "GenEdit" or self.task == "GenImage":
+            # 运行图像生成
+            self.run_gen_image()
         
         # 记录最终结果
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
         
         self._append_to_log("=" * 50)
-        self._append_to_log(f"FINAL RESULT - Total Cycles: {self.total_cycles_all}, Total seconds: {self.total_cycles_all/500000000}")
+        self._append_to_log(f"FINAL RESULT - Total Cycles: {self.total_cycles_all}, total seconds: {self.total_cycles_all/500000000}")
         self._append_to_log(f"Simulation Duration: {duration:.2f} seconds")
         self._append_to_log("======= Bagel Model Simulation Completed =======")
         
         return self.total_cycles_all
-
-
-def main():
-    """主函数"""
-    print("Bagel Model Simulation Starting...")
-    
-    # 实例化Bagel仿真类
-    bagel = Bagel_sim()
-    
-    # 读取JSON配置
-    bagel.read_from_json()
-    
-    # 运行完整模型仿真
-    total_cycles = bagel.run_model()
-    
-    print(f"\nSimulation completed successfully!")
-    print(f"Total cycles: {total_cycles}")
-    print(f"Results saved to: {bagel.result_path}/results.log")
-
-
-if __name__ == "__main__":
-    main()
