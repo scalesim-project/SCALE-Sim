@@ -62,6 +62,9 @@ class scale_config:
         
         # Time linear model parameter
         self.time_linear_model = 'None'
+
+        # Dynamic SRAM bank allocation (IFMAP/FILTER shared pool)
+        self.enable_dynamic_bank_allocation = False
     #
     def read_conf_file(self, conf_file_in):
         """
@@ -100,6 +103,10 @@ class scale_config:
         if config.has_option(section, 'TimeLinearModel'):
             self.time_linear_model = config.get(section, 'TimeLinearModel')
             assert self.time_linear_model in ['None', 'TPUv4', 'TPUv5e', 'TPUv6e'], f"ERROR: Invalid time linear model '{self.time_linear_model}'. Must be one of: None, TPUv4, TPUv5e, TPUv6e"
+
+        # Parse EnableDynamic if present
+        if config.has_option(section, 'EnableDynamic'):
+            self.enable_dynamic_bank_allocation = config.getboolean(section, 'EnableDynamic')
 
 
         # TODO Sarbartha: Should be bw
@@ -244,6 +251,7 @@ class scale_config:
         config.set(section, 'InterfaceBandwidth', str(bw_mode))
         config.set(section, 'UseRamulatorTrace', str(self.use_ramulator_trace))
         config.set(section, 'TimeLinearModel', str(self.time_linear_model))
+        config.set(section, 'EnableDynamic', str(self.enable_dynamic_bank_allocation))
 
         with open(conf_file_out, 'w') as configfile:
             config.write(configfile)
@@ -515,6 +523,14 @@ class scale_config:
         if self.valid_conf_flag:
             return self.time_linear_model
         return "Default"
+
+    def get_enable_dynamic_bank_allocation(self):
+        """
+        Method to check if IFMAP/FILTER SRAM bank allocation should be dynamic.
+        """
+        if self.valid_conf_flag:
+            return self.enable_dynamic_bank_allocation
+        return False
     
     # FIX ISSUE #14
     @staticmethod

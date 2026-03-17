@@ -55,6 +55,9 @@ class single_layer_sim:
         self.overall_util = 0
         self.mapping_eff = 0
         self.compute_util = 0
+        self.final_bank_allocation = '0/0'
+        self.ifmap_bank_capacity_util = 0
+        self.filter_bank_capacity_util = 0
 
         # Report items : BW report
         self.avg_ifmap_sram_bw = 0
@@ -279,6 +282,7 @@ class single_layer_sim:
                     filter_sram_bank_port=self.config.filter_sram_bank_port,
                     using_ifmap_custom_layout=self.using_ifmap_custom_layout,
                     using_filter_custom_layout=self.using_filter_custom_layout,
+                    enable_dynamic_bank_allocation=self.config.get_enable_dynamic_bank_allocation(),
                     estimate_bandwidth_mode=estimate_bandwidth_mode,
                     config=self.config,
                     topo=self.topo
@@ -337,6 +341,10 @@ class single_layer_sim:
         self.overall_util = (self.num_compute * 100) / (self.total_cycles * self.num_mac_unit)
         self.mapping_eff = self.compute_system.get_avg_mapping_efficiency() * 100
         self.compute_util = self.compute_system.get_avg_compute_utilization() * 100
+        final_ifmap_banks, final_filter_banks = self.memory_system.get_final_ifmap_filter_bank_allocation()
+        self.final_bank_allocation = f'{int(final_ifmap_banks)}/{int(final_filter_banks)}'
+        self.ifmap_bank_capacity_util, self.filter_bank_capacity_util = \
+            self.memory_system.get_ifmap_filter_bank_capacity_utilization()
 
         # BW report
         self.ifmap_sram_reads = self.compute_system.get_ifmap_requests()
@@ -401,7 +409,10 @@ class single_layer_sim:
                  self.stall_cycles,
                  self.overall_util,
                  self.mapping_eff,
-                 self.compute_util]
+                 self.compute_util,
+                 self.final_bank_allocation,
+                 self.ifmap_bank_capacity_util * 100,
+                 self.filter_bank_capacity_util * 100]
         return items
 
     #

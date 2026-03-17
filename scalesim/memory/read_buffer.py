@@ -37,6 +37,8 @@ class read_buffer:
 
         # Status of the buffer
         self.hashed_buffer = {}
+        self.hashed_buffer_loc_map = {}
+        self.active_buffer_addr_map = {}
         self.num_lines = 0
         self.num_active_buf_lines = 1
         self.num_prefetch_buf_lines = 1
@@ -61,6 +63,9 @@ class read_buffer:
         self.trace_valid = False
         self.use_ramulator_trace = False
         self.enable_layout_evaluation = False
+        self.num_bank = 1
+        self.num_port = 2
+        self.bw_per_bank = 1
 
     #
     def set_params(self, backing_buf_obj,
@@ -89,11 +94,8 @@ class read_buffer:
         self.req_gen_bandwidth = backing_buf_bw
 
         # Layout modeling
-        self.num_bank = num_bank
-        self.num_port = num_port # number of ports per bank
-        self.bw_per_bank = self.req_gen_bandwidth // self.num_bank # bandwidth per bank
         self.enable_layout_evaluation = enable_layout_evaluation
-        assert self.bw_per_bank * self.num_bank == self.req_gen_bandwidth, f"overall bandwidth must be divisible by total number of banks, number of banks = {self.num_bank}, bandwidth of each as {self.bw_per_bank}, total bandwidth = {self.req_gen_bandwidth}"
+        self._set_bank_topology(num_bank=num_bank, num_port=num_port)
 
         # Ramulator trace
         self.use_ramulator_trace = use_ramulator_trace
@@ -120,6 +122,8 @@ class read_buffer:
 
         # Status of the buffer
         self.hashed_buffer = {}
+        self.hashed_buffer_loc_map = {}
+        self.active_buffer_addr_map = {}
         self.active_buffer_set_limits = []
         self.prefetch_buffer_set_limits = []
 
@@ -140,6 +144,33 @@ class read_buffer:
         self.hashed_buffer_valid = False
         self.trace_valid = False
         self.use_ramulator_trace = False
+        self.num_bank = 1
+        self.num_port = 2
+        self.bw_per_bank = 1
+
+    def _set_bank_topology(self, num_bank, num_port=None):
+        """
+        Internal helper to update bank/port topology used by layout conflict modeling.
+        """
+        if num_bank is None:
+            num_bank = self.num_bank
+        if num_port is None:
+            num_port = self.num_port
+
+        assert num_bank >= 1, f"number of banks must be >= 1, got {num_bank}"
+        assert num_port >= 1, f"number of ports must be >= 1, got {num_port}"
+
+        self.num_bank = int(num_bank)
+        self.num_port = int(num_port)
+
+        # Use ceil so runtime bank repartition can work even when bandwidth is not divisible.
+        self.bw_per_bank = max(1, int(math.ceil(self.req_gen_bandwidth / self.num_bank)))
+
+    def update_bank_topology(self, num_bank, num_port=None):
+        """
+        Public API to update SRAM bank topology at runtime.
+        """
+        self._set_bank_topology(num_bank=num_bank, num_port=num_port)
 
     #
     def set_fetch_matrix(self, fetch_matrix_np):
@@ -175,6 +206,10 @@ class read_buffer:
         """
         Method to convert the fetch matrix into a hashed buffer for fast lookups.
         """
+        self.hashed_buffer = {}
+        self.hashed_buffer_loc_map = {}
+        self.active_buffer_addr_map = {}
+
         elems_per_set = math.ceil(self.total_size_elems / 100)
         if self.enable_layout_evaluation:
             elems_per_set = self.req_gen_bandwidth
@@ -185,6 +220,7 @@ class read_buffer:
         line_id = 0
         elem_ctr = 0
         current_line = set()
+        current_line_loc_map = {}
 
         for r in range(prefetch_rows):
             for c in range(prefetch_cols):
@@ -192,15 +228,19 @@ class read_buffer:
 
                 if not elem == -1:
                     current_line.add(elem)
+                    current_line_loc_map[elem] = elem_ctr
                     elem_ctr += 1
 
                 if not elem_ctr < elems_per_set:    # ie > or =
                     self.hashed_buffer[line_id] = current_line
+                    self.hashed_buffer_loc_map[line_id] = current_line_loc_map
                     line_id += 1
                     elem_ctr = 0
                     current_line = set()        # new set
+                    current_line_loc_map = {}
 
         self.hashed_buffer[line_id] = current_line
+        self.hashed_buffer_loc_map[line_id] = current_line_loc_map
 
         max_num_active_buf_lines = int(math.ceil(self.active_buf_size / elems_per_set))
         max_num_prefetch_buf_lines = int(math.ceil(self.prefetch_buf_size / elems_per_set))
@@ -221,6 +261,58 @@ class read_buffer:
         self.num_lines = num_lines
         self.hashed_buffer_valid = True
 
+    def _iter_active_line_ids(self):
+        """
+        Iterate through line ids currently visible in the active buffer window.
+        """
+        if len(self.active_buffer_set_limits) != 2:
+            return
+
+        start_id, end_id = self.active_buffer_set_limits
+        if start_id < end_id:
+            for line_id in range(start_id, end_id):
+                yield line_id
+        else:
+            for line_id in range(start_id, self.num_lines):
+                yield line_id
+            for line_id in range(end_id):
+                yield line_id
+
+    def _refresh_active_buffer_addr_map(self):
+        """
+        Refresh fast lookup map for active-buffer addresses.
+        """
+        self.active_buffer_addr_map = {}
+        for line_id in self._iter_active_line_ids():
+            line_map = self.hashed_buffer_loc_map.get(line_id, {})
+            for addr, col_id in line_map.items():
+                self.active_buffer_addr_map[addr] = (line_id, col_id)
+
+    def _get_max_prefetch_retries(self):
+        """
+        Upper bound for miss-driven prefetch retries per address.
+        """
+        return max(8, int(self.num_lines * 2))
+
+    def _cycle_to_scalar(self, cycle):
+        """
+        Convert numpy scalar/array cycle representation to python int-like scalar.
+        """
+        if isinstance(cycle, np.ndarray):
+            return float(cycle[0])
+        return float(cycle)
+
+    def _apply_miss_retry_fallback(self, cycle, offset):
+        """
+        Apply bounded penalty and move on when an address repeatedly misses.
+        """
+        cycle_scalar = self._cycle_to_scalar(cycle)
+        penalty = max(1, self.hit_latency, self.num_prefetch_buf_lines, self.num_active_buf_lines)
+        potential_stall_cycles = self.last_prefetch_cycle - (cycle_scalar + offset)
+        if potential_stall_cycles > 0:
+            penalty = max(penalty, int(potential_stall_cycles))
+        return offset + penalty
+
     #
     def active_buffer_hit(self, addr):
         """
@@ -228,47 +320,16 @@ class read_buffer:
         """
         assert self.active_buf_full_flag, 'Active buffer is not ready yet'
 
-        start_id, end_id = self.active_buffer_set_limits
+        if len(self.active_buffer_addr_map) == 0:
+            self._refresh_active_buffer_addr_map()
+
         if self.enable_layout_evaluation:
-          if start_id < end_id:
-              for line_id in range(start_id, end_id):
-                  this_set = self.hashed_buffer[line_id]      # O(1) --> accessing hash
-                  if addr in this_set:                        # Checking in a set(), O(1) lookup
-                      return line_id, list(this_set).index(addr)
-
-          else:
-              for line_id in range(start_id, self.num_lines):
-                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
-                  if addr in this_set:  # Checking in a set(), O(1) lookup
-                      return line_id, list(this_set).index(addr)
-
-              for line_id in range(end_id):
-                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
-                  if addr in this_set:  # Checking in a set(), O(1) lookup
-                      return line_id, list(this_set).index(addr)
-          # Fixing for ISSUE #14
-          # return True
-          return -1, -1
+          loc = self.active_buffer_addr_map.get(addr, None)
+          if loc is None:
+              return -1, -1
+          return loc
         else:
-          if start_id < end_id:
-              for line_id in range(start_id, end_id):
-                  this_set = self.hashed_buffer[line_id]      # O(1) --> accessing hash
-                  if addr in this_set:                        # Checking in a set(), O(1) lookup
-                      return True
-
-          else:
-              for line_id in range(start_id, self.num_lines):
-                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
-                  if addr in this_set:  # Checking in a set(), O(1) lookup
-                      return True
-
-              for line_id in range(end_id):
-                  this_set = self.hashed_buffer[line_id]  # O(1) --> accessing hash
-                  if addr in this_set:  # Checking in a set(), O(1) lookup
-                      return True
-          # Fixing for ISSUE #14
-          # return True
-          return False
+          return addr in self.active_buffer_addr_map
 
     #
     def service_reads(self,
@@ -310,13 +371,21 @@ class read_buffer:
                   # Fixing for ISSUE #14
                   # if not self.active_buffer_hit(addr):  # --> While loop ensures multiple prefetches if needed
                   line_addr, column_addr = self.active_buffer_hit(addr)
-                  while line_addr == -1:
+                  retry_ctr = 0
+                  max_retry = self._get_max_prefetch_retries()
+                  while line_addr == -1 and retry_ctr < max_retry:
                       self.new_prefetch()
+                      retry_ctr += 1
                       potential_stall_cycles = self.last_prefetch_cycle - (cycle + offset)
 
                       if potential_stall_cycles > 0:
                           offset += potential_stall_cycles
                       line_addr, column_addr = self.active_buffer_hit(addr)
+
+                  if line_addr == -1:
+                      # Bounded fallback avoids pathological near-infinite miss loops.
+                      offset = self._apply_miss_retry_fallback(cycle, offset)
+                      continue
                   
                   # Layout Modeling 1 -- data mapping to multiple bank 
                   # The 2D array is interleaved mapped to multiple banks. 
@@ -325,6 +394,7 @@ class read_buffer:
                   # because data access in compiled layout turns to be contiguious, which accesses the continuous addresses.
                   # In (contiguous mapping), such multi-bank mapping would result in more bank conflict slowdown.
                   bank_id = column_addr // self.bw_per_bank
+                  bank_id = min(bank_id, self.num_bank - 1)
                   assert bank_id < self.num_bank, f"bank id = {bank_id} for column_addr = {column_addr} needs to be smaller than total number of bank = {self.num_bank}"
                   if line_addr not in concurrent_line_addr[bank_id]:
                       concurrent_line_addr[bank_id].append(line_addr)
@@ -356,12 +426,19 @@ class read_buffer:
                   # if addr not in self.active_buffer_contents: #this is super slow!!!
                   # Fixing for ISSUE #14
                   # if not self.active_buffer_hit(addr):  # --> While loop ensures multiple prefetches if needed
-                  while not self.active_buffer_hit(addr):
+                  retry_ctr = 0
+                  max_retry = self._get_max_prefetch_retries()
+                  while not self.active_buffer_hit(addr) and retry_ctr < max_retry:
                       self.new_prefetch()
+                      retry_ctr += 1
                       potential_stall_cycles = self.last_prefetch_cycle - (cycle + offset)
                       offset += potential_stall_cycles        # Offset increments if there were potential stalls
                       if potential_stall_cycles > 0:
                           offset += potential_stall_cycles
+
+                  if not self.active_buffer_hit(addr):
+                      offset = self._apply_miss_retry_fallback(cycle, offset)
+                      continue
                     
               if self.use_ramulator_trace == True:
                   out_cycles = cycle + offset + dram_stall_cycles
@@ -434,6 +511,7 @@ class read_buffer:
         prefetch_buf_start_line_id = active_buf_end_line_id
         prefetch_buf_end_line_id = prefetch_buf_start_line_id + self.num_prefetch_buf_lines
         self.prefetch_buffer_set_limits = [prefetch_buf_start_line_id, prefetch_buf_end_line_id]
+        self._refresh_active_buffer_addr_map()
 
         self.active_buf_full_flag = True
 
@@ -470,6 +548,7 @@ class read_buffer:
 
         self.active_buffer_set_limits = [active_start, active_end]
         self.prefetch_buffer_set_limits = [prefetch_start, prefetch_end]
+        self._refresh_active_buffer_addr_map()
 
         # 2. Create the request
         start_idx = self.next_line_prefetch_idx

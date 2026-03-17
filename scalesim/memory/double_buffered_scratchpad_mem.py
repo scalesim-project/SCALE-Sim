@@ -5,6 +5,7 @@ double buffered SRAMs.
 
 import time
 import os
+import math
 import numpy as np
 from tqdm import tqdm
 
@@ -78,6 +79,18 @@ class double_buffered_scratchpad:
         self.using_ifmap_custom_layout = False
         self.using_filter_custom_layout = False
 
+        # Dynamic IFMAP/FILTER bank allocation state
+        self.enable_dynamic_bank_allocation = False
+        self.static_ifmap_sram_bank_num = 1
+        self.static_filter_sram_bank_num = 1
+        self.ifmap_sram_bank_port = 2
+        self.filter_sram_bank_port = 2
+        self.dynamic_ifmap_banks = set()
+        self.dynamic_filter_banks = set()
+        self.dynamic_unassigned_banks = []
+        self.dynamic_target_ifmap_banks = 1
+        self.dynamic_target_filter_banks = 1
+
     #
     def set_params(self,
                    layer_id=0,
@@ -89,6 +102,7 @@ class double_buffered_scratchpad:
                    ifmap_backing_buf_bw=1, filter_backing_buf_bw=1, ofmap_backing_buf_bw=1,
                    ifmap_sram_bank_num=1, ifmap_sram_bank_port=2, filter_sram_bank_num=1, filter_sram_bank_port=2,
                    using_ifmap_custom_layout=False, using_filter_custom_layout=False,
+                   enable_dynamic_bank_allocation=False,
                    config=cfg(), topo=topo()
                    ):
 
@@ -99,6 +113,10 @@ class double_buffered_scratchpad:
         self.topo = topo
         self.config = config
         self.use_ramulator_trace = config.get_ramulator_trace()
+        self.static_ifmap_sram_bank_num = max(1, int(ifmap_sram_bank_num))
+        self.static_filter_sram_bank_num = max(1, int(filter_sram_bank_num))
+        self.ifmap_sram_bank_port = max(1, int(ifmap_sram_bank_port))
+        self.filter_sram_bank_port = max(1, int(filter_sram_bank_port))
 
         self.estimate_bandwidth_mode = estimate_bandwidth_mode
 
@@ -167,7 +185,19 @@ class double_buffered_scratchpad:
         self.verbose = verbose
 
         self.using_ifmap_custom_layout = using_ifmap_custom_layout  
-        self.using_filter_custom_layout = using_filter_custom_layout  
+        self.using_filter_custom_layout = using_filter_custom_layout
+        self.enable_dynamic_bank_allocation = bool(enable_dynamic_bank_allocation)
+        if self.estimate_bandwidth_mode:
+            self.enable_dynamic_bank_allocation = False
+        if not (self.using_ifmap_custom_layout and self.using_filter_custom_layout):
+            self.enable_dynamic_bank_allocation = False
+
+        self.dynamic_ifmap_banks = set()
+        self.dynamic_filter_banks = set()
+        self.dynamic_unassigned_banks = []
+        self.dynamic_target_ifmap_banks = 1
+        self.dynamic_target_filter_banks = 1
+
         self.params_valid_flag = True
 
 
@@ -230,6 +260,149 @@ class double_buffered_scratchpad:
 
         return out_cycles_arr_np
 
+    def _apply_dynamic_bank_topology(self):
+        """
+        Apply current dynamic bank assignment to IFMAP/FILTER read buffers.
+        """
+        ifmap_banks = max(1, len(self.dynamic_ifmap_banks))
+        filter_banks = max(1, len(self.dynamic_filter_banks))
+        self.ifmap_buf.update_bank_topology(num_bank=ifmap_banks,
+                                            num_port=self.ifmap_sram_bank_port)
+        self.filter_buf.update_bank_topology(num_bank=filter_banks,
+                                             num_port=self.filter_sram_bank_port)
+
+    def _assign_one_dynamic_bank(self, assign_to_ifmap):
+        """
+        Permanently assign one unassigned bank to IFMAP or FILTER.
+        """
+        if len(self.dynamic_unassigned_banks) == 0:
+            return False
+
+        bank_id = self.dynamic_unassigned_banks.pop(0)
+        if assign_to_ifmap:
+            self.dynamic_ifmap_banks.add(bank_id)
+        else:
+            self.dynamic_filter_banks.add(bank_id)
+
+        self._apply_dynamic_bank_topology()
+        return True
+
+    def _estimate_required_banks(self, demand_line, num_port, total_banks):
+        """
+        Estimate required banks from instantaneous request pressure.
+        """
+        valid_reqs = int(np.count_nonzero(demand_line != -1))
+        if valid_reqs == 0:
+            return 1
+        est_banks = int(math.ceil(valid_reqs / max(1, num_port)))
+        est_banks = min(total_banks - 1, max(1, est_banks))
+        return est_banks
+
+    def _estimate_unique_demand_bytes(self, demand_mat, word_size=1):
+        """
+        Estimate unique demanded payload size in bytes for one operand.
+        """
+        flat_payload = demand_mat.reshape(-1)
+        valid_payload = flat_payload[flat_payload != -1]
+        if valid_payload.size == 0:
+            return 0.0
+        unique_words = np.unique(valid_payload).size
+        return float(unique_words * max(1, int(word_size)))
+
+    def _allocate_towards_target_distribution(self):
+        """
+        Allocate all free banks towards target IFMAP/FILTER distribution.
+        """
+        while len(self.dynamic_unassigned_banks) > 0:
+            deficit_ifmap = max(0, self.dynamic_target_ifmap_banks - len(self.dynamic_ifmap_banks))
+            deficit_filter = max(0, self.dynamic_target_filter_banks - len(self.dynamic_filter_banks))
+
+            if deficit_ifmap == 0 and deficit_filter == 0:
+                break
+
+            if deficit_ifmap > deficit_filter:
+                self._assign_one_dynamic_bank(assign_to_ifmap=True)
+            elif deficit_filter > deficit_ifmap:
+                self._assign_one_dynamic_bank(assign_to_ifmap=False)
+            else:
+                self._assign_one_dynamic_bank(assign_to_ifmap=(len(self.dynamic_ifmap_banks) <= len(self.dynamic_filter_banks)))
+
+    def _initialize_dynamic_bank_allocator(self, ifmap_demand_mat, filter_demand_mat):
+        """
+        Initialize bank pools and assign banks to balance capacity utilization.
+        """
+        total_banks = self.static_ifmap_sram_bank_num + self.static_filter_sram_bank_num
+        if total_banks < 2:
+            self.enable_dynamic_bank_allocation = False
+            return
+
+        # Start with one dedicated bank each, and keep the rest in a free pool.
+        self.dynamic_ifmap_banks = {0}
+        self.dynamic_filter_banks = {1}
+        self.dynamic_unassigned_banks = list(range(2, total_banks))
+        self._apply_dynamic_bank_topology()
+
+        if len(self.dynamic_unassigned_banks) == 0:
+            return
+
+        ifmap_need_bytes = self._estimate_unique_demand_bytes(ifmap_demand_mat,
+                                                               word_size=getattr(self.ifmap_buf, 'word_size', 1))
+        filter_need_bytes = self._estimate_unique_demand_bytes(filter_demand_mat,
+                                                                word_size=getattr(self.filter_buf, 'word_size', 1))
+
+        ifmap_per_bank_capacity = max(1.0, self.ifmap_buf.total_size_bytes / max(1, self.static_ifmap_sram_bank_num))
+        filter_per_bank_capacity = max(1.0, self.filter_buf.total_size_bytes / max(1, self.static_filter_sram_bank_num))
+
+        ifmap_weight = ifmap_need_bytes / ifmap_per_bank_capacity
+        filter_weight = filter_need_bytes / filter_per_bank_capacity
+
+        if ifmap_weight <= 0 and filter_weight <= 0:
+            ifmap_weight = 1.0
+            filter_weight = 1.0
+
+        target_ifmap = int(round(total_banks * (ifmap_weight / (ifmap_weight + filter_weight))))
+        target_ifmap = min(total_banks - 1, max(1, target_ifmap))
+        target_filter = total_banks - target_ifmap
+
+        self.dynamic_target_ifmap_banks = target_ifmap
+        self.dynamic_target_filter_banks = target_filter
+
+        self._allocate_towards_target_distribution()
+
+        while len(self.dynamic_unassigned_banks) > 0:
+            if ifmap_weight >= filter_weight:
+                self._assign_one_dynamic_bank(assign_to_ifmap=True)
+            else:
+                self._assign_one_dynamic_bank(assign_to_ifmap=False)
+
+    def _dynamic_allocate_from_demand(self, ifmap_demand_line, filter_demand_line):
+        """
+        Allocate remaining banks towards precomputed target distribution.
+        """
+        if len(self.dynamic_unassigned_banks) == 0:
+            return
+        self._allocate_towards_target_distribution()
+
+    def _dynamic_allocate_from_stall_feedback(self, ifmap_stall, filter_stall):
+        """
+        Allocate one extra bank only when target distribution is not yet reached.
+        """
+        if len(self.dynamic_unassigned_banks) == 0:
+            return
+
+        if ifmap_stall <= 0 and filter_stall <= 0:
+            return
+
+        deficit_ifmap = max(0, self.dynamic_target_ifmap_banks - len(self.dynamic_ifmap_banks))
+        deficit_filter = max(0, self.dynamic_target_filter_banks - len(self.dynamic_filter_banks))
+        if deficit_ifmap == 0 and deficit_filter == 0:
+            return
+
+        if ifmap_stall > filter_stall:
+            self._assign_one_dynamic_bank(assign_to_ifmap=True)
+        elif filter_stall > ifmap_stall:
+            self._assign_one_dynamic_bank(assign_to_ifmap=False)
+
     #
     def service_memory_requests(self, ifmap_demand_mat, filter_demand_mat, ofmap_demand_mat):
         """
@@ -250,24 +423,36 @@ class double_buffered_scratchpad:
         filter_serviced_cycles = []
         ofmap_serviced_cycles = []
 
+        if self.enable_dynamic_bank_allocation:
+            self._initialize_dynamic_bank_allocator(ifmap_demand_mat, filter_demand_mat)
+
         pbar_disable = not self.verbose
         for i in tqdm(range(ofmap_lines), disable=pbar_disable):
 
             cycle_arr = np.zeros((1,1)) + i + self.stall_cycles
 
             ifmap_demand_line = ifmap_demand_mat[i, :].reshape((1,ifmap_demand_mat.shape[1]))
+            filter_demand_line = filter_demand_mat[i, :].reshape((1, filter_demand_mat.shape[1]))
+
+            if self.enable_dynamic_bank_allocation:
+                # Permanent one-way assignment from free pool to IFMAP/FILTER.
+                self._dynamic_allocate_from_demand(ifmap_demand_line, filter_demand_line)
+
             ifmap_cycle_out = \
                 self.ifmap_buf.service_reads(incoming_requests_arr_np=ifmap_demand_line,
                                              incoming_cycles_arr=cycle_arr)
             ifmap_serviced_cycles += [ifmap_cycle_out[0]]
             ifmap_stalls = ifmap_cycle_out[0] - cycle_arr[0] - ifmap_hit_latency
 
-            filter_demand_line = filter_demand_mat[i, :].reshape((1, filter_demand_mat.shape[1]))
             filter_cycle_out = \
                 self.filter_buf.service_reads(incoming_requests_arr_np=filter_demand_line,
                                               incoming_cycles_arr=cycle_arr)
             filter_serviced_cycles += [filter_cycle_out[0]]
             filter_stalls = filter_cycle_out[0] - cycle_arr[0] - filter_hit_latency
+
+            if self.enable_dynamic_bank_allocation:
+                self._dynamic_allocate_from_stall_feedback(ifmap_stall=float(ifmap_stalls[0]),
+                                                           filter_stall=float(filter_stalls[0]))
 
             ofmap_demand_line = ofmap_demand_mat[i, :].reshape((1, ofmap_demand_mat.shape[1]))
             ofmap_cycle_out = \
@@ -482,6 +667,71 @@ class double_buffered_scratchpad:
         """
         assert self.traces_valid, 'Traces not generated yet'
         return int(self.stall_cycles)
+
+    def get_final_ifmap_filter_bank_allocation(self):
+        """
+        Method to get final IFMAP/FILTER bank ownership after simulation.
+        """
+        assert self.params_valid_flag, 'Memories not initialized yet'
+
+        if self.enable_dynamic_bank_allocation and len(self.dynamic_ifmap_banks) > 0 and len(self.dynamic_filter_banks) > 0:
+            return len(self.dynamic_ifmap_banks), len(self.dynamic_filter_banks)
+
+        return int(self.static_ifmap_sram_bank_num), int(self.static_filter_sram_bank_num)
+
+    def _get_unique_payload_words(self, trace_matrix):
+        """
+        Count unique valid addresses from a trace matrix payload region.
+        """
+        if trace_matrix is None or trace_matrix.size == 0:
+            return 0
+
+        payload = trace_matrix[:, 1:]
+        if payload.size == 0:
+            return 0
+
+        flat_payload = payload.reshape(-1)
+        valid = flat_payload[flat_payload != -1]
+        if valid.size == 0:
+            return 0
+
+        return int(np.unique(valid).size)
+
+    def get_ifmap_filter_bank_capacity_utilization(self):
+        """
+        Return IFMAP/FILTER bank capacity utilization.
+
+        Utilization definition:
+        used_capacity / (bank_count * per_bank_capacity)
+        """
+        assert self.traces_valid, 'Traces not generated yet'
+
+        final_ifmap_banks, final_filter_banks = self.get_final_ifmap_filter_bank_allocation()
+
+        # Per-bank capacity is derived from configured static banks.
+        ifmap_per_bank_capacity = max(1.0, self.ifmap_buf.total_size_bytes / max(1, self.static_ifmap_sram_bank_num))
+        filter_per_bank_capacity = max(1.0, self.filter_buf.total_size_bytes / max(1, self.static_filter_sram_bank_num))
+
+        ifmap_total_capacity = max(1.0, final_ifmap_banks * ifmap_per_bank_capacity)
+        filter_total_capacity = max(1.0, final_filter_banks * filter_per_bank_capacity)
+
+        ifmap_used_words = self._get_unique_payload_words(self.ifmap_trace_matrix)
+        filter_used_words = self._get_unique_payload_words(self.filter_trace_matrix)
+
+        ifmap_word_size = max(1, int(getattr(self.ifmap_buf, 'word_size', 1)))
+        filter_word_size = max(1, int(getattr(self.filter_buf, 'word_size', 1)))
+
+        ifmap_used_capacity = ifmap_used_words * ifmap_word_size
+        filter_used_capacity = filter_used_words * filter_word_size
+
+        # Cap to 100% as a capacity-utilization metric.
+        ifmap_used_capacity = min(ifmap_used_capacity, ifmap_total_capacity)
+        filter_used_capacity = min(filter_used_capacity, filter_total_capacity)
+
+        ifmap_util = ifmap_used_capacity / ifmap_total_capacity
+        filter_util = filter_used_capacity / filter_total_capacity
+
+        return float(ifmap_util), float(filter_util)
 
     #
     def get_ifmap_sram_start_stop_cycles(self):

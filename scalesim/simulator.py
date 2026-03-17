@@ -173,7 +173,7 @@ class simulator:
         compute_report_name = self.top_path + '/COMPUTE_REPORT.csv'
         compute_report = open(compute_report_name, 'w')
         header = ('LayerID, Total Cycles (incl. prefetch), Total Cycles, Stall Cycles, Overall Util %, Mapping Efficiency %,'
-                  ' Compute Util %,\n')
+                  ' Compute Util %, Final IFMAP/FILTER Bank Allocation, IFMAP Bank Capacity Util %, FILTER Bank Capacity Util %,\n')
         compute_report.write(header)
         
         # Create TIME_REPORT.csv for linear model time conversion
