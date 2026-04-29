@@ -36,6 +36,7 @@ class scale_config:
         self.valid_conf_flag = False
         self.num_bank = 1
         self.num_port = 2
+        self.tensor_cores = 1
 
         # Layout flags with default values
         self.using_ifmap_custom_layout = False
@@ -165,6 +166,12 @@ class scale_config:
                     assert self.sparsity_block_size <= self.array_rows, "ERROR: Invalid block size"
 
                 self.sparsity_rand_seed = int(config.get(section, 'RandomNumberGeneratorSeed'))
+
+        # GPU section if simulating a NVIDIA GPU (optional)
+        if config.has_section('gpu'):
+            gpu_section = 'gpu'
+            if config.has_option(gpu_section, 'TensorCores'):
+                self.tensor_cores = int(config.get(gpu_section, 'TensorCores'))
 
         self.valid_conf_flag = True
 
@@ -496,6 +503,13 @@ class scale_config:
     def get_num_port(self):
         if self.valid_conf_flag:
             return self.num_port
+
+    def get_tensor_cores(self):
+        """
+        Method to get the number of GPU tensor cores for parallel workload division.
+        """
+        if self.valid_conf_flag:
+            return self.tensor_cores
         
     def get_min_dram_bandwidth(self):
         """

@@ -133,21 +133,39 @@ class topologies(object):
         f = open(topofile, 'r')
         for row in f:
             row = row.strip()
-            if first or row == '':
+            if first or row == '' or row.replace(',', '').strip() == '':
                 first = False
             else:
-                elems = row.split(',')[:-1]
+                elems_raw = [e.strip() for e in row.split(',')]
+                while elems_raw and elems_raw[-1] == '':
+                    elems_raw.pop()
 
-                # Add the same stride in the col direction automatically
-                elems = elems[0:8] + [elems[7]] + elems[8:]
+                elems = elems_raw.copy()
+                # If there are less than 9 elements, something is wrong, but let's try to proceed.
+                if len(elems) >= 8:
+                    # Add the same stride in the col direction automatically
+                    elems = elems[0:8] + [elems[7]] + elems[8:]
 
-                # Parsing sparsity ratio
-                if len(elems) < 10:
-                    # If sparsity ratio is missing in the topology file, consider the default ratio
-                    elems.append("1:1")
-                sparsity_ratio = elems.pop().strip().split(':')
+                # Parsing sparsity ratio and target
+                sparsity_field = "1:1"
+                target = "NPU"
+                
+                if len(elems) > 9:
+                    if elems[9] in ["GPU", "NPU"]:
+                        target = elems[9]
+                    else:
+                        sparsity_field = elems[9]
+                if len(elems) > 10:
+                    target = elems[10]
+
+                elems = elems[0:9]
+                if ':' in sparsity_field and sparsity_field != '':
+                    sparsity_ratio = sparsity_field.split(':')
+                else:
+                    sparsity_ratio = ["1", "1"]
                 elems.append(sparsity_ratio[0])
                 elems.append(sparsity_ratio[1])
+                elems.append(target)
 
                 # depth-wise convolution
                 if 'DP' in elems[0].strip():
@@ -218,8 +236,11 @@ class topologies(object):
         entry = [layer_name]
 
         for i in range(1, len(elems)):
-            val = int(str(elems[i]).strip())
-            entry.append(val)
+            if i == 11:
+                entry.append(str(elems[i]).strip())
+            else:
+                val = int(str(elems[i]).strip())
+                entry.append(val)
             # These 3 lines are taken care in the parent function call
             # if i == 7 and len(elems) < 9:
             #     print("Adding extra value")
@@ -583,6 +604,14 @@ class topologies(object):
         s_col = self.spatio_temp_dim_arrays[layer_id][df_idx][1]
         t_time = self.spatio_temp_dim_arrays[layer_id][df_idx][2]
         return s_row, s_col, t_time
+
+    def get_layer_target(self, layer_id=0):
+        """
+        Method to get the compute target for the layer (e.g. 'NPU', 'GPU')
+        """
+        if not self.topo_load_flag:
+            self.load_arrays(self.topo_file_name)
+        return self.topo_arrays[layer_id][11]
 
 
 if __name__ == '__main__':
