@@ -304,7 +304,7 @@ class double_buffered_scratchpad:
                                                  axis=1)
         #self.total_cycles = int(ofmap_serviced_cycles[-1][0])
         ## Probable fault in sanity check
-        self.total_cycles = int(max(ofmap_serviced_cycles))
+        self.total_cycles = int(np.max(ofmap_serviced_cycles))
 
         # END of serving demands from memory
         self.traces_valid = True
