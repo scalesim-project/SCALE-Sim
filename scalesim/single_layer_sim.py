@@ -304,9 +304,7 @@ class single_layer_sim:
         assert self.params_set_flag, 'Parameters are not set'
 
         dir_name = top_path + '/layer' + str(self.layer_id)
-        if not os.path.isdir(dir_name):
-            cmd = 'mkdir ' + dir_name
-            os.system(cmd)
+        os.makedirs(dir_name, exist_ok=True)
 
         ifmap_sram_filename = dir_name +  '/IFMAP_SRAM_TRACE.csv'
         filter_sram_filename = dir_name + '/FILTER_SRAM_TRACE.csv'
