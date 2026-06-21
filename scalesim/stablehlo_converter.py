@@ -192,20 +192,24 @@ class NonComputeLatencyPredictor:
         'stablehlo.minimum': 'minimum',
     }
     
-    def __init__(self, model_dir: str = None, verbose: bool = True):
+    def __init__(self, model_dir: str = None, generation: str = None, verbose: bool = True):
         """
         Initialize the latency predictor.
-        
+
         Args:
             model_dir: Directory containing pre-trained model .pkl files.
-                       If None, uses the default location in scalesim/model/tpuv4/
+                       If None, the directory is resolved from `generation`.
+            generation: TPU generation (e.g. 'TPUv4', 'TPUv6e'); selects the
+                        per-generation subdir under scalesim/model/ (tpuv4, tpuv6e,
+                        ...). Ignored if `model_dir` is given. Falls back to tpuv4
+                        if the requested generation's dir does not exist.
             verbose: Whether to print loading progress
         """
         self.verbose = verbose
-        
+
         # Default model directory
         if model_dir is None:
-            model_dir = Path(__file__).parent / "model" / "tpuv4"
+            model_dir = self._resolve_model_dir(generation, verbose)
         else:
             model_dir = Path(model_dir)
         
@@ -214,7 +218,31 @@ class NonComputeLatencyPredictor:
         self.available_ops: List[str] = []
         
         self._load_available_models()
-    
+
+    # TimeLinearModel config value -> per-generation model subdir name
+    _GENERATION_DIRS = {
+        "tpuv4": "tpuv4", "tpuv5e": "tpuv5e", "tpuv6e": "tpuv6e",
+    }
+
+    @staticmethod
+    def _resolve_model_dir(generation: str, verbose: bool = True) -> Path:
+        """Map a TPU generation (e.g. 'TPUv6e') to its scalesim/model/<gen> dir.
+        Falls back to tpuv4 when generation is unknown/None or its dir is absent."""
+        base = Path(__file__).parent / "model"
+        default = base / "tpuv4"
+        if not generation:
+            return default
+        sub = NonComputeLatencyPredictor._GENERATION_DIRS.get(generation.lower())
+        if sub is None:
+            return default
+        cand = base / sub
+        if not cand.exists():
+            if verbose:
+                print(f"Warning: no op models for {generation} at {cand}; "
+                      f"falling back to {default}")
+            return default
+        return cand
+
     def _load_available_models(self) -> None:
         """Load all available models from the model directory."""
         if not self.model_dir.exists():
@@ -931,7 +959,7 @@ class StableHLOConverter:
         
         return topology_entries, input_type
     
-    def build_op_table(self, model_dir: str = None) -> List[Dict[str, Any]]:
+    def build_op_table(self, model_dir: str = None, generation: str = None) -> List[Dict[str, Any]]:
         """
         Build a program-ordered table of every op (compute + non-compute) for the
         unified TIME_REPORT. One row per op, in MLIR program order:
@@ -950,7 +978,7 @@ class StableHLOConverter:
         Call after convert_to_topology(). Mirrors that method's compute/non-compute
         split exactly, so layer indexing matches the topology / COMPUTE_REPORT.
         """
-        predictor = NonComputeLatencyPredictor(model_dir=model_dir, verbose=False)
+        predictor = NonComputeLatencyPredictor(model_dir=model_dir, generation=generation, verbose=False)
         table: List[Dict[str, Any]] = []
         layer = 0
         for gidx, op in enumerate(self.ops):
@@ -1135,22 +1163,25 @@ def convert_stablehlo_to_topology(mlir_file: str, output_csv: str = None,
 
 
 def convert_mlir_if_needed(
-    topology_file: str, 
-    inp_type: str, 
-    logpath: str
+    topology_file: str,
+    inp_type: str,
+    logpath: str,
+    config_file: str = None
 ) -> Tuple[str, str, bool]:
     """
     Check if the topology file is a .mlir file and convert it if needed.
-    
+
     This function is used by SCALE-Sim's main entry point to automatically
     detect and convert MLIR files to topology CSV format. It also automatically
     predicts latencies for non-compute operations and saves them to a time report.
-    
+
     Args:
         topology_file: Path to the topology or MLIR file
         inp_type: Input type (conv/gemm/auto)
         logpath: Directory for logs and converted files
-        
+        config_file: Path to the SCALE-Sim config; its TimeLinearModel key selects
+                     the per-generation op-latency models (e.g. TPUv6e -> tpuv6e).
+
     Returns:
         Tuple of (topology_csv_path, input_type, is_converted)
         - topology_csv_path: Path to the topology CSV (converted or original)
@@ -1191,7 +1222,21 @@ def convert_mlir_if_needed(
         # non-compute latencies predicted) and stash it for the post-run combiner,
         # which merges it with the simulator's per-layer compute times into the
         # single unified TIME_REPORT.csv (see scalesim/total_time_report.py).
-        op_table = converter.build_op_table()
+        # Resolve the TPU generation from the config so the op-latency models match
+        # the configured TimeLinearModel (e.g. TPUv6e -> scalesim/model/tpuv6e/).
+        generation = None
+        if config_file:
+            try:
+                from scalesim.scale_config import scale_config
+                cfg = scale_config()
+                cfg.read_conf_file(config_file)
+                gen = cfg.get_time_linear_model()
+                if gen and gen not in ("None", "Default"):
+                    generation = gen
+            except Exception as e:
+                print(f"Warning: could not read TimeLinearModel from config: {e}")
+
+        op_table = converter.build_op_table(generation=generation)
         op_table_path = Path(logpath) / f"{topology_path.stem}_op_table.json"
         with open(op_table_path, "w") as f:
             json.dump(op_table, f)

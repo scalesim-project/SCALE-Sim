@@ -17,7 +17,7 @@ try:
 except ImportError:
     STABLEHLO_AVAILABLE = False
     # Fallback if converter not available
-    def convert_mlir_if_needed(topology_file, inp_type, logpath):
+    def convert_mlir_if_needed(topology_file, inp_type, logpath, config_file=None):
         return topology_file, inp_type, False
 
 
@@ -76,9 +76,10 @@ Examples:
 
     # Convert MLIR file if needed (automatically handles non-compute operations)
     topology, inp_type, was_converted = convert_mlir_if_needed(
-        topology, 
-        inp_type, 
-        logpath
+        topology,
+        inp_type,
+        logpath,
+        config
     )
     
     # Determine input type

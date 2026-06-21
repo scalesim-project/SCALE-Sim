@@ -115,8 +115,19 @@ the default). To add a brand-new op: add it to the `OPS`/`build()` tables in
 | # | step | command | output | status |
 |---|------|---------|--------|--------|
 | 0 | env + log | `pip install scikit-learn pandas`; verify TPU | — | ✅ done |
-| 3 | collect 25 ops | `PJRT_DEVICE=TPU python3 collect_ops_tpu.py --ops … --n 1500 --outdir <tmp>` | `<op>_dataset.csv` × 25 | ⏳ pending |
-| 4 | train | `python3 train_ops.py --datadir <tmp> --outdir ../tpuv6e` | `model/tpuv6e/*.pkl` | ⏳ pending |
-| 4 | integrate | make `NonComputeLatencyPredictor` generation-aware (pick `tpuv6e` via `TimeLinearModel`) | `stablehlo_converter.py`, `scale.py` | ⏳ pending |
+| 3 | collect 25 ops | `PJRT_DEVICE=TPU python3 collect_ops_tpu.py --ops … --n 1000 --outdir datasets_tpuv6e` (run in 5 op-batches for crash-safety) | `calibration/datasets_tpuv6e/<op>_dataset.csv` × 25 | ✅ done |
+| 4 | train | `python3 train_ops.py --datadir datasets_tpuv6e --outdir ../tpuv6e` | `model/tpuv6e/*.pkl` × 25 | ✅ done |
+| 4 | integrate | `NonComputeLatencyPredictor` is now generation-aware: `convert_mlir_if_needed(config_file=…)` reads `TimeLinearModel` and selects `model/tpuv6e/` (falls back to `tpuv4` if absent) | `stablehlo_converter.py`, `scale.py` | ✅ done |
 
-**Per-op val MAPE summary (filled in when training completes):** _pending_
+**Per-op val MAPE (TPU v6e, n=1000/op, 80/20 split), best→worst:**
+`concatenate 3.39 · convert 4.54 · rsqrt 4.60 · negate 4.61 · slice 4.61 ·
+exponential 4.70 · transpose 4.86 · tanh 4.96 · reshape 4.99 · power 5.01 ·
+reduce 5.34 · logistic 5.34 · maximum 5.47 · and 5.60 · compare 5.61 ·
+subtract 5.74 · multiply 5.78 · minimum 5.79 · divide 5.81 · add 6.05 ·
+batch_norm_training 7.23 · cosine 8.96 · sine 9.30 · select 9.32 ·
+broadcast_in_dim 21.76`  (%)
+
+Most ops land in the 4–6% band (matching the v4 reference). `sine`/`cosine` (~9%,
+transcendental variance) and `broadcast_in_dim` (21.8%) are the known outliers —
+the latter is the documented train/serve shape-skew (trained on the driver/output
+shape, but the converter feeds the first-input shape; see Limitations above).
