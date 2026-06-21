@@ -9,7 +9,7 @@
 set -e
 cd "$(dirname "$0")"
 
-MLIR=topologies/stablehlo/gpt2.stablehlo.mlir
+MLIR=topologies/stablehlo/llm/gpt2.stablehlo.mlir
 CONFIG=configs/tpuv4.cfg
 OUT=./results/llm_gpt2_bypass
 
