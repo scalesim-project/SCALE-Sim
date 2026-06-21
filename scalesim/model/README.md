@@ -101,3 +101,22 @@ the default). To add a brand-new op: add it to the `OPS`/`build()` tables in
 `collect_ops_tpu.py`, then collect + train.
 
 > Fuller writeup: `SCALE-Sim_TPU/reports/A_noncompute_ops.md`.
+
+---
+
+## d. TPU v6e calibration progress (in progress)
+
+> Live log for building the **TPU v6e** per-op `.pkl` models on this VM. Updated as
+> each step lands so a VM crash leaves a recoverable breadcrumb. Started 2026-06-21.
+
+**Target device:** `TPU v6 lite` (v6e), 8 devices, jax 0.6.2, bf16, single-device.
+**Env:** system `python3` (sees the TPU); `scikit-learn`+`pandas` installed.
+
+| # | step | command | output | status |
+|---|------|---------|--------|--------|
+| 0 | env + log | `pip install scikit-learn pandas`; verify TPU | — | ✅ done |
+| 3 | collect 25 ops | `PJRT_DEVICE=TPU python3 collect_ops_tpu.py --ops … --n 1500 --outdir <tmp>` | `<op>_dataset.csv` × 25 | ⏳ pending |
+| 4 | train | `python3 train_ops.py --datadir <tmp> --outdir ../tpuv6e` | `model/tpuv6e/*.pkl` | ⏳ pending |
+| 4 | integrate | make `NonComputeLatencyPredictor` generation-aware (pick `tpuv6e` via `TimeLinearModel`) | `stablehlo_converter.py`, `scale.py` | ⏳ pending |
+
+**Per-op val MAPE summary (filled in when training completes):** _pending_

@@ -127,3 +127,23 @@ Notes: train on **device time** (additive, composable with the compute path). Th
 dims / dataflow in the config matching what you calibrated, or refit.
 
 > Fuller writeup: `SCALE-Sim_TPU/reports/B_gemm_linear.md`.
+
+---
+
+## d. TPU v6e calibration progress (in progress)
+
+> Live log for building the **TPU v6e** `G_roof` coefficients on this VM. Updated
+> as each step lands so a VM crash leaves a recoverable breadcrumb. Started 2026-06-21.
+
+**Target device:** `TPU v6 lite` (v6e), 8 devices, jax 0.6.2, bf16, single-device.
+**Env:** system `python3` (sees the TPU); `scikit-learn`+`pandas` installed for the fit.
+
+| # | step | command | output | status |
+|---|------|---------|--------|--------|
+| 0 | env + log | `pip install scikit-learn pandas`; verify TPU | — | ✅ done |
+| 1 | sample shapes | `python3 sample_shapes.py` | `shapes.csv` | ⏳ pending |
+| 1 | collect on v6e | `PJRT_DEVICE=TPU python3 collect_gemm_tpu.py --shuffle --out gemm_master_tpuv6e.csv` | `gemm_master_tpuv6e.csv` | ⏳ pending |
+| 2 | fit G_roof | `python3 fit_gemm.py --data gemm_master_tpuv6e.csv --out gemm_linear_tpuv6e.json` | `gemm_linear_tpuv6e.json` | ⏳ pending |
+| 2 | integrate | rewrite `tpuv6e_linear_model` → G_roof; add M,N,K to sig; fix call sites; write `tpuv6e_coeffs.json` | `tpu.py` | ⏳ pending |
+
+**Resulting coefficients (filled in when fit completes):** `A=…  B=…  bytes_per_cycle=…`
