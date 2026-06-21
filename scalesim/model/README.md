@@ -131,3 +131,9 @@ Most ops land in the 4–6% band (matching the v4 reference). `sine`/`cosine` (~
 transcendental variance) and `broadcast_in_dim` (21.8%) are the known outliers —
 the latter is the documented train/serve shape-skew (trained on the driver/output
 shape, but the converter feeds the first-input shape; see Limitations above).
+
+**End-to-end validated** (2026-06-21): `python3 scalesim/scale.py -b -c
+configs/tpuv6e.cfg -t topologies/stablehlo/smollm2-135m.stablehlo.mlir` modeled
+2781/2800 ops; the predictor resolved `TimeLinearModel: TPUv6e` → `model/tpuv6e/`
+and the reported per-op latencies match the tpuv6e `.pkl`s (not the tpuv4
+fallback). Data: `calibration/datasets_tpuv6e/*.csv`.

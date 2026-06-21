@@ -150,3 +150,9 @@ dims / dataflow in the config matching what you calibrated, or refit.
 (G_roof val MAPE **25.0%** on 1420 held-out GEMMs; vs G0 27.9%, placebo M·N·K 35.5%.
 A 3-segment fit scored 22.5% but its breakpoints are unmotivated — G_roof shipped for
 interpretability, matching v4. Fallback G0 `A0=7.489e-5, B0=0.855`.)
+
+**Config + end-to-end validated** (2026-06-21): added `configs/tpuv6e.cfg`
+(`TimeLinearModel: TPUv6e`, 128×128 WS, compute-bound — matching the calibration).
+Verified the model drives `TIME_REPORT.csv` for both GEMM topologies
+(`topologies/GEMM_mnk/NCF.csv -i gemm`) and a full StableHLO model
+(`topologies/stablehlo/smollm2-135m.stablehlo.mlir -b`).
