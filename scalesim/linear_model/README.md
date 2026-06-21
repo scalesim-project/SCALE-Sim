@@ -141,9 +141,12 @@ dims / dataflow in the config matching what you calibrated, or refit.
 | # | step | command | output | status |
 |---|------|---------|--------|--------|
 | 0 | env + log | `pip install scikit-learn pandas`; verify TPU | — | ✅ done |
-| 1 | sample shapes | `python3 sample_shapes.py` | `shapes.csv` | ⏳ pending |
-| 1 | collect on v6e | `PJRT_DEVICE=TPU python3 collect_gemm_tpu.py --shuffle --out gemm_master_tpuv6e.csv` | `gemm_master_tpuv6e.csv` | ⏳ pending |
-| 2 | fit G_roof | `python3 fit_gemm.py --data gemm_master_tpuv6e.csv --out gemm_linear_tpuv6e.json` | `gemm_linear_tpuv6e.json` | ⏳ pending |
-| 2 | integrate | rewrite `tpuv6e_linear_model` → G_roof; add M,N,K to sig; fix call sites; write `tpuv6e_coeffs.json` | `tpu.py` | ⏳ pending |
+| 1 | sample shapes | `python3 sample_shapes.py` | `shapes.csv` (7097 shapes) | ✅ done |
+| 1 | collect on v6e | `PJRT_DEVICE=TPU python3 collect_gemm_tpu.py --shuffle --out gemm_master_tpuv6e.csv` | `gemm_master_tpuv6e.csv` (7097 ok) | ✅ done |
+| 2 | fit G_roof | `python3 fit_gemm.py --data gemm_master_tpuv6e.csv --out gemm_linear_tpuv6e.json` | `gemm_linear_tpuv6e.json` | ✅ done |
+| 2 | integrate | rewrite `tpuv6e_linear_model` → G_roof; add M,N,K to sig; fix call sites; write `tpuv6e_coeffs.json` | `tpu.py`, `simulator.py`, `bypass_compute.py` | ✅ done |
 
-**Resulting coefficients (filled in when fit completes):** `A=…  B=…  bytes_per_cycle=…`
+**Resulting coefficients:** `A = 3.048e-5 µs/cyc   B = 0.879 µs   bytes_per_cycle = 39.07`
+(G_roof val MAPE **25.0%** on 1420 held-out GEMMs; vs G0 27.9%, placebo M·N·K 35.5%.
+A 3-segment fit scored 22.5% but its breakpoints are unmotivated — G_roof shipped for
+interpretability, matching v4. Fallback G0 `A0=7.489e-5, B0=0.855`.)

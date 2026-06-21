@@ -64,7 +64,7 @@ def _layer_time_us(time_model, cycles, s_row, s_col, t_time, M, N, K):
     if time_model == 'TPUv5e':
         return tpuv5e_linear_model(cycles, s_row, s_col, t_time)
     if time_model == 'TPUv6e':
-        return tpuv6e_linear_model(cycles, s_row, s_col, t_time)
+        return tpuv6e_linear_model(cycles, s_row, s_col, t_time, M, N, K)
     return None
 
 

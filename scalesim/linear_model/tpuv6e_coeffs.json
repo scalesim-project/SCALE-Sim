@@ -1,0 +1,23 @@
+{
+  "model": "G_roof",
+  "form": "time_us = A*max(cycles, bytes/bytes_per_cycle) + B",
+  "device": "TPU v6 lite (v6e), single device, bf16, jax 0.6.2",
+  "A_us_per_cycle": 3.048108888396471e-05,
+  "B_us": 0.8789530113345402,
+  "bytes_per_cycle": 39.07396064038605,
+  "bytes_moved": "2*(M*K+K*N+M*N) bf16",
+  "fallback_G0": {
+    "A": 7.488700448879183e-05,
+    "B": 0.8550086502536669
+  },
+  "val_mape": 0.249742780529933,
+  "placebo_const_mape": 1.34571,
+  "placebo_MNK_mape": 0.35474,
+  "n_total": 7097,
+  "n_train": 5677,
+  "n_val": 1420,
+  "signal": "latency_us_device",
+  "cycle_model": "closed_form v1-1: (2*S+S+M-2)*ceil(N/S)*ceil(K/S)-1, S=128; matches SCALE-Sim",
+  "effective_clock_ns": 0.03048108888396471,
+  "note": "Calibrated on a real TPU v6e on 2026-06-21. A data-chosen 3-segment fit (G_seg) scored 22.5% val MAPE vs G_roof 25.0%, but its intensity breakpoints are unmotivated; G_roof is shipped for interpretability (same rationale as TPU v4). Data: calibration/gemm_master_tpuv6e.csv; full fit report: calibration/gemm_linear_tpuv6e.json."
+}

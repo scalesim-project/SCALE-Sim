@@ -246,7 +246,7 @@ class simulator:
             elif time_linear_model == 'TPUv5e':
                 time_us = tpuv5e_linear_model(total_cycles, s_row, s_col, t_time)
             elif time_linear_model == 'TPUv6e':
-                time_us = tpuv6e_linear_model(total_cycles, s_row, s_col, t_time)
+                time_us = tpuv6e_linear_model(total_cycles, s_row, s_col, t_time, M, N, K)
             else:
                 # Default: no conversion, just use cycles as time
                 time_us = total_cycles
