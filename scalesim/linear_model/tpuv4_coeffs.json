@@ -1,0 +1,22 @@
+{
+  "model": "G_roof",
+  "form": "time_us = A*max(cycles, bytes/bytes_per_cycle) + B",
+  "A_us_per_cycle": 3.4082892257395366e-05,
+  "B_us": 1.470841789063479,
+  "bytes_per_cycle": 29.473692968738646,
+  "bytes_moved": "2*(M*K+K*N+M*N) bf16",
+  "fallback_G0": {
+    "A": 0.00010941119711042656,
+    "B": 1.4237668165026633
+  },
+  "val_mape": 0.16548876677984178,
+  "llm_mape": 0.17854150012225262,
+  "placebo_const_mape": 1.8790381761150061,
+  "placebo_MNK_mape": 0.2569947768401538,
+  "n_train": 5694,
+  "n_val": 1424,
+  "signal": "latency_us_device",
+  "cycle_model": "closed_form v1-1: (2*S+S+M-2)*ceil(N/S)*ceil(K/S)-1, S=128; matches SCALE-Sim 72/73 gpt2 layers",
+  "effective_clock_ns": 0.034082892257395365,
+  "note": "coeffs fit on corrected v1 cycles (M-streaming), consistent with scalesim/bypass_compute.py and the simulator"
+}

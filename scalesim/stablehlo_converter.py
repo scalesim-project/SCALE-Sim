@@ -10,9 +10,13 @@ from __future__ import annotations
 
 import os
 import sys
+import pickle
+import json
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 import math
+import numpy as np
+import pandas as pd
 
 # Try to import the StableHLO parser (now local to scalesim)
 try:
@@ -24,6 +28,482 @@ except ImportError as e:
     STABLEHLO_AVAILABLE = False
     StableHLOParser = None
     OpInfo = None
+
+
+class NonComputeOpsStore:
+    """
+    Storage class for non-convolution and non-GEMM StableHLO operations.
+    
+    This class keeps track of all operations that are not compute-intensive
+    (i.e., not convolutions or matrix multiplications), such as:
+    - Element-wise operations (add, subtract, multiply, divide, etc.)
+    - Reshape, transpose, broadcast operations
+    - Activation functions (relu, sigmoid, tanh, etc.)
+    - Reduction operations (reduce_sum, reduce_max, etc.)
+    - Other utility operations
+    
+    Each operation is stored as an OpInfo object preserving all original information.
+    """
+    
+    # Operation categories for classification
+    ELEMENTWISE_OPS = {
+        'stablehlo.add', 'stablehlo.subtract', 'stablehlo.multiply', 'stablehlo.divide',
+        'stablehlo.maximum', 'stablehlo.minimum', 'stablehlo.power', 'stablehlo.remainder',
+        'stablehlo.negate', 'stablehlo.abs', 'stablehlo.sign', 'stablehlo.ceil', 'stablehlo.floor',
+        'stablehlo.round_nearest_afz', 'stablehlo.sqrt', 'stablehlo.rsqrt',
+        'stablehlo.exp', 'stablehlo.expm1', 'stablehlo.log', 'stablehlo.log_plus_one',
+        'stablehlo.sine', 'stablehlo.cosine', 'stablehlo.tanh',
+        'stablehlo.compare', 'stablehlo.select', 'stablehlo.clamp',
+        'stablehlo.and', 'stablehlo.or', 'stablehlo.xor', 'stablehlo.not',
+    }
+    
+    ACTIVATION_OPS = {
+        'stablehlo.logistic',  # sigmoid
+        'stablehlo.tanh',
+    }
+    
+    RESHAPE_OPS = {
+        'stablehlo.reshape', 'stablehlo.transpose', 'stablehlo.broadcast_in_dim',
+        'stablehlo.concatenate', 'stablehlo.slice', 'stablehlo.dynamic_slice',
+        'stablehlo.gather', 'stablehlo.scatter', 'stablehlo.pad',
+        'stablehlo.reverse', 'stablehlo.bitcast_convert',
+    }
+    
+    REDUCTION_OPS = {
+        'stablehlo.reduce', 'stablehlo.reduce_window',
+        'stablehlo.reduce_precision',
+    }
+    
+    CONVERT_OPS = {
+        'stablehlo.convert', 'stablehlo.bitcast_convert',
+    }
+    
+    OTHER_OPS = {
+        'stablehlo.constant', 'stablehlo.iota', 'stablehlo.rng',
+        'stablehlo.custom_call', 'stablehlo.tuple', 'stablehlo.get_tuple_element',
+    }
+    
+    def __init__(self):
+        """Initialize the non-compute operations store."""
+        self.ops: List[OpInfo] = []
+        self.ops_by_category: dict = {
+            'elementwise': [],
+            'activation': [],
+            'reshape': [],
+            'reduction': [],
+            'convert': [],
+            'other': [],
+        }
+    
+    def add_op(self, op: OpInfo) -> None:
+        """
+        Add a non-compute operation to the store.
+        
+        Args:
+            op: OpInfo object representing the StableHLO operation
+        """
+        self.ops.append(op)
+        
+        # Categorize the operation
+        op_name_lower = op.op_name.lower()
+        
+        if op.op_name in self.ELEMENTWISE_OPS or any(e in op_name_lower for e in ['add', 'subtract', 'multiply', 'divide', 'maximum', 'minimum']):
+            self.ops_by_category['elementwise'].append(op)
+        elif op.op_name in self.ACTIVATION_OPS or 'logistic' in op_name_lower or 'tanh' in op_name_lower:
+            self.ops_by_category['activation'].append(op)
+        elif op.op_name in self.RESHAPE_OPS or any(r in op_name_lower for r in ['reshape', 'transpose', 'broadcast', 'slice', 'gather', 'scatter', 'pad']):
+            self.ops_by_category['reshape'].append(op)
+        elif op.op_name in self.REDUCTION_OPS or 'reduce' in op_name_lower:
+            self.ops_by_category['reduction'].append(op)
+        elif op.op_name in self.CONVERT_OPS or 'convert' in op_name_lower:
+            self.ops_by_category['convert'].append(op)
+        else:
+            self.ops_by_category['other'].append(op)
+    
+    def get_ops(self) -> List[OpInfo]:
+        """Return all stored operations."""
+        return self.ops
+    
+    def get_ops_by_category(self, category: str) -> List[OpInfo]:
+        """
+        Get operations by category.
+        
+        Args:
+            category: One of 'elementwise', 'activation', 'reshape', 'reduction', 'convert', 'other'
+            
+        Returns:
+            List of OpInfo objects in the specified category
+        """
+        return self.ops_by_category.get(category, [])
+    
+    def get_op_count(self) -> int:
+        """Return total number of stored operations."""
+        return len(self.ops)
+    
+    def get_category_counts(self) -> dict:
+        """Return counts of operations by category."""
+        return {cat: len(ops) for cat, ops in self.ops_by_category.items()}
+    
+    def get_summary(self) -> str:
+        """Return a summary string of stored operations."""
+        lines = [f"Non-Compute Operations Store: {len(self.ops)} total operations"]
+        for cat, ops in self.ops_by_category.items():
+            if ops:
+                lines.append(f"  {cat}: {len(ops)} ops")
+                # Show first few op names
+                op_names = list(set(op.op_name for op in ops[:5]))
+                lines.append(f"    Examples: {', '.join(op_names)}")
+        return '\n'.join(lines)
+    
+    def to_jsonable(self) -> dict:
+        """Convert the store to a JSON-serializable dictionary."""
+        return {
+            'total_count': len(self.ops),
+            'category_counts': self.get_category_counts(),
+            'operations': [op.to_jsonable() for op in self.ops],
+        }
+    
+    def __len__(self) -> int:
+        return len(self.ops)
+    
+    def __iter__(self):
+        return iter(self.ops)
+    
+    def __repr__(self) -> str:
+        return f"NonComputeOpsStore({len(self.ops)} operations)"
+
+
+class NonComputeLatencyPredictor:
+    """
+    Predicts latency for non-compute StableHLO operations using pre-trained models.
+    
+    This class loads pre-trained sklearn models for elementwise operations
+    and predicts their execution latency based on input tensor shapes.
+    
+    Available models are stored as .pkl files in the model directory.
+    """
+    
+    # Mapping from StableHLO op names to model file names
+    OP_NAME_TO_MODEL = {
+        'stablehlo.add': 'add',
+        'stablehlo.subtract': 'subtract',
+        'stablehlo.multiply': 'multiply',
+        'stablehlo.maximum': 'maximum',
+        'stablehlo.minimum': 'minimum',
+    }
+    
+    def __init__(self, model_dir: str = None, verbose: bool = True):
+        """
+        Initialize the latency predictor.
+        
+        Args:
+            model_dir: Directory containing pre-trained model .pkl files.
+                       If None, uses the default location in scalesim/model/tpuv4/
+            verbose: Whether to print loading progress
+        """
+        self.verbose = verbose
+        
+        # Default model directory
+        if model_dir is None:
+            model_dir = Path(__file__).parent / "model" / "tpuv4"
+        else:
+            model_dir = Path(model_dir)
+        
+        self.model_dir = model_dir
+        self.models: Dict[str, Any] = {}  # op_name -> model
+        self.available_ops: List[str] = []
+        
+        self._load_available_models()
+    
+    def _load_available_models(self) -> None:
+        """Load all available models from the model directory."""
+        if not self.model_dir.exists():
+            if self.verbose:
+                print(f"Warning: Model directory not found: {self.model_dir}")
+            return
+        
+        if self.verbose:
+            print(f"Loading latency prediction models from: {self.model_dir}")
+        
+        for pkl_file in self.model_dir.glob("*.pkl"):
+            op_name = pkl_file.stem  # e.g., "add" from "add.pkl"
+            try:
+                with open(pkl_file, "rb") as f:
+                    model_data = pickle.load(f)
+                
+                # Handle both raw model and dict format
+                if isinstance(model_data, dict) and "model" in model_data:
+                    self.models[op_name] = model_data["model"]
+                else:
+                    self.models[op_name] = model_data
+                
+                self.available_ops.append(op_name)
+                
+                if self.verbose:
+                    print(f"  Loaded model: {op_name}")
+                    
+            except Exception as e:
+                if self.verbose:
+                    print(f"  Warning: Failed to load {pkl_file}: {e}")
+        
+        if self.verbose:
+            print(f"Loaded {len(self.models)} latency prediction models")
+    
+    def _make_features(self, shapes: List[Tuple[int, int, int]]) -> pd.DataFrame:
+        """
+        Create feature dataframe for model prediction.
+        
+        Args:
+            shapes: List of (d0, d1, d2) shape tuples
+            
+        Returns:
+            DataFrame with features: d0, d1, d2, size, log2_size
+        """
+        df = pd.DataFrame({
+            "d0": [s[0] for s in shapes],
+            "d1": [s[1] for s in shapes],
+            "d2": [s[2] for s in shapes],
+        })
+        df["size"] = df["d0"] * df["d1"] * df["d2"]
+        df["log2_size"] = np.log2(df["size"].clip(lower=1)).astype(np.float32)
+        return df
+    
+    def _opinfo_to_shape(self, op: 'OpInfo') -> Tuple[int, int, int]:
+        """
+        Extract a 3D shape from an OpInfo object.
+        
+        Pads shapes with 1s to make them 3D.
+        
+        Args:
+            op: OpInfo object
+            
+        Returns:
+            Tuple (d0, d1, d2) representing the shape
+        """
+        if not op.input_types:
+            return (1, 1, 1)
+        
+        # Use the first input's shape
+        shape, _ = op.input_types[0]
+        
+        # Pad to 3D
+        if len(shape) == 0:
+            return (1, 1, 1)
+        elif len(shape) == 1:
+            return (shape[0], 1, 1)
+        elif len(shape) == 2:
+            return (shape[0], shape[1], 1)
+        elif len(shape) == 3:
+            return (shape[0], shape[1], shape[2])
+        else:
+            # For higher dimensions, flatten trailing dims
+            d0 = shape[0]
+            d1 = shape[1]
+            d2 = int(np.prod(shape[2:]))
+            return (d0, d1, d2)
+    
+    def _get_model_for_op(self, op_name: str) -> Optional[Any]:
+        """
+        Get the appropriate model for a StableHLO operation.
+        
+        Args:
+            op_name: Full StableHLO operation name (e.g., "stablehlo.add")
+            
+        Returns:
+            Model if available, None otherwise
+        """
+        # Check direct mapping
+        if op_name in self.OP_NAME_TO_MODEL:
+            model_name = self.OP_NAME_TO_MODEL[op_name]
+            return self.models.get(model_name)
+        
+        # Try extracting op name from stablehlo prefix
+        if op_name.startswith("stablehlo."):
+            base_name = op_name.split(".")[-1]
+            if base_name in self.models:
+                return self.models[base_name]
+        
+        return None
+    
+    def predict_op_latency(self, op: 'OpInfo') -> Optional[float]:
+        """
+        Predict latency for a single operation.
+        
+        Args:
+            op: OpInfo object representing the operation
+            
+        Returns:
+            Predicted latency in microseconds, or None if model not available
+        """
+        model = self._get_model_for_op(op.op_name)
+        if model is None:
+            return None
+        
+        shape = self._opinfo_to_shape(op)
+        features = self._make_features([shape])
+        
+        prediction = model.predict(features)[0]
+        return float(prediction)
+    
+    def predict_batch(self, ops: List['OpInfo']) -> List[Dict[str, Any]]:
+        """
+        Predict latencies for a batch of operations.
+        
+        Args:
+            ops: List of OpInfo objects
+            
+        Returns:
+            List of result dictionaries with op info and predictions
+        """
+        results = []
+        
+        for idx, op in enumerate(ops):
+            shape = self._opinfo_to_shape(op)
+            model = self._get_model_for_op(op.op_name)
+            
+            result = {
+                "idx": idx,
+                "op_name": op.op_name,
+                "shape": shape,
+                "size": shape[0] * shape[1] * shape[2],
+                "has_model": model is not None,
+                "predicted_latency": None,
+            }
+            
+            if model is not None:
+                features = self._make_features([shape])
+                result["predicted_latency"] = float(model.predict(features)[0])
+            
+            results.append(result)
+        
+        return results
+    
+    def predict_from_store(self, store: NonComputeOpsStore) -> List[Dict[str, Any]]:
+        """
+        Predict latencies for all operations in a NonComputeOpsStore.
+        
+        Args:
+            store: NonComputeOpsStore containing operations to predict
+            
+        Returns:
+            List of result dictionaries with op info and predictions
+        """
+        return self.predict_batch(store.get_ops())
+    
+    def write_predictions_to_file(
+        self, 
+        results: List[Dict[str, Any]], 
+        output_path: str,
+        format: str = "csv"
+    ) -> None:
+        """
+        Write prediction results to a file.
+        
+        Args:
+            results: List of result dictionaries from predict_batch
+            output_path: Path to output file
+            format: Output format ("csv" or "json")
+        """
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        if format.lower() == "csv":
+            df = pd.DataFrame(results)
+            # Expand shape tuple to separate columns
+            df["dim_0"] = df["shape"].apply(lambda x: x[0])
+            df["dim_1"] = df["shape"].apply(lambda x: x[1])
+            df["dim_2"] = df["shape"].apply(lambda x: x[2])
+            df = df.drop(columns=["shape"])
+            
+            # Reorder columns
+            cols = ["idx", "op_name", "dim_0", "dim_1", "dim_2", "size", 
+                    "has_model", "predicted_latency"]
+            df = df[cols]
+            
+            df.to_csv(output_path, index=False)
+            
+        elif format.lower() == "json":
+            # Convert shapes to lists for JSON serialization
+            json_results = []
+            for r in results:
+                jr = r.copy()
+                jr["shape"] = list(jr["shape"])
+                json_results.append(jr)
+            
+            with open(output_path, "w") as f:
+                json.dump(json_results, f, indent=2)
+        else:
+            raise ValueError(f"Unknown format: {format}. Use 'csv' or 'json'.")
+        
+        if self.verbose:
+            print(f"Predictions written to: {output_path}")
+    
+    def predict_and_save(
+        self, 
+        store: NonComputeOpsStore, 
+        output_path: str,
+        format: str = "csv"
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Predict latencies for a store and save to file.
+        
+        Args:
+            store: NonComputeOpsStore containing operations
+            output_path: Path to output file
+            format: Output format ("csv" or "json")
+            
+        Returns:
+            Tuple of (results list, summary statistics)
+        """
+        results = self.predict_from_store(store)
+        self.write_predictions_to_file(results, output_path, format)
+        
+        # Calculate summary statistics
+        predicted_ops = [r for r in results if r["has_model"]]
+        unpredicted_ops = [r for r in results if not r["has_model"]]
+        
+        summary = {
+            "total_ops": len(results),
+            "predicted_ops": len(predicted_ops),
+            "unpredicted_ops": len(unpredicted_ops),
+            "total_predicted_latency": sum(r["predicted_latency"] for r in predicted_ops),
+            "ops_by_type": {},
+        }
+        
+        # Count ops by type
+        for r in results:
+            op_name = r["op_name"]
+            if op_name not in summary["ops_by_type"]:
+                summary["ops_by_type"][op_name] = {"count": 0, "predicted": 0, "total_latency": 0}
+            summary["ops_by_type"][op_name]["count"] += 1
+            if r["has_model"]:
+                summary["ops_by_type"][op_name]["predicted"] += 1
+                summary["ops_by_type"][op_name]["total_latency"] += r["predicted_latency"]
+        
+        if self.verbose:
+            print(f"\nPrediction Summary:")
+            print(f"  Total operations:      {summary['total_ops']}")
+            print(f"  With model available:  {summary['predicted_ops']}")
+            print(f"  Without model:         {summary['unpredicted_ops']}")
+            print(f"  Total predicted time:  {summary['total_predicted_latency']:.6f} μs")
+            print(f"\n  Operations by type:")
+            for op_name, stats in summary["ops_by_type"].items():
+                model_status = "✓" if stats["predicted"] > 0 else "✗"
+                latency_str = f"{stats['total_latency']:.6f} μs" if stats["predicted"] > 0 else "N/A"
+                print(f"    {model_status} {op_name}: {stats['count']} ops, latency: {latency_str}")
+        
+        return results, summary
+    
+    def get_available_ops(self) -> List[str]:
+        """Return list of operation names with available models."""
+        return self.available_ops.copy()
+    
+    def is_op_supported(self, op_name: str) -> bool:
+        """Check if a model is available for the given operation."""
+        return self._get_model_for_op(op_name) is not None
+    
+    def __repr__(self) -> str:
+        return f"NonComputeLatencyPredictor(models={self.available_ops})"
 
 
 class StableHLOConverter:
@@ -54,6 +534,9 @@ class StableHLOConverter:
         self.verbose = verbose
         self.parser = StableHLOParser(mlir_path=str(mlir_file))
         self.ops = self.parser.get_ops_list()
+        
+        # Store for non-compute operations (not conv or gemm)
+        self.non_compute_ops = NonComputeOpsStore()
         
         if self.verbose:
             print(f"Loaded {len(self.ops)} operations from {mlir_file}")
@@ -430,8 +913,10 @@ class StableHLOConverter:
                     pass  # Already counted
             
             else:
+                # Store non-compute operations (not conv or gemm)
+                self.non_compute_ops.add_op(op)
                 if self.verbose:
-                    print(f"  Skipping unsupported op: {op.op_name}")
+                    print(f"  Stored non-compute op: {op.op_name}")
             
             if entry:
                 topology_entries.append(entry)
@@ -441,9 +926,111 @@ class StableHLOConverter:
             print(f"  Total operations: {len(self.ops)}")
             print(f"  Converted convolutions: {conv_count}")
             print(f"  Converted GEMMs: {gemm_count}")
+            print(f"  Non-compute operations stored: {len(self.non_compute_ops)}")
             print(f"  Output format: {input_type}")
         
         return topology_entries, input_type
+    
+    def build_op_table(self, model_dir: str = None) -> List[Dict[str, Any]]:
+        """
+        Build a program-ordered table of every op (compute + non-compute) for the
+        unified TIME_REPORT. One row per op, in MLIR program order:
+
+          op_id    : global program index (stable, orders the report)
+          kind     : 'compute' (dot_general/convolution/dot) or 'noncompute'
+          op       : short op name (e.g. 'transpose')
+          stablehlo: short signature 'op in_shapes->out_shape dtype' (no attrs;
+                     the latency models are shape-only, so attrs are omitted)
+          layer    : compute-layer index == COMPUTE_REPORT LayerID (None/N/A for
+                     non-compute) -- lets a row be matched to the cycle report
+          time_us  : non-compute predicted latency (None if no model); compute
+                     times are filled in later from the simulator's per-layer time
+          modeled  : whether a latency was produced
+
+        Call after convert_to_topology(). Mirrors that method's compute/non-compute
+        split exactly, so layer indexing matches the topology / COMPUTE_REPORT.
+        """
+        predictor = NonComputeLatencyPredictor(model_dir=model_dir, verbose=False)
+        table: List[Dict[str, Any]] = []
+        layer = 0
+        for gidx, op in enumerate(self.ops):
+            nm = op.op_name.lower()
+            is_compute = ("convolution" in nm or "dot_general" in nm
+                          or op.op_name == "stablehlo.dot")
+            row = {"op_id": gidx, "op": op.op_name.split(".")[-1],
+                   "stablehlo": _short_op_sig(op)}
+            if is_compute:
+                row.update(kind="compute", layer=layer, time_us=None, modeled=True)
+                layer += 1
+            else:
+                t = predictor.predict_op_latency(op)
+                row.update(kind="noncompute", layer=None, time_us=t,
+                           modeled=t is not None)
+            table.append(row)
+        return table
+
+    def get_non_compute_ops(self) -> NonComputeOpsStore:
+        """
+        Get the store containing all non-compute operations.
+        
+        Note: This is populated after calling convert_to_topology().
+        
+        Returns:
+            NonComputeOpsStore containing all non-conv and non-gemm operations
+        """
+        return self.non_compute_ops
+    
+    def get_non_compute_ops_list(self) -> List[OpInfo]:
+        """
+        Get a list of all non-compute OpInfo objects.
+        
+        Note: This is populated after calling convert_to_topology().
+        
+        Returns:
+            List of OpInfo objects for non-conv and non-gemm operations
+        """
+        return self.non_compute_ops.get_ops()
+    
+    def predict_non_compute_latencies(
+        self, 
+        output_path: str = None,
+        model_dir: str = None,
+        format: str = "csv"
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Predict latencies for all non-compute operations using pre-trained models.
+        
+        Note: Call convert_to_topology() first to populate non_compute_ops.
+        
+        Args:
+            output_path: Path to save predictions (optional). If None, no file is written.
+            model_dir: Directory containing model .pkl files. If None, uses default.
+            format: Output format ("csv" or "json")
+            
+        Returns:
+            Tuple of (results list, summary statistics)
+        """
+        if len(self.non_compute_ops) == 0:
+            if self.verbose:
+                print("Warning: No non-compute operations found. "
+                      "Did you call convert_to_topology() first?")
+            return [], {"total_ops": 0, "predicted_ops": 0, "unpredicted_ops": 0}
+        
+        predictor = NonComputeLatencyPredictor(model_dir=model_dir, verbose=self.verbose)
+        
+        if output_path:
+            return predictor.predict_and_save(self.non_compute_ops, output_path, format)
+        else:
+            results = predictor.predict_from_store(self.non_compute_ops)
+            # Calculate summary
+            predicted_ops = [r for r in results if r["has_model"]]
+            summary = {
+                "total_ops": len(results),
+                "predicted_ops": len(predicted_ops),
+                "unpredicted_ops": len(results) - len(predicted_ops),
+                "total_predicted_latency": sum(r["predicted_latency"] for r in predicted_ops),
+            }
+            return results, summary
     
     def save_to_csv(self, output_path: str, input_type: str = None) -> str:
         """
@@ -499,7 +1086,24 @@ class StableHLOConverter:
         return final_input_type
 
 
-def convert_stablehlo_to_topology(mlir_file: str, output_csv: str = None, 
+def _short_op_sig(op: 'OpInfo') -> str:
+    """Compact, shapes-only signature: 'name in1·in2->out dtype' (no attributes,
+    since the latency models are shape-only). E.g.
+      'transpose 1x128x12x64->1x12x128x64 f32'
+      'dot_general 128x768·768x2304->128x2304 f32'."""
+    def shp(sig):
+        dims, _ = sig
+        return "x".join(str(d) for d in dims) if dims else "scalar"
+    name = op.op_name.split(".")[-1]
+    ins = "·".join(shp(s) for s in op.input_types) if op.input_types else ""
+    out = shp(op.output_types[0]) if op.output_types else ""
+    dt = (op.input_types[0][1] if op.input_types
+          else (op.output_types[0][1] if op.output_types else ""))
+    core = f"{ins}->{out}" if (ins and out) else (ins or out)
+    return " ".join(p for p in (name, core, dt) if p)
+
+
+def convert_stablehlo_to_topology(mlir_file: str, output_csv: str = None,
                                    verbose: bool = False) -> Tuple[str, str]:
     """
     Convenience function to convert a StableHLO MLIR file to SCALE-Sim topology CSV.
@@ -530,12 +1134,17 @@ def convert_stablehlo_to_topology(mlir_file: str, output_csv: str = None,
     return output_csv, input_type
 
 
-def convert_mlir_if_needed(topology_file: str, inp_type: str, logpath: str) -> Tuple[str, str, bool]:
+def convert_mlir_if_needed(
+    topology_file: str, 
+    inp_type: str, 
+    logpath: str
+) -> Tuple[str, str, bool]:
     """
     Check if the topology file is a .mlir file and convert it if needed.
     
     This function is used by SCALE-Sim's main entry point to automatically
-    detect and convert MLIR files to topology CSV format.
+    detect and convert MLIR files to topology CSV format. It also automatically
+    predicts latencies for non-compute operations and saves them to a time report.
     
     Args:
         topology_file: Path to the topology or MLIR file
@@ -566,26 +1175,57 @@ def convert_mlir_if_needed(topology_file: str, inp_type: str, logpath: str) -> T
         output_csv = Path(logpath) / f"{topology_path.stem}_converted_topology.csv"
         output_csv.parent.mkdir(parents=True, exist_ok=True)
         
-        # Convert the MLIR file
-        converted_csv, detected_type = convert_stablehlo_to_topology(
-            str(topology_file),
-            str(output_csv),
-            verbose=False
-        )
+        # Create converter and convert
+        converter = StableHLOConverter(str(topology_file), verbose=False)
+        detected_type = converter.save_to_csv(str(output_csv))
         
-        # Use detected type if input type is auto or matches
+        # Use detected type if input type is auto
         if inp_type == "auto":
             final_type = detected_type
         else:
             final_type = inp_type
-            print(f"\nNote: Using user-specified input type '{inp_type}' "
-                  f"(auto-detected: '{detected_type}')")
         
-        print(f"\nConverted topology saved to: {converted_csv}")
-        return converted_csv, final_type, True
+        print(f"Converted topology saved to: {output_csv}")
+        
+        # Build the program-ordered op table (compute + non-compute, with
+        # non-compute latencies predicted) and stash it for the post-run combiner,
+        # which merges it with the simulator's per-layer compute times into the
+        # single unified TIME_REPORT.csv (see scalesim/total_time_report.py).
+        op_table = converter.build_op_table()
+        op_table_path = Path(logpath) / f"{topology_path.stem}_op_table.json"
+        with open(op_table_path, "w") as f:
+            json.dump(op_table, f)
+        print(f"Op table saved to: {op_table_path}")
+
+        return str(output_csv), final_type, True
     
     # Not a MLIR file, return as-is
     return topology_file, inp_type, False
+
+
+def _write_non_compute_time_report(results: List[Dict[str, Any]], output_path: str) -> None:
+    """
+    Write non-compute latency predictions to a simple time report CSV.
+    
+    Format matches TIME_REPORT.csv:
+    LayerID, Time (us),
+    
+    Args:
+        results: List of prediction result dicts from NonComputeLatencyPredictor
+        output_path: Path to output CSV file
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_path, 'w') as f:
+        f.write("LayerID, Time (us),\n")
+        for r in results:
+            layer_id = r["idx"]
+            # Use predicted latency if available, otherwise N/A
+            if r["predicted_latency"] is not None:
+                f.write(f"{layer_id}, {r['predicted_latency']},\n")
+            else:
+                f.write(f"{layer_id}, N/A,\n")
 
 
 if __name__ == "__main__":
