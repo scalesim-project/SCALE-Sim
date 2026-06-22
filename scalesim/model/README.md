@@ -133,7 +133,27 @@ the latter is the documented train/serve shape-skew (trained on the driver/outpu
 shape, but the converter feeds the first-input shape; see Limitations above).
 
 **End-to-end validated** (2026-06-21): `python3 scalesim/scale.py -b -c
-configs/tpuv6e.cfg -t topologies/stablehlo/smollm2-135m.stablehlo.mlir` modeled
+configs/tpuv6e.cfg -t topologies/stablehlo/llm/smollm2-135m.stablehlo.mlir` modeled
 2781/2800 ops; the predictor resolved `TimeLinearModel: TPUv6e` → `model/tpuv6e/`
 and the reported per-op latencies match the tpuv6e `.pkl`s (not the tpuv4
 fallback). Data: `calibration/datasets_tpuv6e/*.csv`.
+
+### e. End-to-end accuracy vs real v6e silicon (2026-06-22)
+
+Measured whole-model wall-clock on this v6e (`topologies/stablehlo/llm/run_groundtruth.py
+--gen tpu_v6e`, torch_xla, seq=128, batch=1, 50 iters; ground truth in
+`measured_tpu_v6e.json`) vs the SCALE-Sim bypass TOTAL (`-b -c configs/tpuv6e.cfg`):
+
+| model | measured | device-only | +v4 dispatch (19.75µs) | +v6e dispatch (5.712µs) |
+|-------|---------:|------------:|-----------------------:|------------------------:|
+| gpt2 | 7,049 µs | −69.8% | +172.3% | **+0.2%** |
+| qwen2.5-0.5b | 18,818 µs | −66.9% | +184.7% | **+5.9%** |
+| smollm2-135m | 22,376 µs | −75.7% | +171.4% | **−4.2%** |
+| **MAPE** | | 70.8% | 176.1% | **3.4%** |
+
+Whole-model wall-clock = `device_compute + dispatch · n_ops`. Pure device-compute
+is only ~30% of measured time; per-op overhead dominates. The inherited TPU v4
+dispatch (19.75 µs/op) is ~3.5× too high for v6e — fitting `measured = device +
+d·n_ops` gives **d = 5.712 µs/op** (consistent across all 3 models), for **3.4%
+end-to-end MAPE**. This constant is wired generation-aware in
+`scalesim/total_time_report.py` (`DISPATCH_US_PER_OP_BY_GEN`).

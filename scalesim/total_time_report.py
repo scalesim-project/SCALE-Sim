@@ -25,10 +25,26 @@ import glob
 import json
 import os
 
-# Per-op dispatch cost for the eager-execution wall-clock model (us/op).
-# Calibrated end-to-end on TPU v4 (gpt2/qwen/smollm2); see
-# SCALE-Sim_TPU/reports/C_integration.md. A fused/compiled deployment -> ~0.
+# Per-op dispatch cost for the eager-execution wall-clock model (us/op),
+# calibrated end-to-end (measured whole-model wall-clock vs SCALE-Sim device
+# total, fit as measured = device + dispatch * n_ops). A fused/compiled
+# deployment -> ~0.
+#   TPUv4 : 19.75  (gpt2/qwen/smollm2; see SCALE-Sim_TPU/reports/C_integration.md)
+#   TPUv6e:  5.712 (gpt2/qwen/smollm2 measured on this VM 2026-06-22; end-to-end
+#                   MAPE 3.4% with this constant vs 176% reusing the v4 value;
+#                   ground truth in topologies/stablehlo/llm/measured_tpu_v6e.json)
+DISPATCH_US_PER_OP_BY_GEN = {
+    "TPUv4": 19.75,
+    "TPUv6e": 5.712,
+}
 DEFAULT_DISPATCH_US_PER_OP = 19.75
+
+
+def dispatch_for_generation(generation):
+    """Per-op dispatch cost (us/op) for a TPU generation; DEFAULT if unknown."""
+    if not generation:
+        return DEFAULT_DISPATCH_US_PER_OP
+    return DISPATCH_US_PER_OP_BY_GEN.get(generation, DEFAULT_DISPATCH_US_PER_OP)
 
 
 def _read_compute_times(run_dir):
@@ -43,12 +59,18 @@ def _read_compute_times(run_dir):
     return times
 
 
-def write_total_time_report(logpath, run_dir, dispatch_us_per_op=DEFAULT_DISPATCH_US_PER_OP):
+def write_total_time_report(logpath, run_dir, dispatch_us_per_op=None, generation=None):
     """Join op table + compute times into the single unified TIME_REPORT.csv.
+
+    The eager wall-clock column uses a per-op dispatch cost: an explicit
+    `dispatch_us_per_op` if given, else the value calibrated for `generation`
+    (e.g. TPUv6e -> 5.712 us/op), else the DEFAULT.
 
     No-op (returns False) when no op table is present, e.g. a plain CSV-topology
     run, leaving the standard per-layer TIME_REPORT.csv untouched.
     """
+    if dispatch_us_per_op is None:
+        dispatch_us_per_op = dispatch_for_generation(generation)
     tables = glob.glob(os.path.join(logpath, "*_op_table.json"))
     if not tables:
         return False

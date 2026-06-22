@@ -112,7 +112,8 @@ Examples:
     try:
         from scalesim.total_time_report import write_total_time_report
         run_dir = os.path.join(logpath, s.config.get_run_name())
-        if write_total_time_report(logpath, run_dir):
+        generation = s.config.get_time_linear_model()
+        if write_total_time_report(logpath, run_dir, generation=generation):
             print(f"Unified time report: {os.path.join(run_dir, 'TIME_REPORT.csv')}")
     except Exception as e:
         print(f"Warning: could not write unified time report: {e}")

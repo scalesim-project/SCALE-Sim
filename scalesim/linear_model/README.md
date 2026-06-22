@@ -155,4 +155,4 @@ interpretability, matching v4. Fallback G0 `A0=7.489e-5, B0=0.855`.)
 (`TimeLinearModel: TPUv6e`, 128×128 WS, compute-bound — matching the calibration).
 Verified the model drives `TIME_REPORT.csv` for both GEMM topologies
 (`topologies/GEMM_mnk/NCF.csv -i gemm`) and a full StableHLO model
-(`topologies/stablehlo/smollm2-135m.stablehlo.mlir -b`).
+(`topologies/stablehlo/llm/smollm2-135m.stablehlo.mlir -b`).
