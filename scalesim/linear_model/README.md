@@ -159,47 +159,80 @@ Verified the model drives `TIME_REPORT.csv` for both GEMM topologies
 
 ---
 
-## e. Pure-device (xprof) measurement — trace-authoritative kernel time
+## e. Pure-device (xprof) profiling — trace-authoritative `fusion` kernel time
 
-`collect_gemm_tpu.py` derives its `latency_us_device` **indirectly** — an in-JIT
-`fori_loop` and a wall-clock subtraction `(t_K − t_1)/(K−1)` that cancels the fixed
-host dispatch. `collect_pure_device_gemm_tpu.py` is the **direct** alternative: it
-compiles the GEMM (`jit().lower().compile()`), runs it under `jax.profiler.trace`,
-and reads the kernel's span on the **TPU:0 device timeline** straight from the trace
-— host/PJRT dispatch and the host→device sync floor excluded *by construction*.
+`collect_gemm_tpu.py` derives `latency_us_device` **indirectly** — an in-JIT
+`fori_loop` + wall-clock subtraction `(t_K − t_1)/(K−1)` that cancels host dispatch.
+`collect_pure_device_gemm_tpu.py` is the **direct** alternative: it compiles the
+GEMM (`jit().lower().compile()`), runs it under `jax.profiler.trace`, and reads the
+matmul span on the **TPU:0 device timeline** straight from the trace.
 
-Its CSV is a **drop-in for `fit_gemm.py`** (same `gemm_master.csv` columns):
-`latency_us_device` = pure xprof kernel time, `latency_us_wallclock` = python-timer
-execute+block, plus an extra `host_us = wall − kernel`. So you can refit G_roof on
-pure-kernel labels with `python3 fit_gemm.py --data gemm_pure_master.csv`.
+### The three timing levels (what the trace separates)
 
-**What the trace shows (TPU v4, bf16):**
-- **Pure kernel time `≈ 1.14e-4 µs/cyc · cycles + 12.6 µs` floor** — and the
-  `1.14e-4` slope matches the shipped `A` once the sim-cycle↔hardware-cycle factor
-  is accounted for, an independent confirmation of the cycle model.
-- **`host_us` is flat ~90 µs per execute**, work-independent — the per-execute (not
-  per-op) launch cost. It is correctly *outside* the device label.
-- The wall-clock "device" signal (`collect_gemm_tpu.py`) conflates the **~12 µs
-  kernel floor** with **~52 µs device sync**; xprof separates them. So for the
-  *compute-bound slope* the two methods agree, but they differ on the floor `B`:
-  the trace gives the true kernel floor, the subtraction gives kernel+sync.
+A single GEMM execution decomposes into three nested levels — the collector records
+all three (columns `latency_us_device` / `program_us` / `host_us`):
 
-**Method notes (baked into the script):** the TPU device PID is auto-detected from
-the trace `process_name` (`/device:TPU:0`) — never hardcode `pid == 3`;
-`jax.named_call` does not propagate to the device op, so it takes the dominant
-device span (which also avoids double-counting nested fusions); summing per-event
-`dur` would overstate a multi-op graph (use `max(end)−min(start)` there), but a
-single GEMM is one kernel so the mean span is exact. xprof tracing is slower than
-the loop method (one trace/parse per shape) — use it to **audit** the G_roof fit
-and **pin the floor/host constants**, while `collect_gemm_tpu.py` remains the
-fast bulk collector for refitting.
+| level | column | 128³ | 2048³ | nature |
+|---|---|---|---|---|
+| matmul kernel (`fusion` span) | `latency_us_device` | **1.2 µs** | 70.8 µs | **per-GEMM compute** — what the model targets |
+| whole program (`jit_*` wrapper) | `program_us` | 12.8 µs | 82.4 µs | kernel + per-LAUNCH overhead |
+| execute+block (python timer) | `latency_us_wallclock` | ~105 µs | ~175 µs | program + host dispatch |
 
-**Usage:**
+So `program − fusion ≈ 11 µs` is fixed **per-launch** overhead (DMA setup / sync /
+prologue), and `wall − program ≈ 92 µs` is **host** dispatch. Both are flat (work-
+independent) and **per-execute, not per-GEMM** — they belong in the whole-model
+`C_forward` constant, never multiplied per layer.
+
+> **Extraction bug fixed (2026-06-24).** An earlier version took the *dominant*
+> device span, which is the outer `jit_*` wrapper = the **whole program**, and so
+> reported a ~14 µs "kernel floor" for tiny GEMMs. That ~14 µs was 1.2 µs of matmul
+> + ~13 µs of launch overhead. The collector now sums the **inner op spans**
+> (`fusion`, copy, …) for `latency_us_device` and reports the wrapper separately as
+> `program_us`. The corrected matmul floor (~1.2–1.5 µs) matches the loop method.
+
+The CSV is a **drop-in for `fit_gemm.py`** (`--data … --signal latency_us_device`).
+
+### Stratified shape sampling (`stratified_shapes.py`)
+
+The 8 regions are very unevenly populated under random sampling — at 7097 random
+shapes the rare large regions (`r3`,`r7`: N≥16 ∧ M≥16 tiles) got only ~40–67 points,
+too few for their 3-param G_roof, while `r0`/`r4` got ~2700 each. Since xprof traces
+**one shape at a time** (XLA recompiles per distinct shape, ~2–3 s — the real cost),
+blindly collecting 7000 is ~15 h and *still* starves the rare regions.
+
+`stratified_shapes.py` instead bins candidate shapes by `region(M,N,K)` and fills
+each region to a **quota** (~150, 180 for the rare `r3`/`r7`), log-uniform over that
+region's allowed sub-ranges with enough size spread to expose the floor→compute
+slope. **~1260 shapes (≥150/region)** gives every region a stable fit in **~1 h** —
+cheaper than 7000 random *and* statistically better where the model has parameters.
+
+### Accuracy (predicting the golden `fusion` kernel time)
+
+The fusion signal is clean (identical tiny shapes vary <1%, unlike the ~±15–20%
+jitter in the launch wrapper), so the fit is good. The loop-method signal is ≈ the
+fusion span, so the shipped piecewise table's **14.2% full-space MAPE** is the
+established full-coverage fusion-time accuracy. The exact stratified-fusion fit (per
+region) is recorded in `scalesim/calibration_pure/RESULTS.md`.
+
+### Pipeline / usage
+
 ```bash
-cd scalesim/linear_model/calibration
-PJRT_DEVICE=TPU python3 collect_pure_device_gemm_tpu.py --shuffle \
-    --shapes shapes.csv --out gemm_pure_master.csv --iters 30   # -> drop-in for fit_gemm.py
+cd scalesim/calibration_pure
+python3 stratified_shapes.py                       # -> shapes_stratified.csv (~1260)
+cd ../linear_model/calibration
+PJRT_DEVICE=TPU python3 collect_pure_device_gemm_tpu.py \
+    --shapes ../../calibration_pure/shapes_stratified.csv \
+    --out ../../calibration_pure/gemm_fusion_strat.csv --iters 8   # fusion/program/host
+cd ../../calibration_pure
+python3 fit_piecewise_pure.py gemm_fusion_strat.csv               # single + 8-region MAPE
 ```
+
+**Method notes (baked in):** TPU device PID auto-detected from `process_name`
+(`/device:TPU:0`) — never hardcode `pid == 3`; the kernel = sum of inner (non-`jit_`)
+op spans (avoids counting the wrapper); each trace folder is deleted after parsing
+(disk-bounded) so the CSV is the only persisted output. Use this to **calibrate the
+fusion-time model and pin the per-launch/host constants**; `collect_gemm_tpu.py`
+remains the fast bulk collector for the marginal signal.
 
 > Matmul floor/host/slope measurement that seeded this:
 > `SCALE-Sim_TPU/e2e_work/compensation/measure_xprof.py`. The non-compute-op

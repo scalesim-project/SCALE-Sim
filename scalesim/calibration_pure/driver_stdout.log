@@ -1,0 +1,15 @@
+[01:08:32] === PURE-DEVICE CALIBRATION START ===
+[01:08:32] Phase 1: GEMM xprof collection -> gemm_pure_master.csv
+[03:53:28] Phase 1 done (7098 rows)
+[03:53:28] Phase 2: non-compute xprof collection -> datasets_pure_tpuv4/
+[03:53:28]   ops batch: add subtract multiply divide maximum
+[04:36:59]   ops batch: minimum negate rsqrt exponential logistic
+[05:20:50]   ops batch: tanh power sine cosine convert
+[06:15:50]   ops batch: compare and select batch_norm_training reduce
+[07:00:47]   ops batch: slice transpose reshape broadcast concatenate
+[08:01:59] Phase 2 done (25 op datasets)
+[08:01:59] Phase 3: fit_gemm on pure-kernel labels -> gemm_linear_pure_tpuv4.json
+[08:01:59] Phase 3 done
+[08:01:59] Phase 4: train_ops on pure datasets -> model/tpuv4_pure/
+[08:02:13] Phase 4 done (25 pkl models)
+[08:02:13] === PURE-DEVICE CALIBRATION COMPLETE ===

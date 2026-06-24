@@ -182,25 +182,35 @@ per shape:
 `train_ops.py` (same `[d0,d1,d2,size,log2_size,latency_us]` schema; `wall/host`
 are extra columns).
 
+The collector records three nested levels per op (cols `latency_us`=`kernel_us` /
+`program_us` / `wall_us`), exactly like the GEMM case (see `linear_model/README.md`
+§e for the table): the op's **`fusion` kernel** span, the **whole-program** (`jit_*`
+wrapper) span, and the python-timer wall.
+
 **What it found (TPU v4, bf16):**
-- **`host_us` is flat at ~90–94 µs** across every op type and 4 orders of magnitude
-  of tensor size. The host cost is **per-execute, not per-op** — a single op pays
+- **`host_us` is flat at ~90–94 µs** (`wall − program`) across every op type and 4
+  orders of magnitude of tensor size. Per-**execute**, not per-op — a single op pays
   it once, and so does a whole fused model. (This is *why* a fitted per-op host
-  constant `c` collapses to 0 in the whole-model compensation; the cost is a single
-  per-forward term, not a per-op one.)
-- **Pure kernel time has a small per-kernel device floor** (~10–13 µs) plus a
-  size-proportional term; for matmul the slope is `1.14e-4 µs/cyc`, matching the
-  GEMM linear model's effective clock. The wall-clock "floor" (~65 µs) measured by
-  subtraction was **kernel floor (~12 µs) + device sync (~52 µs)** conflated; xprof
-  separates them.
+  constant `c` collapses to 0 in the whole-model compensation; it's one per-forward
+  term, not a per-op one.) The per-launch program overhead (`program − kernel`) is
+  similarly a flat ~11 µs, also per-execute.
+- **The matmul/op `fusion` kernel floor is ~1.2–1.5 µs** (not the ~12 µs an earlier
+  version reported). See the correction note below.
+
+> **Extraction bug fixed (2026-06-24).** The first version took the *dominant*
+> device span = the outer `jit_*` **whole-program** wrapper, so it reported a ~12 µs
+> "kernel floor" that was really 1.2 µs of `fusion` + ~11 µs per-launch overhead.
+> The collector now sums the **inner op spans** (`fusion`, copy, …) for `kernel_us`
+> and reports the wrapper separately as `program_us`. This also fixes ops like
+> `reshape` (a free bitcast: ~0 real kernel, was inflated by the wrapper).
 
 **Method notes / gotchas (baked into the script):**
 - The TPU device-stream PID is **auto-detected** from the trace `process_name`
   metadata (`/device:TPU:0`). Do **not** hardcode `pid == 3` — it varies across
   libtpu/multi-device.
 - `jax.named_call(name=…)` does **not** propagate to the device op; the device span
-  is named after the jit function. The script takes the **dominant** device span
-  (max total `dur`) on TPU:0, which also avoids double-counting nested fusion ops.
+  is named after the jit function. Take the **inner** (non-`jit_`) op spans as the
+  kernel, NOT the dominant span (the wrapper nests them — that was the bug above).
 - Summing per-event `dur` overstates a *multi-op* graph's span (MXU/VPU overlap);
   fine for a single-kernel op, but for a whole graph use `max(end)−min(start)`.
 - xprof tracing is slower than the loop method (one trace/parse per shape), so keep
