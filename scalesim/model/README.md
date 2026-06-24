@@ -218,3 +218,35 @@ PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py \
 > Whole-model use of these constants (the two-factor MXU/VPU + per-forward-host
 > compensation) is in `scalesim/total_time_report.py`; the matmul floor/host
 > measurement that seeded it is `SCALE-Sim_TPU/e2e_work/compensation/measure_xprof.py`.
+
+---
+
+## g. TPU v6e pure-device single-op set (`model/tpuv6e_pure/`) (2026-06-24)
+
+Rebuilt all 25 v6e per-op models on **trace-authoritative pure-kernel labels**
+(`collect_pure_device_tpu.py`, xprof device-span, n=300/op, iters=12; data in
+`calibration/datasets_pure_tpuv6e/*_pure_dataset.csv`), trained with the same
+`train_ops.py` recipe and written to **`model/tpuv6e_pure/`**.
+
+**These are an AUDIT / constant-pinning set, not the production models.** As §f
+predicts, pure-kernel labels are noisier per shape than the loop-averaged marginal
+labels, so the fitted MAPEs are higher than the loop-method `model/tpuv6e/` set:
+
+| set | label source | n/op | typical val MAPE |
+|-----|--------------|-----:|-----------------:|
+| `model/tpuv6e/` (production) | loop method (marginal) | 1000 | **4–6%** |
+| `model/tpuv6e_pure/` (audit) | xprof pure kernel | 300 | **12–29%** |
+
+Pure-set per-op val MAPE, best→worst: `power 12.4 · tanh 12.4 · exponential 12.6
+· rsqrt 12.7 · transpose 12.7 · negate 12.9 · logistic 13.5 · divide 13.6 · and
+13.8 · multiply 13.9 · slice 14.0 · subtract 14.1 · compare 14.2 · select 14.2 ·
+convert 14.3 · minimum 14.3 · add 14.6 · maximum 14.6 · concatenate 16.0 · cosine
+17.9 · sine 18.6 · batch_norm_training 20.0 · broadcast_in_dim 23.2 · reduce 25.4
+· reshape 28.8` (%).
+
+The elevated MAPE is the *measurement* (single-kernel xprof span, n=300) being
+noisier than the loop method — not a worse op. The pure set gives the true
+standalone device kernel time (floor included), which is the right quantity for
+auditing the loop models and for pinning the whole-model compensation constants
+(C_forward, MXU/VPU factors in `total_time_report.py`); the loop-method
+`model/tpuv6e/` remains the production single-op predictor.
