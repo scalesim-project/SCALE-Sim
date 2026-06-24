@@ -156,3 +156,51 @@ interpretability, matching v4. Fallback G0 `A0=7.489e-5, B0=0.855`.)
 Verified the model drives `TIME_REPORT.csv` for both GEMM topologies
 (`topologies/GEMM_mnk/NCF.csv -i gemm`) and a full StableHLO model
 (`topologies/stablehlo/llm/smollm2-135m.stablehlo.mlir -b`).
+
+---
+
+## e. Pure-device (xprof) measurement — trace-authoritative kernel time
+
+`collect_gemm_tpu.py` derives its `latency_us_device` **indirectly** — an in-JIT
+`fori_loop` and a wall-clock subtraction `(t_K − t_1)/(K−1)` that cancels the fixed
+host dispatch. `collect_pure_device_gemm_tpu.py` is the **direct** alternative: it
+compiles the GEMM (`jit().lower().compile()`), runs it under `jax.profiler.trace`,
+and reads the kernel's span on the **TPU:0 device timeline** straight from the trace
+— host/PJRT dispatch and the host→device sync floor excluded *by construction*.
+
+Its CSV is a **drop-in for `fit_gemm.py`** (same `gemm_master.csv` columns):
+`latency_us_device` = pure xprof kernel time, `latency_us_wallclock` = python-timer
+execute+block, plus an extra `host_us = wall − kernel`. So you can refit G_roof on
+pure-kernel labels with `python3 fit_gemm.py --data gemm_pure_master.csv`.
+
+**What the trace shows (TPU v4, bf16):**
+- **Pure kernel time `≈ 1.14e-4 µs/cyc · cycles + 12.6 µs` floor** — and the
+  `1.14e-4` slope matches the shipped `A` once the sim-cycle↔hardware-cycle factor
+  is accounted for, an independent confirmation of the cycle model.
+- **`host_us` is flat ~90 µs per execute**, work-independent — the per-execute (not
+  per-op) launch cost. It is correctly *outside* the device label.
+- The wall-clock "device" signal (`collect_gemm_tpu.py`) conflates the **~12 µs
+  kernel floor** with **~52 µs device sync**; xprof separates them. So for the
+  *compute-bound slope* the two methods agree, but they differ on the floor `B`:
+  the trace gives the true kernel floor, the subtraction gives kernel+sync.
+
+**Method notes (baked into the script):** the TPU device PID is auto-detected from
+the trace `process_name` (`/device:TPU:0`) — never hardcode `pid == 3`;
+`jax.named_call` does not propagate to the device op, so it takes the dominant
+device span (which also avoids double-counting nested fusions); summing per-event
+`dur` would overstate a multi-op graph (use `max(end)−min(start)` there), but a
+single GEMM is one kernel so the mean span is exact. xprof tracing is slower than
+the loop method (one trace/parse per shape) — use it to **audit** the G_roof fit
+and **pin the floor/host constants**, while `collect_gemm_tpu.py` remains the
+fast bulk collector for refitting.
+
+**Usage:**
+```bash
+cd scalesim/linear_model/calibration
+PJRT_DEVICE=TPU python3 collect_pure_device_gemm_tpu.py --shuffle \
+    --shapes shapes.csv --out gemm_pure_master.csv --iters 30   # -> drop-in for fit_gemm.py
+```
+
+> Matmul floor/host/slope measurement that seeded this:
+> `SCALE-Sim_TPU/e2e_work/compensation/measure_xprof.py`. The non-compute-op
+> equivalent + the kernel/host findings are in `scalesim/model/README.md` §f.

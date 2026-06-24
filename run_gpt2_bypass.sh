@@ -11,7 +11,7 @@ cd "$(dirname "$0")"
 
 MLIR=topologies/stablehlo/llm/gpt2.stablehlo.mlir
 CONFIG=configs/tpuv4.cfg
-OUT=./results/llm_gpt2_bypass
+OUT=./results/llm_gpt2
 
 # JAX_PLATFORMS=cpu: parsing the MLIR uses JAX, but the bypass needs no TPU, so we
 # keep JAX off the accelerator. -i gemm: treat dot_general layers as GEMM.

@@ -57,6 +57,24 @@ def closed_form_cycles(M, N, K, arr_h=128, arr_w=128):
     return (2 * arr_h + arr_w + M - 2) * math.ceil(N / arr_w) * math.ceil(K / arr_h) - 1
 
 
+def mem_cycles(M, N, K, bytes_per_cycle, dtype_bytes=2, sram_bytes=None,
+               arr_h=128, arr_w=128):
+    """Analytical memory-bound cycle estimate (roofline): bytes moved / bandwidth.
+
+        bytes_moved = dtype_bytes * (M*K + K*N + M*N)        # operand reads + output write
+
+    Optional tiling refetch: if the stationary operand (the K*N filter tile) does
+    not fit on-chip SRAM, the streamed operand is re-read once per N-fold:
+        bytes_moved += dtype_bytes * M*K * (ceil(N/arr_w) - 1)
+    Returns cycles; pair with closed_form_cycles via max() to get total (stalled)
+    cycles. `bytes_per_cycle` is calibrated against full SCALE-Sim (see M1.5).
+    """
+    bytes_moved = dtype_bytes * (M * K + K * N + M * N)
+    if sram_bytes is not None and dtype_bytes * K * N > sram_bytes:
+        bytes_moved += dtype_bytes * M * K * (math.ceil(N / arr_w) - 1)
+    return bytes_moved / bytes_per_cycle
+
+
 def _layer_time_us(time_model, cycles, s_row, s_col, t_time, M, N, K):
     """Apply the configured linear time model (returns None if model is OFF)."""
     if time_model == 'TPUv4':
@@ -84,14 +102,19 @@ def _layer_mnk(topo_obj, lid):
     return int(M), int(N), int(K)
 
 
-def run_bypass(config_obj, topo_obj, top_path, gemm_mode=False, verbose=True):
+def run_bypass(config_obj, topo_obj, top_path, gemm_mode=False, verbose=True,
+               memory_bw=None, sram_bytes=None):
     """Compute every layer's cycles via the closed form and write
     COMPUTE_REPORT.csv + TIME_REPORT.csv under top_path/<run_name>/.
 
     gemm_mode is accepted for call-site symmetry with scalesim's input_type_gemm
     but is not needed: _layer_mnk() recovers the true dims for both layer types.
-    Returns the report directory path. Mirrors the column layout the
-    cycle-accurate path produces, so downstream tooling is unchanged.
+
+    memory_bw (bytes/cycle): if given, adds the analytical roofline stall term so
+    total_cycles = max(compute_cycles, mem_cycles) and the Stall Cycles column is
+    populated -- reproducing full SCALE-Sim's memory behavior cheaply. If None
+    (default), reports the compute-bound floor (stall = 0).
+    Returns the report directory path.
     """
     arr_h, arr_w = config_obj.get_array_dims()
     dataflow = config_obj.get_dataflow()
@@ -112,17 +135,27 @@ def run_bypass(config_obj, topo_obj, top_path, gemm_mode=False, verbose=True):
     total_us = 0.0
     for lid in range(n_layers):
         M, N, K = _layer_mnk(topo_obj, lid)
-        cycles = closed_form_cycles(M, N, K, arr_h, arr_w)
+        compute_cyc = closed_form_cycles(M, N, K, arr_h, arr_w)
+
+        # analytical memory roofline: total = max(compute, mem); stall = the excess
+        if memory_bw:
+            mc = mem_cycles(M, N, K, memory_bw, sram_bytes=sram_bytes,
+                            arr_h=arr_h, arr_w=arr_w)
+            cycles = int(max(compute_cyc, mc))
+            stall = max(0, cycles - compute_cyc)
+        else:
+            cycles = compute_cyc
+            stall = 0
 
         # utilization metrics (analytical): useful MACs / (array * cycles)
         num_mac = M * N * K
         util = (num_mac * 100.0) / (cycles * array_size) if cycles else 0.0
         # mapping efficiency = utilization of the mapped array footprint
         mapped = min(K, arr_h) * min(N, arr_w) if min(K, arr_h) and min(N, arr_w) else 1
-        map_eff = (num_mac * 100.0) / (cycles * mapped) if cycles else 0.0
+        map_eff = (num_mac * 100.0) / (compute_cyc * mapped) if compute_cyc else 0.0
         map_eff = min(map_eff, 100.0)
 
-        compute_report.write(f'{lid}, {cycles}, {cycles}, 0, '
+        compute_report.write(f'{lid}, {cycles}, {cycles}, {stall}, '
                              f'{util:.2f}, {map_eff:.2f}, {util:.2f},\n')
 
         if time_model in ('TPUv4', 'TPUv5e', 'TPUv6e'):

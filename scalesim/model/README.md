@@ -26,7 +26,9 @@ Same recipe for every op (matches the originally-shipped 5 models):
   learning_rate=0.06, early_stopping="auto")`, 80/20 split.
 - **Measurement:** an in-JIT `fori_loop` runs the op many times on-device in a single
   dispatch; device time = `(t_K − t_1)/(K−1)` cancels the fixed ~55 µs host dispatch,
-  isolating kernel time. bf16, single device, no SPMD.
+  isolating kernel time. bf16, single device, no SPMD. (A trace-authoritative
+  cross-check, `collect_pure_device_tpu.py`, reads kernel time straight from the
+  xprof device timeline instead of subtracting — see §f.)
 - **Sampling:** ~1500 shapes/op, log-uniform over an activation-like 3-D space.
 
 **Shape-only by design:** the models take no op *attributes* (transpose permutation,
@@ -157,3 +159,62 @@ dispatch (19.75 µs/op) is ~3.5× too high for v6e — fitting `measured = devic
 d·n_ops` gives **d = 5.712 µs/op** (consistent across all 3 models), for **3.4%
 end-to-end MAPE**. This constant is wired generation-aware in
 `scalesim/total_time_report.py` (`DISPATCH_US_PER_OP_BY_GEN`).
+
+---
+
+## f. Pure-device (xprof) measurement — trace-authoritative kernel time
+
+The per-op labels in §a are isolated by an **indirect** wall-clock subtraction
+(`(t_K − t_1)/(K−1)` over an in-JIT loop). `collect_pure_device_tpu.py` is the
+**direct** alternative: it compiles the op (`jit().lower().compile()`), runs it
+under `jax.profiler.trace`, and reads the op's span on the **TPU:0 device
+timeline** straight from the trace — host/PJRT dispatch and the host→device sync
+floor are excluded *by construction*, not by subtraction. It records three columns
+per shape:
+
+| column | meaning |
+|--------|---------|
+| `kernel_us` (=`latency_us`) | pure device kernel time (xprof device-span, per call) |
+| `wall_us` | python-timer execute+block (host + device), per call |
+| `host_us` | `wall − kernel` = the per-execute non-TPU cost |
+
+`latency_us` is set equal to `kernel_us`, so the CSV is a drop-in for
+`train_ops.py` (same `[d0,d1,d2,size,log2_size,latency_us]` schema; `wall/host`
+are extra columns).
+
+**What it found (TPU v4, bf16):**
+- **`host_us` is flat at ~90–94 µs** across every op type and 4 orders of magnitude
+  of tensor size. The host cost is **per-execute, not per-op** — a single op pays
+  it once, and so does a whole fused model. (This is *why* a fitted per-op host
+  constant `c` collapses to 0 in the whole-model compensation; the cost is a single
+  per-forward term, not a per-op one.)
+- **Pure kernel time has a small per-kernel device floor** (~10–13 µs) plus a
+  size-proportional term; for matmul the slope is `1.14e-4 µs/cyc`, matching the
+  GEMM linear model's effective clock. The wall-clock "floor" (~65 µs) measured by
+  subtraction was **kernel floor (~12 µs) + device sync (~52 µs)** conflated; xprof
+  separates them.
+
+**Method notes / gotchas (baked into the script):**
+- The TPU device-stream PID is **auto-detected** from the trace `process_name`
+  metadata (`/device:TPU:0`). Do **not** hardcode `pid == 3` — it varies across
+  libtpu/multi-device.
+- `jax.named_call(name=…)` does **not** propagate to the device op; the device span
+  is named after the jit function. The script takes the **dominant** device span
+  (max total `dur`) on TPU:0, which also avoids double-counting nested fusion ops.
+- Summing per-event `dur` overstates a *multi-op* graph's span (MXU/VPU overlap);
+  fine for a single-kernel op, but for a whole graph use `max(end)−min(start)`.
+- xprof tracing is slower than the loop method (one trace/parse per shape), so keep
+  `--n` modest (default 300) — this is an **audit / constant-pinning** tool, while
+  the §a loop method remains the one used to *train* the size-driven models.
+
+**Usage:**
+```bash
+cd scalesim/model/calibration
+PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py \
+    --ops add multiply reduce transpose reshape broadcast \
+    --n 300 --iters 30 --outdir datasets_pure_tpuv4     # -> <op>_pure_dataset.csv
+```
+
+> Whole-model use of these constants (the two-factor MXU/VPU + per-forward-host
+> compensation) is in `scalesim/total_time_report.py`; the matmul floor/host
+> measurement that seeded it is `SCALE-Sim_TPU/e2e_work/compensation/measure_xprof.py`.
