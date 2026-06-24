@@ -1,23 +1,27 @@
 import math
 
 # --- TPU v4 piecewise G_roof region table -----------------------------------
-# A single global G_roof has a systematic, shape-dependent bias: the effective
-# slope varies ~20x across the (M,N,K) space, so one (A,B,BW) cannot serve every
-# shape. We partition the WHOLE space by three physical tile-fold splits and fit
-# an independent G_roof per region. Each split is a hardware quantity -- whether
-# a dimension spans more than one 128x128 array tile (foldK>1) or is "wide" (>=16
-# tiles, the regime where output/weight streaming dominates):
+# Predicts a GEMM's device COMPUTE-kernel time (us) -- the matmul `fusion` span on
+# the device, NOT including the fixed per-program launch wrapper (that ~12us
+# per-execute overhead is a single C_forward term, handled by the compensation
+# layer, never per layer). The WHOLE (M,N,K) space is partitioned by three physical
+# tile-fold splits, each a hardware quantity -- whether a dimension spans more than
+# one 128x128 array tile (foldK>1) or is "wide" (>=16 tiles, where output/weight
+# streaming dominates) -- and an independent G_roof is fit per region:
 #
 #     region = (ceil(K/128) > 1) * 4         # deep-K  (weights exceed one tile row)
 #            + (ceil(N/128) >= 16) * 2        # wide-N  (many output-column folds)
 #            + (ceil(M/128) >= 16)            # tall-M  (long ifmap stream)
 #
-# Calibrated on 10,874 bf16 GEMMs measured on a real TPU v4 spanning the full
-# space (log-uniform M,N,K in [1,16384] + per-dim sweeps + tile-boundary + extreme
-# corners; SCALE-Sim_TPU/e2e_work/gemm_pw/). Selected over single/K-band/KxN/
-# intensity/aspect schemes by held-out MAPE (CV+BIC): full-space 18.8% -> 14.2%,
-# OOD-large 29.3% -> 20.4%, and LLM anchors 19.1% -> 13.3% (never a fitting target).
-# Per region: (A = eff. clock us/cyc, B = fixed overhead us, BW = bytes/cycle).
+# Floor B ~= 1.5us = the matmul kernel's own minimum device span (confirmed: the
+# xprof `fusion` event for a 128^3 matmul is 1.22us, matching this). Calibrated on
+# 10,874 full-space bf16 GEMMs (SCALE-Sim_TPU/e2e_work/gemm_pw/); held-out
+# full-space MAPE 14.2% (vs 18.8% single), OOD-large 20.4%. Per region:
+# (A = eff. clock us/cyc, B = kernel floor us, BW = bytes/cycle).
+#
+# (An earlier attempt fit B~14us from xprof, but that mistakenly read the whole-
+# program span instead of the matmul `fusion` span -- ~12us of it was per-execute
+# launch overhead, not per-GEMM. See scalesim/calibration_pure/RESULTS.md.)
 TPUV4_REGION_TABLE = {
     0: (5.652130e-06, 1.4190,   5.261),   # K=1, N<16, M<16  (small / thin)        n=3593
     1: (1.623043e-05, 1.5792,  20.377),   # K=1, N<16, M>=16 (tall, thin-K)        n=658
@@ -48,12 +52,15 @@ def tpuv4_linear_model(cycles, s_row=1, s_col=1, t_time=1, M=None, N=None, K=Non
         cyc_mem = bytes_moved / bytes_per_cycle[r]         # memory roofline term
         time_us = A[r] * max(cycles, cyc_mem) + B[r]       # A=eff. clock, B=overhead
 
-    where bytes_moved = 2*(M*K + K*N + M*N) for bf16 and r = region(M,N,K). A
-    single global G_roof had a ~20x slope spread across shapes (systematic bias on
-    thin-K / large-vocab / GEMV corners); the per-region fit removes it while
-    keeping every coefficient physical and the selector a few integer comparisons.
-    Calibrated on 10,874 full-space bf16 GEMMs (SCALE-Sim_TPU/e2e_work/gemm_pw/);
-    held-out full-space MAPE 14.2% (vs 18.8% single), OOD-large 20.4% (vs 29.3%).
+    where bytes_moved = 2*(M*K + K*N + M*N) for bf16 and r = region(M,N,K). The
+    target is the GEMM's device compute-kernel time (the matmul `fusion` span; the
+    fixed per-program launch overhead is a separate once-per-forward constant, not
+    charged per layer). A single global G_roof had a ~20x slope spread across shapes
+    (systematic bias on thin-K / large-vocab / GEMV corners); the per-region fit
+    removes it while keeping coefficients physical. Calibrated on 10,874 full-space
+    bf16 GEMMs (SCALE-Sim_TPU/e2e_work/gemm_pw/); held-out full-space MAPE 14.2%
+    (vs 18.8% single), OOD-large 20.4% (vs 29.3%). Floor B~1.5us = the matmul
+    kernel's minimum span (xprof `fusion` for 128^3 is 1.22us, confirming it).
 
     M,N,K are optional and passed by simulator.py for GEMM layers. If absent
     (e.g. conv layers or older call sites), it degrades gracefully to the

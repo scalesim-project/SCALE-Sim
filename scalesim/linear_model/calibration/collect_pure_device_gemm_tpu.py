@@ -52,28 +52,34 @@ def device_pid_tpu0(events):
     return None
 
 
-def kernel_us_from_trace(folder):
-    """Per-call pure kernel time = mean dur of the dominant device span on the
-    TPU:0 timeline (the executed HLO module). Taking the single largest-total-dur
-    span name avoids double-counting nested fusion ops."""
+def kernel_us_from_trace(folder, iters):
+    """Per-call device times from the TPU:0 timeline. Returns
+    (kernel_us, program_us): kernel = the matmul work (inner op spans: `fusion`,
+    copy, ...), program = the whole jit-module span (kernel + the fixed per-LAUNCH
+    overhead). The outer `jit_*` wrapper NESTS the inner ops, so we must NOT take
+    it as the kernel time -- that was the bug that inflated the floor to ~14us; the
+    real matmul `fusion` for a 128^3 is ~1.2us. program-kernel = the per-execute
+    launch overhead (~12us), a once-per-forward constant, not per-GEMM."""
     files = []
     for root, _, fs in os.walk(folder):
         files += [os.path.join(root, f) for f in fs if f.endswith(".trace.json.gz")]
     if not files:
-        return None
+        return None, None
     data = json.load(gzip.open(max(files, key=os.path.getmtime), "rt"))
     events = data.get("traceEvents", [])
     pid = device_pid_tpu0(events)
     if pid is None:
-        return None
-    by_name = {}
+        return None, None
+    inner = prog = 0.0
     for e in events:
         if e.get("pid") == pid and e.get("ph") == "X" and "dur" in e:
-            by_name.setdefault(e["name"], []).append(e["dur"])
-    if not by_name:
-        return None
-    durs = by_name[max(by_name, key=lambda n: sum(by_name[n]))]
-    return sum(durs) / len(durs)
+            if e["name"].startswith("jit"):     # outer whole-program wrapper span
+                prog += e["dur"]
+            else:                                # inner op spans = the real kernel
+                inner += e["dur"]
+    if inner == 0 and prog == 0:
+        return None, None
+    return inner / iters, prog / iters           # (kernel_us, program_us)
 
 
 def measure(m, n, k, warmup, iters, reps):
@@ -97,9 +103,9 @@ def measure(m, n, k, warmup, iters, reps):
     with jax.profiler.trace(folder):
         for _ in range(iters):
             compiled(a, b).block_until_ready()
-    kernel = kernel_us_from_trace(folder)
+    kernel, program = kernel_us_from_trace(folder, iters)
     shutil.rmtree(folder, ignore_errors=True)
-    return wall, kernel
+    return wall, kernel, program
 
 
 def main():
@@ -127,7 +133,7 @@ def main():
             done.add((int(r["M"]), int(r["N"]), int(r["K"])))
 
     fields = ["M", "N", "K", "shape_class", "dtype", "latency_us_wallclock",
-              "latency_us_device", "host_us", "cycles_compute", "status"]
+              "latency_us_device", "program_us", "host_us", "cycles_compute", "status"]
     new = not os.path.exists(args.out)
     fh = open(args.out, "a", newline="")
     w = csv.DictWriter(fh, fieldnames=fields)
@@ -141,19 +147,20 @@ def main():
             continue
         rec = {"M": m, "N": n, "K": k, "shape_class": r.get("shape_class", ""),
                "dtype": "bf16", "latency_us_wallclock": "", "latency_us_device": "",
-               "host_us": "", "cycles_compute": matmul_scale_sim_model(m, n, k),
-               "status": "ok"}
+               "program_us": "", "host_us": "",
+               "cycles_compute": matmul_scale_sim_model(m, n, k), "status": "ok"}
         if 2 * (m * k + k * n + m * n) > args.max_bytes:
             rec["status"] = "skip_oom"; n_skip += 1
         else:
             try:
-                wall, kernel = measure(m, n, k, args.warmup, args.iters, args.reps)
+                wall, kernel, program = measure(m, n, k, args.warmup, args.iters, args.reps)
                 if kernel is None:
                     rec["status"] = "err:no_trace"; n_err += 1
                 else:
                     rec["latency_us_wallclock"] = f"{wall:.4f}"
-                    rec["latency_us_device"] = f"{kernel:.4f}"     # PURE xprof kernel
-                    rec["host_us"] = f"{wall - kernel:.4f}"
+                    rec["latency_us_device"] = f"{kernel:.4f}"     # matmul `fusion` span
+                    rec["program_us"] = f"{program:.4f}"           # whole-program span
+                    rec["host_us"] = f"{wall - program:.4f}"
                     n_ok += 1
             except Exception as e:
                 rec["status"] = "err:" + repr(e)[:60]; n_err += 1

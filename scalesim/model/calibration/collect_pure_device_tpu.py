@@ -55,27 +55,32 @@ def device_pid_tpu0(events):
 
 
 def kernel_us_from_trace(folder, iters):
-    """Per-call pure kernel time = mean dur of the dominant device span on the
-    TPU:0 timeline (the executed HLO module, once per iteration). Taking the
-    single largest-total-dur span name avoids double-counting nested fusion ops."""
+    """Per-call device times from the TPU:0 timeline. Returns (kernel_us,
+    program_us): kernel = sum of the INNER op spans (`fusion`, copy, ...) = the
+    op's real device work; program = the whole jit-module span = kernel + the
+    fixed per-LAUNCH overhead. The outer `jit_*` wrapper NESTS the inner ops, so
+    taking it as the kernel time double-counts the launch overhead (the bug that
+    inflated tiny ops to ~14us). program-kernel ~= per-execute launch overhead."""
     files = []
     for root, _, fs in os.walk(folder):
         files += [os.path.join(root, f) for f in fs if f.endswith(".trace.json.gz")]
     if not files:
-        return None
+        return None, None
     data = json.load(gzip.open(max(files, key=os.path.getmtime), "rt"))
     events = data.get("traceEvents", [])
     pid = device_pid_tpu0(events)
     if pid is None:
-        return None
-    by_name = {}
+        return None, None
+    inner = prog = 0.0
     for e in events:
         if e.get("pid") == pid and e.get("ph") == "X" and "dur" in e:
-            by_name.setdefault(e["name"], []).append(e["dur"])
-    if not by_name:
-        return None
-    durs = by_name[max(by_name, key=lambda n: sum(by_name[n]))]
-    return sum(durs) / len(durs)          # mean device span per call
+            if e["name"].startswith("jit"):
+                prog += e["dur"]
+            else:
+                inner += e["dur"]
+    if inner == 0 and prog == 0:
+        return None, None
+    return inner / iters, prog / iters    # (kernel_us, program_us)
 
 
 def measure(kind, fn, d0, d1, d2, warmup, iters, reps):
@@ -98,9 +103,9 @@ def measure(kind, fn, d0, d1, d2, warmup, iters, reps):
     with jax.profiler.trace(folder):
         for _ in range(iters):
             compiled(*inputs).block_until_ready()
-    kernel = kernel_us_from_trace(folder, iters)
+    kernel, program = kernel_us_from_trace(folder, iters)
     shutil.rmtree(folder, ignore_errors=True)        # keep disk bounded
-    return kernel, wall
+    return kernel, program, wall
 
 
 def main():
@@ -123,20 +128,26 @@ def main():
         if op not in OPS:
             print(f"  SKIP unknown op {op}"); continue
         kind, fn = OPS[op]
-        out = os.path.join(args.outdir, f"{op}_pure_dataset.csv")
+        # named <op>_dataset.csv so train_ops.py's stem->op mapping works as-is
+        # (separate --outdir keeps these pure-kernel sets distinct from the loop sets)
+        out = os.path.join(args.outdir, f"{op}_dataset.csv")
+        if os.path.exists(out) and sum(1 for _ in open(out)) > len(shapes) // 2:
+            print(f"  {op:12s} already done ({out}), skipping"); continue
         fh = open(out, "w", newline=""); w = csv.writer(fh)
         w.writerow(["d0", "d1", "d2", "size", "log2_size",
-                    "latency_us", "kernel_us", "wall_us", "host_us"])
+                    "latency_us", "kernel_us", "program_us", "wall_us", "host_us"])
         t0 = time.perf_counter(); ok = 0
         for (d0, d1, d2) in shapes:
             try:
-                k, wall = measure(kind, fn, d0, d1, d2,
-                                  args.warmup, args.iters, args.reps)
+                k, program, wall = measure(kind, fn, d0, d1, d2,
+                                           args.warmup, args.iters, args.reps)
                 if k is None:
                     continue
                 size = d0 * d1 * d2
+                # latency_us == kernel_us (inner fusion span) for train_ops drop-in
                 w.writerow([d0, d1, d2, size, f"{math.log2(size):.6f}",
-                            f"{k:.6f}", f"{k:.6f}", f"{wall:.6f}", f"{wall - k:.6f}"])
+                            f"{k:.6f}", f"{k:.6f}", f"{program:.6f}",
+                            f"{wall:.6f}", f"{wall - program:.6f}"])
                 ok += 1
                 if ok % 50 == 0:
                     fh.flush()
