@@ -108,3 +108,48 @@ overfits the floor noise. So there is **no shape structure left to exploit**; th
 shapes too small to rise above it (that floor varies ±~15–20% run-to-run, which is
 not a function of M,N,K). The model is already at the achievable ceiling; the
 predictable part (compute-bound slope) is captured to ~3%.
+
+---
+
+# TPU v6e pure-device (fusion) calibration (2026-06-24)
+
+Re-profiled the v6e GEMM data with the **corrected** collector (reads the inner
+`fusion` span, not the outer `jit_*` wrapper). Earlier v6e pure data was collected
+with the pre-fix collector (whole-program span) and is superseded.
+
+- Data: `gemm_pure_master_tpuv6e.csv` — **1260 stratified GEMMs** (8 regions at
+  quota via `stratified_shapes.py`), `latency_us_device` = true matmul fusion time.
+- Fits: `gemm_linear_pure_tpuv6e.json` (single G_roof) and
+  `gemm_pure_piecewise_tpuv6e.json` (8-region table + constants).
+
+## Execution decomposition (v6e ≠ v4)
+
+| quantity | v6e | v4 (ref) |
+|---|---|---|
+| fusion floor (tiny GEMM) | ~1.27 µs | ~1.3 µs |
+| program − fusion (device launch span) | **~0.006 µs (none)** | ~11 µs |
+| host (`wall − program`), per execute | **~137 µs flat** | ~92 µs |
+
+**Key v6e difference:** the per-launch overhead is **entirely host dispatch**
+(~137 µs/execute) — there is **no separate device "program" span** (program ≈
+fusion). So the v6e per-execute *device-busy* floor is just the fusion floor
+(~1.3 µs), and the ~137 µs is host, not device.
+
+## GEMM fusion fit
+
+| model | held-out MAPE |
+|---|---|
+| single G_roof | 27–29% |
+| **piecewise (8 region)** | **11.6%** |
+
+Much better than v4's pure-device 24% ceiling: v6e fusion labels are *clean*
+(launch overhead lives in host, excluded from the fusion span), so there's no
+~14 µs launch-floor jitter corrupting small-GEMM labels. Region table in
+`gemm_pure_piecewise_tpuv6e.json` (rule `(foldK>1)*4+(foldN>=16)*2+(foldM>=16)`).
+
+## Implication for the whole-model compensation
+On v6e the device-busy per-execute floor ≈ the fusion floor (~1.3 µs), and the
+~137 µs host term is per-execute dispatch (not device). The compute-side
+`single_op` is the fusion latency (piecewise model above); the v6e `C_forward` /
+host constants for `total_time_report.py` should be pinned from these (next step),
+not reused from v4.
