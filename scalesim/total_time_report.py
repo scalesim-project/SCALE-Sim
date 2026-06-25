@@ -86,18 +86,18 @@ COMPENSATION_BY_GEN = {
     # NOT modelled. See SCALE-Sim_TPU/e2e_work/compensation/.
     "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0359,
               "c_c": 0.0, "c_n": 0.0, "C0_forward": 81.0, "C1_per_gemm": 0.253},
-    # v6e: same model + structure as v4 (a0=1, size-dependent C0 + C1*n_gemm).
-    # Calibrated batch-1 on 3 LLMs x seq{128,256,512} + tiny_transformer (the small-
-    # model anchor) -> calib_tpuv6e.csv via fit_compensation_v6e.py. a1=0.0295 is
-    # PINNED (non-compute fusion survival; Sn and n_gemm are confounded, so the free
-    # 3-param solve is degenerate -- a1 from the robust LLM fit, ~v4's 0.036). v6e's
-    # floor is large+constant (C0=321us) with a small positive per-kernel term
-    # (C1=0.80us) -- C0 >> v4's 81us, the real generational difference. In-sample
-    # 10.8% MAPE (~v4's 11.9%); tiny model now +13% (was +59% with a fixed C=490 fit
-    # only on the LLMs). Calibrated on 3 LLMs x seq{128,256,512,1024} + tiny. Batch>1
-    # occupancy NOT modelled.
-    "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0295,
-               "c_c": 0.0, "c_n": 0.0, "C0_forward": 329.8, "C1_per_gemm": 0.7559},
+    # v6e: same model + structure as v4 (a0=1, size-dependent C0 + C1*n_gemm). The
+    # non-compute single_op uses the PURE-DEVICE per-op models (model/tpuv6e_pure/,
+    # xprof kernel time incl. floor) -- NonComputeLatencyPredictor maps TPUv6e ->
+    # tpuv6e_pure. On this (larger, floor-inclusive) Sn basis the free 3-param solve
+    # is well-conditioned (a1,C1 > 0; no pinning needed, unlike the loop-method basis
+    # which was degenerate). Calibrated batch-1 on 3 LLMs x seq{128,256,512,1024} +
+    # tiny_transformer -> calib_tpuv6e.csv via fit_compensation_v6e.py. a1=0.0199
+    # (non-compute fusion survival on the pure basis), C0=331us (large constant
+    # per-forward floor, vs v4's 81us -- the real generational difference),
+    # C1=0.846us/GEMM. In-sample 10.9% MAPE (~v4's 11.9%). Batch>1 NOT modelled.
+    "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0199,
+               "c_c": 0.0, "c_n": 0.0, "C0_forward": 330.9, "C1_per_gemm": 0.8457},
 }
 
 

@@ -319,26 +319,34 @@ in-sample 10.8%.
 ### Predicted vs real latency, batch-1 (3 LLMs x seq) — `prediction_vs_real_tpuv6e.csv`
 
 Predicted = SCALE-Sim `tuned_us` TOTAL (`scale.py -b -c configs/tpuv6e.cfg`);
-real = torch.compile device-busy (`e2e_device_truth_tpuv6e.csv`).
+real = torch.compile device-busy (`e2e_device_truth_tpuv6e.csv`). Non-compute
+single_op uses the **pure-device** models (`model/tpuv6e_pure/`); compensation
+a1=0.0199, C0=330.9, C1=0.8457 (free fit, well-conditioned on the pure basis).
 
 | model | seq | predicted (us) | real (us) | err |
 |-------|----:|---------------:|----------:|----:|
-| gpt2 | 128 | 618.8 | 763.5 | −19.0% |
-| gpt2 | 256 | 737.2 | 792.3 | −7.0% |
-| gpt2 | 512 | 878.7 | 953.6 | −7.9% |
-| gpt2 | 1024 | 1517.9 | 1965.5 | −22.8% |
-| qwen2.5-0.5b | 128 | 1239.4 | 1521.2 | −18.5% |
-| qwen2.5-0.5b | 256 | 1607.8 | 1663.8 | −3.4% |
-| qwen2.5-0.5b | 512 | 1972.7 | 2154.9 | −8.5% |
-| qwen2.5-0.5b | 1024 | 3912.5 | 3750.0 | +4.3% |
-| smollm2-135m | 128 | 1128.8 | 1091.2 | +3.4% |
-| smollm2-135m | 256 | 1359.1 | 1177.3 | +15.4% |
-| smollm2-135m | 512 | 1611.5 | 1469.5 | +7.9% |
-| smollm2-135m | 1024 | 2677.5 | 2554.2 | +4.8% |
+| gpt2 | 128 | 611.2 | 763.5 | −19.9% |
+| gpt2 | 256 | 731.0 | 792.3 | −7.7% |
+| gpt2 | 512 | 897.1 | 953.6 | −5.9% |
+| gpt2 | 1024 | 1574.0 | 1965.5 | −19.9% |
+| qwen2.5-0.5b | 128 | 1224.0 | 1521.2 | −19.5% |
+| qwen2.5-0.5b | 256 | 1597.1 | 1663.8 | −4.0% |
+| qwen2.5-0.5b | 512 | 2051.5 | 2154.9 | −4.8% |
+| qwen2.5-0.5b | 1024 | 4092.4 | 3750.0 | +9.1% |
+| smollm2-135m | 128 | 1099.4 | 1091.2 | +0.8% |
+| smollm2-135m | 256 | 1328.9 | 1177.3 | +12.9% |
+| smollm2-135m | 512 | 1602.4 | 1469.5 | +9.0% |
+| smollm2-135m | 1024 | 2886.3 | 2554.2 | +13.0% |
 
-**12 points: mean |err| = 10.4%, median 8.2%, max 22.8%.** Per model: qwen 8.7% ·
-smollm2 8.3% · gpt2 14.1% (gpt2 is the smallest, overhead-dominated, and
-under-predicts at both seq extremes -- the large-vocab/overhead weak spot, same as
-v4; mid sizes/seqs are ~3-10%). Pipeline: export_stablehlo_v6e.py (fp32, shapes
-only) -> build_calib_v6e.py (JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e
-.py -> fit_compensation_v6e.py -> total_time_report.py.
+**12 points: mean |err| = 10.6%, median 9.1%.** Per model: qwen 9.4% · smollm2 8.9%
+· gpt2 13.3% (gpt2 is the smallest, overhead-dominated, under-predicts at both seq
+extremes -- the large-vocab/overhead weak spot, same as v4; mid sizes/seqs ~4-13%).
+
+**Pure vs loop-method non-compute models:** switching the non-compute single_op from
+the loop-method models (`model/tpuv6e/`) to the pure-device models
+(`model/tpuv6e_pure/`) gives essentially the same whole-model accuracy (10.6% vs
+10.4%), but the pure basis makes the compensation fit *well-conditioned* (free a1,C1
+> 0, no pinning needed; the loop basis needed a1 pinned because Sn/n_gemm were
+confounded). Pipeline: export_stablehlo_v6e.py (fp32, shapes only) ->
+build_calib_v6e.py (JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e.py ->
+fit_compensation_v6e.py -> total_time_report.py.

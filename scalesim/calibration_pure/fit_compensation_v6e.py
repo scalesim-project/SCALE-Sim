@@ -44,17 +44,22 @@ A1_PIN = 0.0295
 
 
 def fit(Sc, Sn, Nc, Y, w):
-    """a0=1 and a1=A1_PIN pinned. Fit C_forward = C0 + C1*Nc on the residual
-    r' = Y - Sc - a1*Sn ~= C0 + C1*Nc, with the PHYSICAL constraint C1 >= 0 (a GEMM
-    kernel can only add launch/drain). If the free solve gives C1 < 0, pin C1 = 0."""
-    a1 = A1_PIN
-    rp = Y - Sc - a1 * Sn
-    X = np.stack([np.ones(len(rp)), Nc], 1)
-    WX = X * w[:, None]
-    C0, C1 = np.linalg.solve(X.T @ WX, X.T @ (w * rp))
+    """a0=1 pinned. Free WLS for (a1, C0, C1) on r = Y - Sc ~= a1*Sn + C0 + C1*Nc.
+    Physical constraints: a1 > 0, C1 >= 0. The free solve is used when it satisfies
+    them (it does on the pure-device basis); if it degenerates (a1<=0 or C1<0, as on
+    the loop-method basis where Sn and Nc are confounded), pin a1 = A1_PIN and refit
+    (C0, C1>=0)."""
+    r = Y - Sc
+    X3 = np.stack([Sn, np.ones(len(Sn)), Nc], 1)
+    a1, C0, C1 = np.linalg.solve(X3.T @ (X3 * w[:, None]), X3.T @ (w * r))
+    if a1 > 0 and C1 >= 0:
+        return a1, C0, C1
+    a1 = A1_PIN                                       # degenerate -> pin a1, refit C0,C1>=0
+    rp = r - a1 * Sn
+    X2 = np.stack([np.ones(len(rp)), Nc], 1)
+    C0, C1 = np.linalg.solve(X2.T @ (X2 * w[:, None]), X2.T @ (w * rp))
     if C1 < 0:
-        C1 = 0.0
-        C0 = float(np.sum(w * rp) / np.sum(w))
+        C1 = 0.0; C0 = float(np.sum(w * rp) / np.sum(w))
     return a1, C0, C1
 
 
