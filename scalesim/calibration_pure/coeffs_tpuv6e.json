@@ -1,10 +1,11 @@
 {
-  "model": "T = 1.0*Sum(GEMM) + a1*Sum(noncompute) + C_forward  [batch-1]",
+  "model": "T = Sum(GEMM) + a1*Sum(noncompute) + C0 + C1*n_gemm  [batch-1]",
   "a0_mxu": 1.0,
-  "a1_vpu": 0.0294563595211446,
+  "a1_vpu": 0.0295,
   "c_c": 0.0,
   "c_n": 0.0,
-  "C_forward": 490.8152974290173,
-  "in_sample_mape": 7.183169829467702,
-  "n_points": 9
+  "C0_forward": 321.07520821160074,
+  "C1_per_gemm": 0.8015856004411385,
+  "in_sample_mape": 10.827272721089134,
+  "n_points": 10
 }

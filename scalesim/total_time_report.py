@@ -86,13 +86,17 @@ COMPENSATION_BY_GEN = {
     # NOT modelled. See SCALE-Sim_TPU/e2e_work/compensation/.
     "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0359,
               "c_c": 0.0, "c_n": 0.0, "C0_forward": 81.0, "C1_per_gemm": 0.253},
-    # v6e: same model + structure as v4, v6e constants. Will be refit to the new
-    # size-dependent C0/C1 form next; meanwhile it carries the prior fixed-C fit
-    # (a1=0.0295, C_forward=490.8; in-sample 7.2%, LOMO 13.8%, 3 LLMs x seq{128,256,
-    # 512}). write_total_time_report falls back to fixed C_forward for entries
-    # without C0_forward, so this stays correct until the refit lands.
+    # v6e: same model + structure as v4 (a0=1, size-dependent C0 + C1*n_gemm).
+    # Calibrated batch-1 on 3 LLMs x seq{128,256,512} + tiny_transformer (the small-
+    # model anchor) -> calib_tpuv6e.csv via fit_compensation_v6e.py. a1=0.0295 is
+    # PINNED (non-compute fusion survival; Sn and n_gemm are confounded, so the free
+    # 3-param solve is degenerate -- a1 from the robust LLM fit, ~v4's 0.036). v6e's
+    # floor is large+constant (C0=321us) with a small positive per-kernel term
+    # (C1=0.80us) -- C0 >> v4's 81us, the real generational difference. In-sample
+    # 10.8% MAPE (~v4's 11.9%); tiny model now +13% (was +59% with a fixed C=490 fit
+    # only on the LLMs). Batch>1 occupancy NOT modelled.
     "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0295,
-               "c_c": 0.0, "c_n": 0.0, "C_forward": 490.8},
+               "c_c": 0.0, "c_n": 0.0, "C0_forward": 321.1, "C1_per_gemm": 0.8016},
 }
 
 

@@ -299,12 +299,23 @@ All 4 layers calibrated for v6e (CALIBRATION_RUNBOOK):
 - **Whole-model**: `COMPENSATION_BY_GEN["TPUv6e"]`, same form as v4, a0 pinned=1.
 
 Whole-model fit (`fit_compensation_v6e.py`, batch-1, torch.compile device-busy truth
-`e2e_device_truth_tpuv6e.csv`, sums `calib_tpuv6e.csv` from per-seq StableHLO export
-+ bypass): **a1=0.0295, C_forward=491us, in-sample 7.2% MAPE, leave-one-model-out
-13.8%** (vs v4's a1=0.028 / 11% / 16%). `Sum(GEMM) < truth` holds for all 9 points.
+`e2e_device_truth_tpuv6e.csv`, sums `calib_tpuv6e.csv`): SIZE-DEPENDENT C like v4,
+`T = Sum(GEMM) + a1*Sum(noncompute) + C0 + C1*n_gemm`. Calibrated on 3 LLMs x
+seq{128,256,512} **+ tiny_transformer** (the small-model anchor, truth via
+`measure_tiny_truth_v6e.py`). **a1=0.0295 (PINNED), C0=321us, C1=0.80us/GEMM,
+in-sample 10.8% MAPE** (≈ v4's 11.9%). `Sum(GEMM) < truth` holds for all 10 points.
+
+Note on a1: Sn (non-compute) and n_gemm are confounded (both ~ model size), so the
+free 3-param solve is degenerate (a1 ~2x high, C1 < 0). a1 is pinned to the robust
+LLM-only value (0.0295, ~v4's 0.036 -- non-compute fusion survival is generation-
+stable); then C0,C1 fit cleanly with C1 > 0. **v6e's floor is large+constant
+(C0=321us) vs v4's small C0=81us** -- the real generational difference (v6e pays a
+big fixed per-forward overhead; per-kernel C1 is minor).
 
 End-to-end through `scale.py -b -c configs/tpuv6e.cfg` (tuned_us TOTAL vs truth, seq128):
-gpt2 −5.1% · smollm2-135m −0.6% · qwen2.5-0.5b −18.8% (the same qwen/seq128
-under-prediction v4 shows — large vocab embedding/LM-head the a1 term under-weights).
-Pipeline: export_stablehlo_v6e.py (fp32, shapes only) -> build_calib_v6e.py
-(JAX_PLATFORMS=cpu bypass sums) -> fit_compensation_v6e.py -> total_time_report.py.
+tiny +13.0% · gpt2 −19.7% · smollm2-135m +3.8% · qwen2.5-0.5b −18.4%. The tiny
+model is +13% (was +59% with a fixed C fit only on the LLMs) -- the size-dependent
+C is what fixes small models. gpt2/qwen seq128 under-predict (the same large-vocab
+seq128 weak spot v4 shows). Pipeline: export_stablehlo_v6e.py (fp32, shapes only) ->
+build_calib_v6e.py (JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e.py ->
+fit_compensation_v6e.py -> total_time_report.py.
