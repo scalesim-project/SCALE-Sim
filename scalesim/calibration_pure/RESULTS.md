@@ -316,12 +316,29 @@ Extended to **seq 1024** (2026-06-25): calibrated on 3 LLMs x seq{128,256,512,10
 + tiny (13 points). Constants barely moved (C0=329.8us, C1=0.7559us, a1=0.0295),
 in-sample 10.8%.
 
-**3 large models, all 4 seqs (12 points): mean |err| = 10.4%, median 8.2%, max 22.8%.**
-Per model: qwen2.5-0.5b 8.7% · smollm2-135m 8.3% · gpt2 14.1% (gpt2 is the smallest,
-overhead-dominated, and under-predicts at both seq extremes). End-to-end seq1024
-(pipeline): gpt2 −22.8% · smollm2 +4.8% · qwen +4.3%; seq128: gpt2 −19.7% · smollm2
-+3.8% · qwen −18.4%; tiny +13%. The gpt2/qwen seq128 + gpt2/1024 under-predictions
-are the large-vocab/overhead weak spot (same as v4); the mid sizes/seqs are ~3-10%.
-Pipeline: export_stablehlo_v6e.py (fp32, shapes only) -> build_calib_v6e.py
-(JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e.py -> fit_compensation_v6e
-.py -> total_time_report.py.
+### Predicted vs real latency, batch-1 (3 LLMs x seq) — `prediction_vs_real_tpuv6e.csv`
+
+Predicted = SCALE-Sim `tuned_us` TOTAL (`scale.py -b -c configs/tpuv6e.cfg`);
+real = torch.compile device-busy (`e2e_device_truth_tpuv6e.csv`).
+
+| model | seq | predicted (us) | real (us) | err |
+|-------|----:|---------------:|----------:|----:|
+| gpt2 | 128 | 618.8 | 763.5 | −19.0% |
+| gpt2 | 256 | 737.2 | 792.3 | −7.0% |
+| gpt2 | 512 | 878.7 | 953.6 | −7.9% |
+| gpt2 | 1024 | 1517.9 | 1965.5 | −22.8% |
+| qwen2.5-0.5b | 128 | 1239.4 | 1521.2 | −18.5% |
+| qwen2.5-0.5b | 256 | 1607.8 | 1663.8 | −3.4% |
+| qwen2.5-0.5b | 512 | 1972.7 | 2154.9 | −8.5% |
+| qwen2.5-0.5b | 1024 | 3912.5 | 3750.0 | +4.3% |
+| smollm2-135m | 128 | 1128.8 | 1091.2 | +3.4% |
+| smollm2-135m | 256 | 1359.1 | 1177.3 | +15.4% |
+| smollm2-135m | 512 | 1611.5 | 1469.5 | +7.9% |
+| smollm2-135m | 1024 | 2677.5 | 2554.2 | +4.8% |
+
+**12 points: mean |err| = 10.4%, median 8.2%, max 22.8%.** Per model: qwen 8.7% ·
+smollm2 8.3% · gpt2 14.1% (gpt2 is the smallest, overhead-dominated, and
+under-predicts at both seq extremes -- the large-vocab/overhead weak spot, same as
+v4; mid sizes/seqs are ~3-10%). Pipeline: export_stablehlo_v6e.py (fp32, shapes
+only) -> build_calib_v6e.py (JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e
+.py -> fit_compensation_v6e.py -> total_time_report.py.
