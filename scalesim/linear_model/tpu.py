@@ -150,12 +150,29 @@ def tpuv5e_linear_model(cycles, s_row=1, s_col=1, t_time=1):
     else:
         return 0.000159 * cycles -0.380696
 
-# v6e 12-region fusion table: None until a v6e VM runs CALIBRATION_RUNBOOK step 1.
-# When calibrated, set this to the same {region_id: (A, B, BW)} form as
-# TPUV4_REGION_TABLE (the _tpuv4_region tile-fold selector is shared) and v6e
-# switches from the single-G_roof below to the per-region fusion model.
-TPUV6E_REGION_TABLE = None
-_TPUV6E_FALLBACK = (3.048108888396471e-05, 0.8789530113345402, 39.07396064038605)
+# v6e 12-region fusion table (CALIBRATION_RUNBOOK step 1, done 2026-06-25).
+# Same {region_id: (A, B, BW)} form and same _tpuv4_region tile-fold selector as
+# TPUV4_REGION_TABLE (shared 128x128 array); only the coefficients are v6e.
+# Calibrated DIRECTLY on the golden xprof `fusion` time of 1260 region-stratified
+# bf16 GEMMs measured on a real TPU v6e
+# (scalesim/calibration_pure/gemm_pure_master_tpuv6e.csv, fit_piecewise12_v6e.py);
+# held-out fusion-time MAPE 11.7% (vs 27.0% single G_roof). Floor B ~= 1.1us = the
+# matmul kernel's minimum fusion span on v6e. (A = us/cyc, B = floor us, BW = bytes/cyc.)
+TPUV6E_REGION_TABLE = {
+    0:  (7.163260e-04, 0.8318,  64.937),  # K=1 N=1 M=1tile                        n=59
+    1:  (0.000000e+00, 1.2192,  27.204),  # K=1 N=1 1<M<6tile (floor-only)         n=18
+    2:  (1.228766e-06, 1.1583,   2.000),  # K=1 N>1 M=1tile                        n=138
+    3:  (4.143272e-06, 1.2872,   4.774),  # K=1 N>1 1<M<6tile                      n=44
+    4:  (4.599992e-06, 1.1676,   8.527),  # K>1 N=1 M=1tile (deep-K)               n=55
+    5:  (7.711162e-07, 1.1342,   2.000),  # K>1 N=1 1<M<6tile                      n=23
+    6:  (1.736788e-05, 1.1318,  71.528),  # K>1 N>1 M=1tile (deep-K, wide-N)       n=132
+    7:  (2.402579e-05, 1.5676,  58.953),  # K>1 N>1 1<M<6tile                      n=46
+    9:  (1.113757e-05, 1.1858,  22.421),  # K=1 N=1 M>=6tile (tall, thin-K)        n=118
+    11: (1.638546e-04, 1.5609, 276.866),  # K=1 N>1 M>=6tile (large thin-K)        n=253
+    13: (4.845264e-07, 1.2152,   2.427),  # K>1 N=1 M>=6tile (deep-K, tall)        n=114
+    15: (4.264973e-05, 2.3951, 188.075),  # K>1 N>1 M>=6tile (large compute)       n=260
+}
+_TPUV6E_FALLBACK = (4.264973e-05, 2.3951, 188.075)  # large-compute region, if id unseen
 
 
 def tpuv6e_batch_reduction(batch, M, N, K):
@@ -169,26 +186,21 @@ def tpuv6e_linear_model(cycles, s_row=1, s_col=1, t_time=1, M=None, N=None, K=No
     """
     TPUv6e linear model: convert SCALE-Sim compute cycles to time (microseconds).
 
-    Model = G_roof, calibrated on 7097 bf16 GEMMs measured on a real TPU v6e
-    ("TPU v6 lite") single device (see scalesim/linear_model/calibration/, data
-    in gemm_master_tpuv6e.csv, coeffs in gemm_linear_tpuv6e.json /
-    tpuv6e_coeffs.json). Same single-linear-piece form as the TPU v4 model so the
-    coefficients stay physical:
+    Model = piecewise (region-selected) G_roof, exactly like the TPU v4 model
+    (12 regions via the shared _tpuv4_region tile-fold selector; 128x128 array),
+    only the coefficients are v6e:
 
-        cyc_mem = bytes_moved / bytes_per_cycle           # memory roofline term
-        time_us = A * max(cycles, cyc_mem) + B            # A=eff. clock, B=overhead
+        cyc_mem = bytes_moved / bytes_per_cycle[r]         # memory roofline term
+        time_us = A[r] * max(cycles, cyc_mem) + B[r]       # A=eff. clock, B=floor
 
-    where bytes_moved = 2*(M*K + K*N + M*N) for bf16. The memory term absorbs the
-    memory-bound regime so A stays the effective clock and B the fixed overhead
-    EVERYWHERE (no arbitrary thresholds). This replaces the previous hand-stubbed
-    3-segment model keyed on s_row/s_col/t_time, whose breakpoints/coefficients
-    were placeholders, not calibrated.
-
-    Validation (held-out 1420 of 7097 GEMMs, relative-error weighted fit):
-        G_roof val MAPE 25.0%  vs  G0 (no roofline) 27.9%  vs  placebo M*N*K 35.5%.
-    A data-chosen 3-segment fit scored marginally lower (22.5%) but its intensity
-    breakpoints are unmotivated; we keep G_roof for the same interpretability
-    reason as TPU v4.
+    where bytes_moved = 2*(M*K + K*N + M*N) for bf16 and r = region(M,N,K). The
+    target is the GEMM's device compute-kernel time (the matmul `fusion` span; the
+    per-program launch overhead is a separate once-per-forward constant handled by
+    the compensation layer, never per layer). Calibrated DIRECTLY on the golden
+    xprof fusion time of 1260 region-stratified bf16 GEMMs measured on a real TPU
+    v6e (scalesim/calibration_pure/gemm_pure_master_tpuv6e.csv, fit_piecewise12_v6e
+    .py); held-out fusion-time MAPE 11.7% (vs 27.0% single G_roof). See
+    TPUV6E_REGION_TABLE and scalesim/calibration_pure/RESULTS.md.
 
     M,N,K are optional and passed by simulator.py / bypass_compute.py for GEMM
     layers. If absent (e.g. conv layers or older call sites) it degrades to the
@@ -205,14 +217,8 @@ def tpuv6e_linear_model(cycles, s_row=1, s_col=1, t_time=1, M=None, N=None, K=No
     A0, B0 = 7.488700448879183e-05, 0.8550086502536669  # fallback (no M,N,K)
 
     if M is not None and N is not None and K is not None:
-        # If a v6e 12-region fusion table has been calibrated (CALIBRATION_RUNBOOK
-        # step 1 on a v6e VM), use it -- same tile-fold selector as v4 (128x128
-        # array), v6e coefficients. Until then, use the calibrated single G_roof.
-        if TPUV6E_REGION_TABLE is not None:
-            A, B, BYTES_PER_CYCLE = TPUV6E_REGION_TABLE.get(_tpuv4_region(M, N, K),
-                                                            _TPUV6E_FALLBACK)
-        else:
-            A, B, BYTES_PER_CYCLE = 3.048108888396471e-05, 0.8789530113345402, 39.07396064038605
+        A, B, BYTES_PER_CYCLE = TPUV6E_REGION_TABLE.get(_tpuv4_region(M, N, K),
+                                                        _TPUV6E_FALLBACK)
         bytes_moved = 2.0 * (M * K + K * N + M * N)       # bf16
         cyc_mem = bytes_moved / BYTES_PER_CYCLE
         return A * max(cycles, cyc_mem) + B
