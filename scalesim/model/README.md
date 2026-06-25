@@ -142,7 +142,7 @@ fallback). Data: `calibration/datasets_tpuv6e/*.csv`.
 
 ### e. End-to-end accuracy vs real v6e silicon (2026-06-22)
 
-Measured whole-model wall-clock on this v6e (`topologies/stablehlo/llm/run_groundtruth.py
+Measured whole-model wall-clock on this v6e (`topologies/stablehlo/llm/profile_model_on_tpu.py
 --gen tpu_v6e`, torch_xla, seq=128, batch=1, 50 iters; ground truth in
 `measured_tpu_v6e.json`) vs the SCALE-Sim bypass TOTAL (`-b -c configs/tpuv6e.cfg`):
 
