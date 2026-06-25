@@ -16,6 +16,74 @@
 > MAPE 14.2%), which was correct all along and agrees with the `fusion` span.
 > The sections below (B≈14 µs, 24% ceiling) are kept for the record but SUPERSEDED.
 
+## Fusion-time model — authoritative result (stratified, corrected extraction)
+
+After the extraction fix, the GEMM linear model was re-evaluated against the golden
+**`fusion`** kernel time on a **stratified** dataset (`stratified_shapes.py` →
+`gemm_fusion_strat.csv`, 1260 shapes, ≥150 per region so rare regions r3/r7 are no
+longer starved). `fit_piecewise_pure.py`, 80/20 held out:
+
+| model | held-out MAPE (fusion time) |
+|---|---|
+| single G_roof | 37.7% |
+| **piecewise, 8-region** | **18.3%** |
+
+Per-region (A us/cyc, B us floor, BW bytes/cyc), n=150–180 each:
+
+    r0 (2.85e-6, 1.08, 2.0)    r4 (3.40e-5, 1.09, 78.8)
+    r1 (2.46e-6, 1.14, 2.0)    r5 (8.66e-5, 0.71, 228.2)
+    r2 (2.43e-6, 1.03, 2.0)    r6 (2.73e-5, 1.01, 86.8)
+    r3 (6.23e-6, 2.99, 6.4)    r7 (1.20e-4, 4.05, 116.0)
+
+Floor B~1 us == the matmul `fusion` floor (the bug-era "14 us" is gone). Piecewise
+HALVES single-G_roof error because `A` spans 2.4e-6 -> 1.2e-4 (50x) across regions --
+one global slope cannot fit that. On a balanced set the gap is larger than the
+14.2% the loop-method table scores on full-space-weighted data (which is dominated by
+the easy small regions); 18.3% is the fairer, every-regime-equal number. tpu.py keeps
+the loop-method table (10,874 shapes, marginal ~= fusion); this stratified-fusion
+table is the directly-fusion-calibrated alternative.
+
+### r6 fix: add a foldM>1 sub-split -> 12 regions, 18.3% -> 15.3%
+
+r6 (K>1, N>=16, M<16 tiles) was the weak region at 42.6%: it spans a 280x latency
+range (1.2-344 us) because small-M shapes sit at the ~1 us floor while large-N*K
+shapes are compute-bound. Residual correlated most with M (+0.64). Splitting the
+small-M regions (0,2,4,6) by **foldM>1 (M>128 = more than one 128-array tile)** --
+the physical point where the fixed 3*128 fill/drain term stops dominating and
+M-streaming takes over -- fixes it:
+
+| | regions | overall MAPE | r6 MAPE |
+|---|---|---|---|
+| KxNxM | 8 | 18.3% | 42.6% |
+| **+ foldM>1 split on small-M regions** | **12** | **15.3%** | **12-20%** |
+
+r6 now splits into M=1-tile (19.6%, floor-dominated) and 1<foldM<16 (12.1%,
+compute). The same split also lifts r0/r2/r4, so the whole model improves. This is a
+4th physical tile-fold level (M: 1 / 2-15 / >=16 tiles), consistent with the existing
+foldK>1 and fold>=16 splits. Could be ported to the shipped loop-method tpu.py table.
+
+### The "16" threshold was unjustified -> use >1 tile for ALL dims (13.5%)
+
+Sweeping the "wide" threshold T (the fold>=T bit for N and M) showed MAPE is
+**monotonic in T** -- 16 was just a round number from the original piecewise work,
+never swept:
+
+    T (tiles):   2     4     6     8    12    16    24    32
+    MAPE:      13.5  15.2  15.7  16.5  17.6  18.3  24.9  25.7  %
+
+The optimum is **T=2 = the fundamental >1-tile boundary** (dim>128) -- the SAME rule
+as foldK>1. So the principled scheme splits all three dims at fold>1:
+
+    region = (foldK>1)*4 + (foldN>1)*2 + (foldM>1)        # 8 regions, one rule
+
+**Overall held-out MAPE 13.5%** (vs 18.3% at threshold 16, and the 12-region patch's
+15.3%) -- fewer regions, one consistent physical rule, better accuracy. Per-region
+6.6% (all-multi-tile compute) to 22% (single-M-tile floor regime). This SUPERSEDES
+both the >=16 scheme and the 12-region patch above. Recommended scheme to ship
+(and to port to the loop-method tpu.py table, which uses the same unjustified >=16).
+
+---
+
 Built by `run_all.sh` (2026-06-24, ~15 h on TPU v4). Every op (GEMM + 25
 non-compute) profiled with **pure device kernel time read from the xprof trace**
 (`collect_pure_device_gemm_tpu.py`, `collect_pure_device_tpu.py`), then models
@@ -153,3 +221,45 @@ On v6e the device-busy per-execute floor ≈ the fusion floor (~1.3 µs), and th
 `single_op` is the fusion latency (piecewise model above); the v6e `C_forward` /
 host constants for `total_time_report.py` should be pinned from these (next step),
 not reused from v4.
+
+---
+
+## Batch handling + whole-model (final architecture, 2026-06-25)
+
+### Attention / batched dot_general -> per-head GEMM + 2-level latency
+SCALE-Sim's cycle model is non-batch. The converter previously folded the head
+count into BOTH M and N (`1536x1536` for 12 heads) -> a dense matmul computing all
+cross-head pairs, ~12x over-count, which pushed Sum(GEMM) ABOVE the whole-model time
+(impossible -- compute is incompressible). Fixed: a batched dot_general now maps to
+the **per-head (M,N,K) + a batch count B**, and the latency is built in two levels:
+
+  level 1 (cycle model)  : single per-head GEMM time           tpuv4_linear_model
+  level 2 (batch reduce) : x B x R(B,M,N)                       tpuv4_batch_reduction
+      R = u + (1-u)/B,  u = nt^0.805/(nt^0.805+21),  nt = ceil(M/128)*ceil(N/128)
+
+R is the measured fact that one batched kernel shares a single array fill, so it
+costs LESS than B separate GEMMs (up to 16x less for many tiny heads). Calibrated on
+a TPU batch x shape sweep (`measure_batch_sweep.py`, `batch_reduction.csv`), 6.3% MAPE.
+Kept SEPARATE from the cycle model so each recalibrates independently.
+
+### Second M bar (foldM>=6) -> 12 regions
+A single >1-tile bar lumped M=256-512 (still fill-dominated: the cycle formula's
+additive 3*128 fill term over-counts small M) with M>=2048, under one slope ->
+over-predicted small-multi-tile GEMMs ~1.7x (qwen MLP/LM-head), violating the
+Sum(GEMM)<truth bound at seq>=256. Fix: a 2nd bar on M at foldM>=6 (M>=768) gives M
+three levels (1 / 2-5 / >=6 tiles) -> 12 regions. After this, Sum(GEMM)<truth holds
+for all 3 LLMs x seq{128,256,512}. A 2nd bar on N or K was tested and rejected:
+only ~0.5% gain, creates empty regions, and has no additive-fill physical cause.
+
+### Whole-model (batch-1)
+    T_device ~= a0*Sum(GEMM) + a1*Sum(non-compute) + C_forward
+    a0 = 1.0 (GEMM passthrough; Sum(GEMM) is the right magnitude, validated by the
+              incompressibility bound -- pinned, not fit, for robustness),
+    a1 ~= 0.028 (non-compute fusion survival, ~97% fused away),
+    C_forward ~= 185 us (once-per-forward host/launch overhead).
+Lives in the `tuned_us` column of TIME_REPORT.csv (a0*single for GEMM, a1*single for
+non-compute, C in the TOTAL row). In-sample 11% MAPE, leave-one-model-out ~16%
+(3 LLMs x 3 seq). a0 free gives 10.1% but unstable (15-31% LOMO) -> pin a0=1.
+Batch>1 (inference) occupancy deliberately NOT modelled (keeps the system simple).
+Weak spot: qwen seq128 (-26%) -- large vocab, embedding/LM-head overhead the a1 term
+under-weights. More calibration models would tighten the 2 constants.

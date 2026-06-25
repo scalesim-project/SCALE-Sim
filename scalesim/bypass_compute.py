@@ -29,7 +29,23 @@ import math
 import os
 
 from scalesim.linear_model.tpu import (tpuv4_linear_model, tpuv5e_linear_model,
-                                        tpuv6e_linear_model)
+                                        tpuv6e_linear_model, tpuv4_batch_reduction,
+                                        tpuv6e_batch_reduction)
+
+
+def _batch_reduction(time_model, batch, M, N, K):
+    """Level-2 batched-matmul latency reduction (separate from the cycle model).
+    A batched dot_general (multi-head attention) is `batch` per-head GEMMs sharing
+    one array fill, so it costs less than batch x a single GEMM. Returns 1.0 for
+    batch<=1 or models without a calibrated reduction. Per-generation function so
+    each can be recalibrated independently (see CALIBRATION_RUNBOOK step 3)."""
+    if batch is None or batch <= 1:
+        return 1.0
+    if time_model == 'TPUv4':
+        return tpuv4_batch_reduction(batch, M, N, K)
+    if time_model == 'TPUv6e':
+        return tpuv6e_batch_reduction(batch, M, N, K)
+    return 1.0
 
 
 def closed_form_cycles(M, N, K, arr_h=128, arr_w=128):
@@ -135,24 +151,29 @@ def run_bypass(config_obj, topo_obj, top_path, gemm_mode=False, verbose=True,
     total_us = 0.0
     for lid in range(n_layers):
         M, N, K = _layer_mnk(topo_obj, lid)
-        compute_cyc = closed_form_cycles(M, N, K, arr_h, arr_w)
+        # batch = head count for a batched dot_general (multi-head attention); 1 for
+        # ordinary GEMMs. SCALE-Sim's cycle model is NON-batch -> we model ONE per-head
+        # GEMM, then scale to the whole batched op below (x batch x level-2 reduction).
+        batch = topo_obj.get_layer_batch(lid) if hasattr(topo_obj, 'get_layer_batch') else 1
+        per_head_cyc = closed_form_cycles(M, N, K, arr_h, arr_w)
 
         # analytical memory roofline: total = max(compute, mem); stall = the excess
         if memory_bw:
             mc = mem_cycles(M, N, K, memory_bw, sram_bytes=sram_bytes,
                             arr_h=arr_h, arr_w=arr_w)
-            cycles = int(max(compute_cyc, mc))
-            stall = max(0, cycles - compute_cyc)
+            cyc1 = int(max(per_head_cyc, mc))
+            stall = max(0, cyc1 - per_head_cyc) * batch
         else:
-            cycles = compute_cyc
+            cyc1 = per_head_cyc
             stall = 0
+        cycles = cyc1 * batch        # total compute cycles = batch independent GEMMs
 
         # utilization metrics (analytical): useful MACs / (array * cycles)
-        num_mac = M * N * K
+        num_mac = M * N * K * batch
         util = (num_mac * 100.0) / (cycles * array_size) if cycles else 0.0
         # mapping efficiency = utilization of the mapped array footprint
         mapped = min(K, arr_h) * min(N, arr_w) if min(K, arr_h) and min(N, arr_w) else 1
-        map_eff = (num_mac * 100.0) / (compute_cyc * mapped) if compute_cyc else 0.0
+        map_eff = (num_mac * 100.0) / (per_head_cyc * batch * mapped) if per_head_cyc else 0.0
         map_eff = min(map_eff, 100.0)
 
         compute_report.write(f'{lid}, {cycles}, {cycles}, {stall}, '
@@ -160,7 +181,9 @@ def run_bypass(config_obj, topo_obj, top_path, gemm_mode=False, verbose=True,
 
         if time_model in ('TPUv4', 'TPUv5e', 'TPUv6e'):
             s_row, s_col, t_time = topo_obj.get_spatiotemporal_dims(layer_id=lid, df=dataflow)
-            time_us = _layer_time_us(time_model, cycles, s_row, s_col, t_time, M, N, K)
+            # LEVEL 1: per-head single-GEMM time. LEVEL 2: x batch x reduction(batch).
+            single_us = _layer_time_us(time_model, cyc1, s_row, s_col, t_time, M, N, K)
+            time_us = single_us * batch * _batch_reduction(time_model, batch, M, N, K)
         else:
             time_us = cycles  # no model: report cycles as time (matches default path)
         total_us += time_us
