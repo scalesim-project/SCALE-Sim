@@ -100,14 +100,24 @@ class topologies(object):
                 m = elems[1].strip()
                 n = elems[2].strip()
                 k = elems[3].strip()
-                if len(elems) < 5:
-                    # If sparsity ratio is missing in the topology file, consider the default ratio
-                    elems.append("1:1")
-                sparsity_ratio = elems[4].strip().split(':')
+                # Optional 5th column = batch count (multi-head/batched dot_general;
+                # 1 for ordinary GEMMs). A plain integer here is the batch; a value
+                # containing ':' is instead the (legacy) sparsity ratio.
+                batch = 1
+                sparsity_ratio = ["1", "1"]
+                if len(elems) >= 5 and elems[4].strip() != '':
+                    field = elems[4].strip()
+                    if ':' in field:
+                        sparsity_ratio = field.split(':')
+                    else:
+                        batch = int(field)
+                # batch may also be an explicit 6th column alongside sparsity
+                if len(elems) >= 6 and elems[5].strip() != '':
+                    batch = int(elems[5].strip())
 
                 # Entries: layer name, Ifmap h, ifmap w, filter h, filter w, num_ch, num_filt,
-                #          stride h, stride w, N in N:M, M in N:M
-                entries = [layer_name, m, k, 1, k, 1, n, 1, 1, sparsity_ratio[0], sparsity_ratio[1]]
+                #          stride h, stride w, N in N:M, M in N:M, batch
+                entries = [layer_name, m, k, 1, k, 1, n, 1, 1, sparsity_ratio[0], sparsity_ratio[1], batch]
                 # entries are later iterated from index 1. Index 0 is used to store layer name in
                 # convolution mode. So, to rectify assignment of M, N and K in GEMM mode, layer name
                 # has been added at index 0 of entries.
@@ -353,6 +363,15 @@ class topologies(object):
             mnk_dims_arr.append([M, N, K])
 
         return mnk_dims_arr
+
+    def get_layer_batch(self, layer_id=0):
+        """Batch (head) count of a GEMM layer for a batched dot_general; 1 if absent
+        (ordinary GEMM, conv, or older topology with no batch column)."""
+        try:
+            entry = self.topo_arrays[layer_id]
+            return int(entry[11]) if len(entry) > 11 else 1
+        except (IndexError, ValueError, TypeError):
+            return 1
 
     #
     def get_current_topo_name(self):

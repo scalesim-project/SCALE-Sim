@@ -73,8 +73,16 @@ def dispatch_for_generation(generation):
 #   SCOPE: batch-1 composition. batch>1 parallelizes across the chip -- multiply
 #   the TOTAL by the occupancy factor (fit_occupancy_model.py), not modeled here.
 COMPENSATION_BY_GEN = {
-    "TPUv4": {"a0_mxu": 0.220, "a1_vpu": 0.0806,
-              "c_c": 0.0, "c_n": 0.0, "C_forward": 65.0},  # C_forward MEASURED
+    # Batch-1 whole-model model, fit against the CORRECTED GEMM term (fusion + batch
+    # fix). a0 is PINNED to 1.0: the GEMM single_op_us is now the right magnitude
+    # (validated: Sum(GEMM) < whole-model time), so GEMM passes through as-is rather
+    # than being a free knob -- this is both physical and far more robust (leave-one-
+    # model-out 15-17% balanced, vs 15-31% unstable when a0 is free). a1~=0.028 =
+    # non-compute fusion survival (~97% fused away); C_forward~=185us per-forward
+    # overhead. Batch-1 only (inference batch>1 occupancy NOT modelled). In-sample
+    # 11.0% MAPE, LOMO ~16%. See SCALE-Sim_TPU/e2e_work/compensation/.
+    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0284,
+              "c_c": 0.0, "c_n": 0.0, "C_forward": 185.0},
 }
 
 

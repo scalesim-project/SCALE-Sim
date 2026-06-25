@@ -768,34 +768,35 @@ class StableHLOConverter:
             if dim_idx < len(lhs_shape):
                 K *= lhs_shape[dim_idx]
         
-        # Calculate M (batch * non-contracting from lhs)
-        lhs_batch_size = 1
+        # Batch dimensions (e.g. the heads of multi-head attention) are a SEPARATE
+        # count -- a batched dot_general is `batch` INDEPENDENT per-head GEMMs, NOT
+        # one dense (batch*M)x(batch*N) matmul. Folding batch into M *and* N (the old
+        # bug) computed all cross-head pairs -> ~batch x too much compute. We keep the
+        # per-head (M, N, K) for SCALE-Sim's non-batch cycle model and record `batch`
+        # separately; the batched latency is applied downstream as
+        #   batch * single_GEMM_time * tpuv4_batch_reduction(batch, M, N, K)   (level 2).
+        batch = 1
         for batch_pair in batch_dims:
-            lhs_batch_idx = batch_pair[0]
-            if lhs_batch_idx < len(lhs_shape):
-                lhs_batch_size *= lhs_shape[lhs_batch_idx]
-        
-        M = lhs_batch_size
+            if batch_pair[0] < len(lhs_shape):
+                batch *= lhs_shape[batch_pair[0]]
+
+        # M = per-head non-contracting from lhs (NOT including the batch dims)
+        M = 1
         for dim_idx in range(len(lhs_shape)):
             if dim_idx not in lhs_contracting and dim_idx not in [b[0] for b in batch_dims]:
                 M *= lhs_shape[dim_idx]
-        
-        # Calculate N (batch * non-contracting from rhs)
-        rhs_batch_size = 1
-        for batch_pair in batch_dims:
-            rhs_batch_idx = batch_pair[1]
-            if rhs_batch_idx < len(rhs_shape):
-                rhs_batch_size *= rhs_shape[rhs_batch_idx]
-        
-        N = rhs_batch_size
+
+        # N = per-head non-contracting from rhs (NOT including the batch dims)
+        N = 1
         for dim_idx in range(len(rhs_shape)):
             if dim_idx not in rhs_contracting and dim_idx not in [b[1] for b in batch_dims]:
                 N *= rhs_shape[dim_idx]
-        
+
         # Ensure we have valid dimensions
         M = max(1, int(M))
         N = max(1, int(N))
         K = max(1, int(K))
+        batch = max(1, int(batch))
         
         layer_name = f"gemm_{op_idx}"
         
@@ -803,7 +804,9 @@ class StableHLOConverter:
         N_sparse, M_sparse = 1, 1
         
         # Return in the internal format used by SCALE-Sim's GEMM loader
-        # Format: [name, M, K, 1, K, 1, N, 1, 1, N_sparse, M_sparse]
+        # Format: [name, M, K, 1, K, 1, N, 1, 1, N_sparse, M_sparse, batch]
+        # (batch appended at the end; per-head M,N,K precede it. Readers that want
+        #  only M/N/K ignore the trailing batch field.)
         topology_entry = [
             layer_name,
             M,
@@ -815,11 +818,13 @@ class StableHLOConverter:
             1,
             1,
             N_sparse,
-            M_sparse
+            M_sparse,
+            batch
         ]
-        
+
         if self.verbose:
-            print(f"  Converted {op.op_name} -> {layer_name}: M={M}, N={N}, K={K}")
+            tag = f", batch={batch}" if batch > 1 else ""
+            print(f"  Converted {op.op_name} -> {layer_name}: M={M}, N={N}, K={K}{tag}")
         
         return topology_entry
     
@@ -1094,17 +1099,18 @@ class StableHLOConverter:
                            f"{entry[5]}, {entry[6]}, {entry[7]},\n"
                     f.write(line)
             else:
-                # GEMM format header
-                f.write("Layer,M,N,K,\n")
-                
+                # GEMM format header (batch column carries multi-head/batched
+                # dot_general head count; 1 for ordinary GEMMs)
+                f.write("Layer,M,N,K,batch,\n")
+
                 for entry in topology_entries:
-                    # entry: [name, M, K, 1, K, 1, N, 1, 1, N_sparse, M_sparse]
-                    # Extract M, N, K from the entry
+                    # entry: [name, M, K, 1, K, 1, N, 1, 1, N_sparse, M_sparse, batch]
                     name = entry[0]
                     M = entry[1]
                     N = entry[6]
                     K = entry[2]
-                    line = f"{name},{M},{N},{K},\n"
+                    batch = entry[11] if len(entry) > 11 else 1
+                    line = f"{name},{M},{N},{K},{batch},\n"
                     f.write(line)
         
         if self.verbose:
