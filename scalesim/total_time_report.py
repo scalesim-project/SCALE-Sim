@@ -74,15 +74,18 @@ def dispatch_for_generation(generation):
 #   the TOTAL by the occupancy factor (fit_occupancy_model.py), not modeled here.
 COMPENSATION_BY_GEN = {
     # Batch-1 whole-model model, fit against the CORRECTED GEMM term (fusion + batch
-    # fix). a0 is PINNED to 1.0: the GEMM single_op_us is now the right magnitude
-    # (validated: Sum(GEMM) < whole-model time), so GEMM passes through as-is rather
-    # than being a free knob -- this is both physical and far more robust (leave-one-
-    # model-out 15-17% balanced, vs 15-31% unstable when a0 is free). a1~=0.028 =
-    # non-compute fusion survival (~97% fused away); C_forward~=185us per-forward
-    # overhead. Batch-1 only (inference batch>1 occupancy NOT modelled). In-sample
-    # 11.0% MAPE, LOMO ~16%. See SCALE-Sim_TPU/e2e_work/compensation/.
-    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0284,
-              "c_c": 0.0, "c_n": 0.0, "C_forward": 185.0},
+    # fix). a0 PINNED to 1.0 (GEMM passes through: single_op_us is the right
+    # magnitude, validated Sum(GEMM)<truth). a1 = non-compute fusion survival.
+    # The per-forward overhead is SIZE-DEPENDENT, not a fixed constant:
+    #     C_forward = C0_forward + C1_per_gemm * (#GEMM kernels)
+    # C0~=81us is the per-execute device floor (matches the ~65us measured single-
+    # kernel floor) and each GEMM kernel adds ~0.25us launch/drain overhead. A fixed
+    # C (was 185, fit on the 3 mid-size LLMs) over-predicted a tiny model by +75%;
+    # the size-dependent form fixes that (+3%) while holding the LLMs (~11% MAPE).
+    # Calibrated batch-1 on 3 LLMs x 3 seq + a tiny transformer. Batch>1 occupancy
+    # NOT modelled. See SCALE-Sim_TPU/e2e_work/compensation/.
+    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0359,
+              "c_c": 0.0, "c_n": 0.0, "C0_forward": 81.0, "C1_per_gemm": 0.253},
 }
 
 
@@ -147,6 +150,7 @@ def write_total_time_report(logpath, run_dir, dispatch_us_per_op=None, generatio
 
     out = os.path.join(run_dir, "TIME_REPORT.csv")
     sum_single = sum_tuned = 0.0
+    n_gemm = 0
     with open(out, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["OpID", "single_op_us", "tuned_us", "layer", "stablehlo"])
@@ -154,6 +158,7 @@ def write_total_time_report(logpath, run_dir, dispatch_us_per_op=None, generatio
             if r["kind"] == "compute":
                 t = compute_times.get(r["layer"])
                 layer = r["layer"]
+                n_gemm += 1
             else:
                 t = r["time_us"]
                 layer = "N/A"
@@ -163,11 +168,17 @@ def write_total_time_report(logpath, run_dir, dispatch_us_per_op=None, generatio
             sum_tuned += tuned
             w.writerow([r["op_id"], "" if t is None else f"{t:.6f}",
                         f"{tuned:.6f}", layer, r["stablehlo"]])
-        # add the once-per-forward host constant to the tuned TOTAL only
-        c_forward = comp["C_forward"] if comp else 0.0
+        # once-per-forward overhead, SIZE-DEPENDENT: C0 + C1*(#GEMM kernels).
+        # (A fixed C over-predicts tiny models; this scales the floor with the
+        #  number of device kernel launches. Falls back to a fixed C_forward if a
+        #  generation still carries the old constant form.)
+        if comp and "C0_forward" in comp:
+            c_forward = comp["C0_forward"] + comp.get("C1_per_gemm", 0.0) * n_gemm
+        else:
+            c_forward = comp["C_forward"] if comp else 0.0
         sum_tuned += c_forward
         w.writerow(["TOTAL", f"{sum_single:.6f}", f"{sum_tuned:.6f}",
-                    f"C_forward={c_forward:.3f}", ""])
+                    f"C_forward={c_forward:.3f}(n_gemm={n_gemm})", ""])
 
     # remove redundant intermediates now folded into the unified report
     for p in tables:
