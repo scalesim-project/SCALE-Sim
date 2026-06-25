@@ -312,10 +312,16 @@ stable); then C0,C1 fit cleanly with C1 > 0. **v6e's floor is large+constant
 (C0=321us) vs v4's small C0=81us** -- the real generational difference (v6e pays a
 big fixed per-forward overhead; per-kernel C1 is minor).
 
-End-to-end through `scale.py -b -c configs/tpuv6e.cfg` (tuned_us TOTAL vs truth, seq128):
-tiny +13.0% · gpt2 −19.7% · smollm2-135m +3.8% · qwen2.5-0.5b −18.4%. The tiny
-model is +13% (was +59% with a fixed C fit only on the LLMs) -- the size-dependent
-C is what fixes small models. gpt2/qwen seq128 under-predict (the same large-vocab
-seq128 weak spot v4 shows). Pipeline: export_stablehlo_v6e.py (fp32, shapes only) ->
-build_calib_v6e.py (JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e.py ->
-fit_compensation_v6e.py -> total_time_report.py.
+Extended to **seq 1024** (2026-06-25): calibrated on 3 LLMs x seq{128,256,512,1024}
++ tiny (13 points). Constants barely moved (C0=329.8us, C1=0.7559us, a1=0.0295),
+in-sample 10.8%.
+
+**3 large models, all 4 seqs (12 points): mean |err| = 10.4%, median 8.2%, max 22.8%.**
+Per model: qwen2.5-0.5b 8.7% · smollm2-135m 8.3% · gpt2 14.1% (gpt2 is the smallest,
+overhead-dominated, and under-predicts at both seq extremes). End-to-end seq1024
+(pipeline): gpt2 −22.8% · smollm2 +4.8% · qwen +4.3%; seq128: gpt2 −19.7% · smollm2
++3.8% · qwen −18.4%; tiny +13%. The gpt2/qwen seq128 + gpt2/1024 under-predictions
+are the large-vocab/overhead weak spot (same as v4); the mid sizes/seqs are ~3-10%.
+Pipeline: export_stablehlo_v6e.py (fp32, shapes only) -> build_calib_v6e.py
+(JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e.py -> fit_compensation_v6e
+.py -> total_time_report.py.

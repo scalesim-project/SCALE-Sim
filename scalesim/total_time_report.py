@@ -94,9 +94,10 @@ COMPENSATION_BY_GEN = {
     # floor is large+constant (C0=321us) with a small positive per-kernel term
     # (C1=0.80us) -- C0 >> v4's 81us, the real generational difference. In-sample
     # 10.8% MAPE (~v4's 11.9%); tiny model now +13% (was +59% with a fixed C=490 fit
-    # only on the LLMs). Batch>1 occupancy NOT modelled.
+    # only on the LLMs). Calibrated on 3 LLMs x seq{128,256,512,1024} + tiny. Batch>1
+    # occupancy NOT modelled.
     "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0295,
-               "c_c": 0.0, "c_n": 0.0, "C0_forward": 321.1, "C1_per_gemm": 0.8016},
+               "c_c": 0.0, "c_n": 0.0, "C0_forward": 329.8, "C1_per_gemm": 0.7559},
 }
 
 
