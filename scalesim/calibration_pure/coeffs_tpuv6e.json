@@ -1,0 +1,10 @@
+{
+  "model": "T = 1.0*Sum(GEMM) + a1*Sum(noncompute) + C_forward  [batch-1]",
+  "a0_mxu": 1.0,
+  "a1_vpu": 0.027038334750514835,
+  "c_c": 0.0,
+  "c_n": 0.0,
+  "C_forward": 493.27393947470125,
+  "in_sample_mape": 7.326716429205183,
+  "n_points": 9
+}
