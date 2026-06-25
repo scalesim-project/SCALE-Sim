@@ -268,18 +268,19 @@ under-weights. More calibration models would tighten the 2 constants.
 
 All 4 layers calibrated for v6e (CALIBRATION_RUNBOOK):
 - **L1 GEMM fusion**: 12-region `TPUV6E_REGION_TABLE` in tpu.py (held-out 11.7%).
-- **L2 batch reduction**: `tpuv6e_batch_reduction` reuses the v4 shape (same 128x128
-  array; p,c recalibration optional — RUNBOOK step 3).
+- **L2 batch reduction**: `tpuv6e_batch_reduction` recalibrated on a v6e batch x
+  shape sweep (`measure_batch_sweep.py`, `batch_reduction.csv`): p=0.7769, c=23.20,
+  R MAPE 7.1% (vs 11.0% reusing v4's p=0.805,c=21.0).
 - **Ops**: loop-method `model/tpuv6e/` (4–6% per-op, kept as production single_op).
 - **Whole-model**: `COMPENSATION_BY_GEN["TPUv6e"]`, same form as v4, a0 pinned=1.
 
 Whole-model fit (`fit_compensation_v6e.py`, batch-1, torch.compile device-busy truth
 `e2e_device_truth_tpuv6e.csv`, sums `calib_tpuv6e.csv` from per-seq StableHLO export
-+ bypass): **a1=0.0270, C_forward=493us, in-sample 7.3% MAPE, leave-one-model-out
-14.4%** (vs v4's a1=0.028 / 11% / 16%). `Sum(GEMM) < truth` holds for all 9 points.
++ bypass): **a1=0.0295, C_forward=491us, in-sample 7.2% MAPE, leave-one-model-out
+13.8%** (vs v4's a1=0.028 / 11% / 16%). `Sum(GEMM) < truth` holds for all 9 points.
 
 End-to-end through `scale.py -b -c configs/tpuv6e.cfg` (tuned_us TOTAL vs truth, seq128):
-gpt2 −5.1% · smollm2-135m −1.2% · qwen2.5-0.5b −19.2% (the same qwen/seq128
+gpt2 −5.1% · smollm2-135m −0.6% · qwen2.5-0.5b −18.8% (the same qwen/seq128
 under-prediction v4 shows — large vocab embedding/LM-head the a1 term under-weights).
 Pipeline: export_stablehlo_v6e.py (fp32, shapes only) -> build_calib_v6e.py
 (JAX_PLATFORMS=cpu bypass sums) -> fit_compensation_v6e.py -> total_time_report.py.

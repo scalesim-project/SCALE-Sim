@@ -86,12 +86,12 @@ COMPENSATION_BY_GEN = {
     # Same model + structure as v4 (a0 pinned to 1.0, GEMM passthrough), v6e
     # constants. Fit batch-1 against torch.compile device-busy ground truth on this
     # VM (3 LLMs x seq{128,256,512}; calibration_pure/calib_tpuv6e.csv via
-    # fit_compensation_v6e.py). a1=0.027 (~97% of non-compute fused away, matching
-    # v4's 0.028); C_forward=493us per-forward overhead. In-sample 7.3% MAPE,
-    # leave-one-model-out 14.4%. Same qwen/seq128 weak spot as v4. Uses the v6e
-    # GEMM term (TPUV6E_REGION_TABLE) so Sum(GEMM) < truth holds for all points.
-    "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0270,
-               "c_c": 0.0, "c_n": 0.0, "C_forward": 493.3},
+    # fit_compensation_v6e.py). a1=0.0295 (~97% of non-compute fused away, matching
+    # v4's 0.028); C_forward=491us per-forward overhead. In-sample 7.2% MAPE,
+    # leave-one-model-out 13.8%. Same qwen/seq128 weak spot as v4. Uses the v6e
+    # GEMM term (TPUV6E_REGION_TABLE) + v6e batch reduction so Sum(GEMM) < truth.
+    "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0295,
+               "c_c": 0.0, "c_n": 0.0, "C_forward": 490.8},
 }
 
 

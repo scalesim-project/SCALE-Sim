@@ -176,10 +176,16 @@ _TPUV6E_FALLBACK = (4.264973e-05, 2.3951, 188.075)  # large-compute region, if i
 
 
 def tpuv6e_batch_reduction(batch, M, N, K):
-    """Level-2 batched-matmul reduction for v6e. Until a v6e batch-sweep is fit
-    (CALIBRATION_RUNBOOK step 3), reuse the v4 reduction shape (same 128x128 array;
-    recalibrate p,c on v6e for accuracy)."""
-    return tpuv4_batch_reduction(batch, M, N, K)
+    """Level-2 batched-matmul reduction for v6e (same form as v4, v6e p,c).
+    Calibrated on a v6e batch x shape xprof sweep (measure_batch_sweep.py,
+    batch_reduction.csv): R = u + (1-u)/batch, u = nt^0.7769/(nt^0.7769 + 23.20),
+    nt = ceil(M/128)*ceil(N/128). R MAPE 7.1% on 60 batched points (vs 11.0%
+    reusing v4's p=0.805,c=21.0). Returns 1.0 for batch<=1."""
+    if batch is None or batch <= 1:
+        return 1.0
+    nt = math.ceil(M / 128) * math.ceil(N / 128)
+    u = nt ** 0.7769 / (nt ** 0.7769 + 23.1994)
+    return u + (1.0 - u) / batch
 
 
 def tpuv6e_linear_model(cycles, s_row=1, s_col=1, t_time=1, M=None, N=None, K=None):
