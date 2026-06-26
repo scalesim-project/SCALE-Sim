@@ -1,0 +1,10 @@
+# Generated at runtime by preprocess.py / run_all.sh
+accelergy_output/
+output/
+accelergy_input/architecture.yaml
+accelergy_input/action_count.yaml
+
+# Tutorial sweep outputs (reproducible via tutorial_vit_sweep.py)
+tutorial_results/
+
+__pycache__/

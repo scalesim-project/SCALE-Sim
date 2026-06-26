@@ -1,0 +1,51 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: custom_intmac
+    attributes:
+      technology: 40nm
+      width: 32
+      action_latency_cycles: 1
+    subcomponents:
+      - name: intmac
+        class: intmac
+        attributes:
+          width: 32
+          technology: 40nm
+          action_latency_cycles: 1
+    actions:
+      - name: mac_gated
+        subcomponents:
+          - name: intmac
+            actions:
+              - name: mac_gated
+                arguments:
+                  action_latency_cycles: 1
+      - name: mult_gated
+        subcomponents:
+          - name: intmac
+            actions:
+              - name: mult_gated
+                arguments:
+                  action_latency_cycles: 1
+      - name: mult_reused
+        subcomponents:
+          - name: intmac
+            actions:
+              - name: mult_reused
+                arguments:
+                  action_latency_cycles: 1
+      - name: mac_random
+        subcomponents:
+          - name: intmac
+            actions:
+              - name: mac_random
+                arguments:
+                  action_latency_cycles: 1
+      - name: idle
+        subcomponents:
+          - name: intmac
+            actions:
+              - name: idle
+                arguments:
+                  action_latency_cycles: 1

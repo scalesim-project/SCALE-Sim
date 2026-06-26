@@ -1,0 +1,37 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: custom_DRAM
+    attributes:
+      technology: 40nm
+      type: "LPDDR4"
+      width: 32
+    subcomponents:
+      - name: DRAM
+        class: DRAM
+        attributes:
+          type: "LPDDR4"
+          width: 32
+          technology: 40nm
+    actions:
+      - name: read
+        subcomponents:
+          - name: DRAM
+            actions:
+              - name: read
+      - name: idle
+        subcomponents:
+          - name: DRAM
+            actions:
+              - name: leak
+      - name: update
+        subcomponents:
+          - name: DRAM
+            actions:
+              - name: update
+      - name: write
+        subcomponents:
+          - name: DRAM
+            actions:
+              - name: write
+          

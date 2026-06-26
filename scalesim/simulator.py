@@ -103,6 +103,9 @@ class simulator:
 
             single_layer_obj.run()
 
+            # Generate REPEAT_CYCLE.csv for Accelergy energy estimation
+            single_layer_obj.run_energy_model(self.top_path)
+
             if self.verbose:
                 comp_items = single_layer_obj.get_compute_report_items()
                 total_cycles = comp_items[0]
@@ -199,7 +202,8 @@ class simulator:
         header += 'SRAM OFMAP Start Cycle, SRAM OFMAP Stop Cycle, SRAM OFMAP Writes, '
         header += 'DRAM IFMAP Start Cycle, DRAM IFMAP Stop Cycle, DRAM IFMAP Reads, '
         header += 'DRAM Filter Start Cycle, DRAM Filter Stop Cycle, DRAM Filter Reads, '
-        header += 'DRAM OFMAP Start Cycle, DRAM OFMAP Stop Cycle, DRAM OFMAP Writes,\n'
+        header += 'DRAM OFMAP Start Cycle, DRAM OFMAP Stop Cycle, DRAM OFMAP Writes, '
+        header += 'IFMAP Write Count, IFMAP Read Count, Filter Write Count, Filter Read Count, OFMAP Write Count, OFMAP Read Count,\n'
         detail_report.write(header)
 
         if self.conf.sparsity_support is True:

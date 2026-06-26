@@ -55,6 +55,10 @@ class systolic_compute_is:
         self.mapping_efficiency_per_fold = []
         self.compute_utility_per_fold = []
 
+        # Used PE array (for Accelergy action counts)
+        self.row_used_fold = []
+        self.col_used_fold = []
+
         # Flags
         self.params_set_flag = False
         self.prefetch_mat_ready_flag = False
@@ -270,6 +274,9 @@ class systolic_compute_is:
 
                 self.mapping_efficiency_per_fold.append(mapping_eff_this_fold)
                 self.compute_utility_per_fold.append(compute_util_this_fold)
+
+                self.row_used_fold.append(row_used)
+                self.col_used_fold.append(col_used)
 
                 if fr == 0 and fc == 0:
                     self.ifmap_demand_matrix = this_fold_demand
@@ -490,6 +497,64 @@ class systolic_compute_is:
         """
         assert self.demand_mat_ready_flag, 'Computes not ready yet'
         return self.ofmap_writes
+
+    # get pe action counts (for Accelergy energy estimation)
+    def get_pe_action_count(self):
+        ifmap_write_action_count, ifmap_read_action_count = self.get_ifmap_action_count()
+        filter_write_action_count, filter_read_action_count = self.get_filter_action_count()
+        ofmap_write_action_count, ofmap_read_action_count = self.get_ofmap_action_count()
+        return ifmap_write_action_count, ifmap_read_action_count, filter_write_action_count, filter_read_action_count, ofmap_write_action_count, ofmap_read_action_count
+
+    def get_ifmap_action_count(self):
+        ifmap_write_action_count = 0
+        ifmap_read_action_count = 0
+        for fc in range(self.col_fold):
+            for fr in range(self.row_fold):
+                row_used = self.row_used_fold[fc * self.row_fold + fr]
+                col_used = self.col_used_fold[fc * self.row_fold + fr]
+                ifmap_write_prefill_action_count = (1 + row_used) * row_used *0.5 * col_used
+                ifmap_write_compute_action_count = 0
+                ifmap_write_action_count_fold = ifmap_write_prefill_action_count + ifmap_write_compute_action_count
+                ifmap_read_prefill_action_count = (1 + row_used) * row_used *0.5 * col_used - row_used * col_used
+                ifmap_read_compute_action_count = row_used * col_used * self.T
+                ifmap_read_action_count_fold = ifmap_read_prefill_action_count + ifmap_read_compute_action_count
+                ifmap_write_action_count += ifmap_write_action_count_fold
+                ifmap_read_action_count += ifmap_read_action_count_fold
+        return ifmap_write_action_count, ifmap_read_action_count
+
+    def get_filter_action_count(self):
+        filter_write_action_count = 0
+        filter_read_action_count = 0
+        for fc in range(self.col_fold):
+            for fr in range(self.row_fold):
+                row_used = self.row_used_fold[fc * self.row_fold + fr]
+                col_used = self.col_used_fold[fc * self.row_fold + fr]
+                filter_write_prefill_action_count = row_used * col_used * self.T
+                filter_write_compute_action_count = 0
+                filter_write_action_count_fold = filter_write_prefill_action_count + filter_write_compute_action_count
+                filter_read_prefill_action_count = row_used * (col_used - 1) * self.T
+                filter_read_compute_action_count = row_used * col_used * self.T
+                filter_read_action_count_fold = filter_read_prefill_action_count + filter_read_compute_action_count
+                filter_write_action_count += filter_write_action_count_fold
+                filter_read_action_count += filter_read_action_count_fold
+        return filter_write_action_count, filter_read_action_count
+
+    def get_ofmap_action_count(self):
+        ofmap_write_action_count = 0
+        ofmap_read_action_count = 0
+        for fc in range(self.col_fold):
+            for fr in range(self.row_fold):
+                row_used = self.row_used_fold[fc * self.row_fold + fr]
+                col_used = self.col_used_fold[fc * self.row_fold + fr]
+                ofmap_write_compute_action_count = row_used * col_used * self.T
+                ofmap_write_postfill_action_count = (self.arr_row - row_used) * col_used * self.T
+                ofmap_write_action_count_fold = ofmap_write_compute_action_count + ofmap_write_postfill_action_count
+                ofmap_read_compute_action_count = (row_used - 1) * col_used * self.T
+                ofmap_read_postfill_action_count = (self.arr_row - row_used) * col_used * self.T
+                ofmap_read_action_count_fold = ofmap_read_compute_action_count + ofmap_read_postfill_action_count
+                ofmap_write_action_count += ofmap_write_action_count_fold
+                ofmap_read_action_count += ofmap_read_action_count_fold
+        return ofmap_write_action_count, ofmap_read_action_count
 
 
 #
