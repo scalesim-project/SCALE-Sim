@@ -165,17 +165,43 @@ def measure(kind, fn, d0, d1, d2, warmup, reps):
     return (t_loop(K) - t_loop(K1)) / (K - K1) * 1e6, K  # us/op
 
 
-def sample_shapes(n, seed, max_numel=4e7):
+def sample_shapes(n, seed, max_numel=4e7, llm_frac=0.6):
+    """Distinct 3-D shapes for op-latency sampling, in two buckets so the models are
+    sharp for LLMs (the priority -- the only regime validated against whole-model
+    truth) yet degrade gracefully off-distribution:
+
+      llm_frac  (default 60%)  LLM-anchored: small batch/head d0, a seq-length menu
+                d1, and d2 log-uniform up to 160k -- covers hidden -> FFN -> VOCAB
+                (the big dim in LLMs is the vocab/logits axis, e.g. gpt2 50k,
+                qwen 152k, llama 128k; cap 160k so qwen/llama are in-distribution,
+                not extrapolated).
+      1-llm_frac (40%)  broad/general: wide log-uniform d0/d1/d2 with varied
+                aspect ratios, so CNN/ViT/diffusion/arbitrary shapes are covered
+                enough to avoid wild extrapolation.
+
+    Note: the models are shape-only (features [d0,d1,d2,size,log2_size], no axis/
+    permutation feature). Elementwise ops generalize by total size, so the broad
+    bucket helps them directly; layout/axis ops (transpose/reduce/broadcast/slice)
+    still bake in the sampled config -- broad coverage limits, not eliminates, their
+    off-LLM error (a real fix needs an axis feature)."""
     import random
     rng = random.Random(seed)
+    n_llm = int(round(n * llm_frac))
     shapes = set()
-    # log-uniform over a 3D activation-like space + LLM-ish picks
-    d1_choices = [1, 8, 16, 64, 128, 256, 512, 1024]
-    while len(shapes) < n:
+    # --- LLM-anchored bucket (60%) ---
+    d1_llm = [1, 8, 16, 64, 128, 256, 512, 1024]
+    while len(shapes) < n_llm:
         d0 = rng.choice([1, 1, 1, 2, 4, 8, 12, 14, 16, 32])
-        d1 = rng.choice(d1_choices)
-        d2 = int(round(math.exp(rng.uniform(math.log(8), math.log(50000)))))
-        if d0 * d1 * d2 <= max_numel and d2 >= 2:
+        d1 = rng.choice(d1_llm)
+        d2 = int(round(math.exp(rng.uniform(math.log(8), math.log(160000)))))  # ..vocab
+        if d2 >= 2 and d0 * d1 * d2 <= max_numel:
+            shapes.add((d0, d1, d2))
+    # --- broad / general bucket (40%) ---
+    while len(shapes) < n:
+        d0 = int(round(math.exp(rng.uniform(0.0, math.log(2048)))))   # 1 .. 2048
+        d1 = int(round(math.exp(rng.uniform(0.0, math.log(4096)))))   # 1 .. 4096
+        d2 = int(round(math.exp(rng.uniform(0.0, math.log(50000)))))  # 1 .. 50000
+        if d2 >= 2 and d0 * d1 * d2 <= max_numel:
             shapes.add((d0, d1, d2))
     return sorted(shapes)
 

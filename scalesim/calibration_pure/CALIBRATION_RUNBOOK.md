@@ -20,9 +20,13 @@ The model has 4 layers, calibrated in order. `<GEN>` = `TPUv6e` (or `TPUv5e`, ..
 - Exclusive PJRT access (`PJRT_DEVICE=TPU`, no other process on `/dev/accel*`).
 - `pip install "jax[tpu]" scikit-learn pandas` ; `pip install torch torch_xla transformers` (for whole-model ground truth).
 - Clone this repo; `cd scalesim`. bf16, single device throughout.
-- xprof note: the collectors read the device-timeline `fusion` span from the trace
-  (PID auto-detected from `/device:TPU:0` process_name). Verify a smoke run prints
-  non-empty kernel times before launching the full sweeps.
+- xprof note: the collectors read the op's real kernel time as the **sum of the inner
+  device spans nested in the `jit_*` wrapper, EXCLUDING the wrapper** (PID auto-detected
+  from `/device:TPU:0`). Reading the wrapper instead = a ~10 us per-launch floor on
+  every op (the old bug). Verify a smoke run prints non-empty, sub-10us kernel times.
+- The whole-model calibration graphs are **committed** (`calib_mlir/s{128,256,512,1024}/
+  <model>.stablehlo.mlir`, f32) and are target-independent, so step 4 needs **no
+  re-export** -- the same graphs calibrate every generation.
 
 ## 1. Level-1 GEMM fusion-time model  (-> `tpu.py` region table)
 ```bash
@@ -46,16 +50,28 @@ python3 fit_piecewise_pure.py gemm_fusion_strat_<gen>.csv     # prints 8-region 
   violated, the small-M slope is too high -> check the 2nd M bar.
 
 ## 2. Non-compute per-op models  (-> `model/<gen>/*.pkl`)
+PURE device-span method (`collect_pure_device_tpu.py`): reads each op's real kernel
+time off the xprof device timeline = **sum of the inner spans nested in the `jit_*`
+wrapper, EXCLUDING the wrapper** (the wrapper is the ~10 us per-launch floor; reading
+it as the kernel was the old bug that inflated every op ~10 us). Audited across all 24
+ops -- uniform rule, no per-op special-casing (composite ops like `batch_norm_training`
+just sum their several real fusions). See `model/README.md` §f.
 ```bash
 cd scalesim/model/calibration
-PJRT_DEVICE=TPU python3 collect_ops_tpu.py --ops add subtract multiply maximum minimum \
-    divide negate rsqrt exponential logistic tanh power sine cosine convert compare and \
-    select batch_norm_training reduce slice transpose reshape broadcast concatenate \
-    --n 1000 --outdir datasets_<gen>          # one CSV per op (run in batches of 5 for crash-safety)
-python3 train_ops.py --datadir datasets_<gen> --outdir ../<gen>     # -> model/<gen>/*.pkl
+OPS="add subtract multiply divide maximum minimum negate rsqrt exponential logistic \
+     tanh power sine cosine convert compare and select batch_norm_training reduce \
+     slice transpose reshape broadcast concatenate"
+PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py --ops $OPS \
+    --outdir ../../calibration_pure/datasets_pure_<gen>_fixed
+    # defaults: n=1000 (60% LLM-anchored incl. vocab to 160k + 40% broad/general),
+    #           iters=10 warmup=1 reps=1. Verify it prints "device=TPU <gen>".
+python3 train_ops.py \
+    --datadir ../../calibration_pure/datasets_pure_<gen>_fixed --outdir ../<gen>   # -> model/<gen>/*.pkl
 ```
 `NonComputeLatencyPredictor` auto-selects `model/<gen>/` from the config's
-`TimeLinearModel:` key (falls back to tpuv4 if absent).
+`TimeLinearModel:` key (falls back to tpuv4 if absent), so the new models go live once
+written. (The loop-method `collect_ops_tpu.py` is the floor-removed alternate; the
+shipped models use the pure span -- the honest standalone cost the whole-model sum needs.)
 
 ## 3. Level-2 batch reduction  (-> `tpu.py` batch-reduction coeffs)
 ```bash
@@ -68,19 +84,24 @@ loop is in the RESULTS.md "batch" section / fit_piecewise helpers). **Wire in:**
 and point `bypass_compute._batch_reduction` at it for `<GEN>`.
 
 ## 4. Whole-model compensation  (-> `COMPENSATION_BY_GEN[<GEN>]`)
+Model: `T = Sc + a1*Sn + C0` (a0 pinned to 1; C1*n_gemm dropped -- collinear with Sn).
+The calibration StableHLO graphs are committed (`calib_mlir/s{128,256,512,1024}/`, f32,
+target-independent) and the fit is one **CPU-only** command parameterized by `--gen`,
+so the only TPU work here is measuring truth.
 ```bash
 cd scalesim/calibration_pure
-# 4a. ground truth: torch.compile device-busy per (model,seq), batch=1
-PJRT_DEVICE=TPU python3 devicetruth_worker.py <model> <seq> 1   # repeat over models x seqs -> e2e_device_truth_<gen>.csv
-# 4b. predicted sums: run the bypass on each model's StableHLO at each seq
-PYTHONPATH=.. python3 ../scale.py -b -c ../../configs/<gen>.cfg -t <model>.stablehlo.mlir -p out/   # -> COMPUTE/TIME report
-#     collect Sum(GEMM) (bypass "total predicted compute time") and Sum(non-compute) per run
-# 4c. fit  T ~= a0*Sum(GEMM) + a1*Sum(noncompute) + C  (pin a0=1; fit a1, C)
-python3 fit_compensation.py        # adapt its calib.csv inputs to the <gen> sums + truth
+# 4a. whole-model truth (torch.compile device-busy), batch=1, per (model,seq):
+PJRT_DEVICE=TPU python3 devicetruth_worker.py <model> <seq> 1   # -> rows of e2e_device_truth_<gen>.csv
+#     (reuse the committed e2e_device_truth_<gen>.csv if this VM is the same hardware)
+# 4b. tiny small-model anchor truth on this gen:
+PJRT_DEVICE=TPU python3 measure_tiny_truth.py                   # prints tiny device-busy us
+# 4c. fit (CPU; uses the in-repo calib_mlir + model/<gen> from step 2):
+python3 fit_compensation_pure.py --gen <gen> --tiny-truth <us_from_4b>
 ```
-**Wire in:** `COMPENSATION_BY_GEN["<GEN>"] = {a0_mxu:1.0, a1_vpu:<fit>, c_c:0, c_n:0,
-C_forward:<fit>}` in `total_time_report.py`. Batch-1 only (inference batch>1 occupancy
-is deliberately out of scope).
+It prints `a1`, `C0` and writes `coeffs_<gen>_pure.json` + `calib_<gen>_pure.csv`.
+**Wire in:** paste into `COMPENSATION_BY_GEN["<GEN>"] = {a0_mxu:1.0, a1_vpu:<a1>, c_c:0,
+c_n:0, C0_forward:<C0>, C1_per_gemm:0.0}` in `total_time_report.py`. Batch-1 only
+(inference batch>1 occupancy is deliberately out of scope).
 
 ## 5. Validate
 - Per-GEMM: `gemm_model_vs_golden` style check (pred vs measured `fusion`).

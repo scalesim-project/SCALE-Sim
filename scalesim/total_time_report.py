@@ -86,7 +86,7 @@ COMPENSATION_BY_GEN = {
     # 3 LLMs x seq{128,256,512,1024} + a tiny_transformer anchor (pins C0 down --
     # without it C0 free-fits to ~257us and over-predicts tiny by +120%) vs v4 device-
     # busy truth (e2e_work/e2e_device_truth.csv + measured tiny) via calibration_pure/
-    # fit_compensation_v4_pure.py -> calib_v4_pure.csv, coeffs_v4_pure.json: in-sample
+    # fit_compensation_pure.py --gen tpuv4 -> calib_tpuv4_pure.csv: in-sample
     # 11.9% MAPE, tiny 8%.  Batch>1 occupancy NOT modelled.
     #   NOTE: a1=0.0092 is NOT comparable to the old loop fit's 0.0359 -- a1 only maps
     # this pipeline's Sn magnitude onto the truth; the meaningful invariant is the
