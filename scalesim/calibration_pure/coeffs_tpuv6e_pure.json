@@ -1,0 +1,13 @@
+{
+  "a0_mxu": 1.0,
+  "a1_vpu": -0.004424096301239646,
+  "c_c": 0.0,
+  "c_n": 0.0,
+  "C0_forward": 110.17845443377114,
+  "C1_per_gemm": 0.0,
+  "in_sample_mape": 18.058933920371697,
+  "lomo_cv_mape": 25.04430850096061,
+  "n_points": 13,
+  "gen": "tpuv6e",
+  "basis": "PURE per-op models; T=Sc+a1*Sn+C0; f32 graphs"
+}

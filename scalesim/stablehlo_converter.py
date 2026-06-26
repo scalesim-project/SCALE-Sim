@@ -221,10 +221,10 @@ class NonComputeLatencyPredictor:
 
     # TimeLinearModel config value -> per-generation model subdir name
     _GENERATION_DIRS = {
-        # TPUv6e uses the pure-device (xprof kernel) per-op models. The compensation
-        # a1/C0/C1 in total_time_report.py were refit against the resulting (larger,
-        # floor-inclusive) non-compute sums -- keep these consistent.
-        "tpuv4": "tpuv4", "tpuv5e": "tpuv5e", "tpuv6e": "tpuv6e_pure",
+        # model/<gen> holds the PURE-device (xprof inner-span) per-op models for each
+        # generation (v4 and v6e both re-collected with the fixed collector + n=1000
+        # sampler; see CALIBRATION_RUNBOOK). Identity mapping -- no _pure suffix.
+        "tpuv4": "tpuv4", "tpuv5e": "tpuv5e", "tpuv6e": "tpuv6e",
     }
 
     @staticmethod
