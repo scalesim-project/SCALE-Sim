@@ -5,9 +5,11 @@ cycle-accurately (everything except `dot_general`/`convolution`). The
 `NonComputeLatencyPredictor` (in `stablehlo_converter.py`) loads these and predicts
 each op's latency from its tensor shape.
 
-- `tpuv4/*.pkl` — one model per op, for TPU v4. Auto-loaded by filename: a file
-  `reshape.pkl` is matched to `stablehlo.reshape` (last name-token), so new ops are
-  drop-in with no converter changes.
+- `tpuv4/*.pkl` — one model per op, for TPU v4. These are the **pure** (xprof
+  single-op device-span) models: the standalone per-op kernel time read straight from
+  the device timeline (§f), which is what the whole-model compensation now sums.
+  Auto-loaded by filename: a file `reshape.pkl` is matched to `stablehlo.reshape`
+  (last name-token), so new ops are drop-in with no converter changes.
 - `calibration/` — scripts to measure and train the models on a TPU (below).
 
 Each `.pkl` is `{"model": HistGradientBoostingRegressor, "op_name": str,
@@ -21,14 +23,17 @@ Same recipe for every op (matches the originally-shipped 5 models):
 
 - **Features (5):** `d0, d1, d2, size = d0·d1·d2, log2_size`, taken from the op's
   **first input** shape padded/flattened to 3-D (`_opinfo_to_shape`).
-- **Label:** measured **device time** in µs (kernel-only; host/PJRT dispatch removed).
+- **Label:** the op's **pure device-span** in µs — its standalone kernel time read
+  directly from the xprof device timeline (NOT host/PJRT dispatch).
 - **Model:** `HistGradientBoostingRegressor(loss="absolute_error",
   learning_rate=0.06, early_stopping="auto")`, 80/20 split.
-- **Measurement:** an in-JIT `fori_loop` runs the op many times on-device in a single
-  dispatch; device time = `(t_K − t_1)/(K−1)` cancels the fixed ~55 µs host dispatch,
-  isolating kernel time. bf16, single device, no SPMD. (A trace-authoritative
-  cross-check, `collect_pure_device_tpu.py`, reads kernel time straight from the
-  xprof device timeline instead of subtracting — see §f.)
+- **Measurement (§f):** `collect_pure_device_tpu.py` reads the single-op kernel span
+  straight from the xprof device timeline — the lean, standalone kernel time. This is
+  consistently *smaller* than the loop-method `(t_K − t_1)/(K−1)` marginal (≈0.7–0.95×
+  for elementwise, ~0.3× for `reduce`): the loop marginal carries per-iteration
+  loop-body/control overhead that a single clean kernel does not. The pure span is the
+  honest standalone device cost, so the whole-model fit sums it. bf16, single device,
+  no SPMD.
 - **Sampling:** ~1500 shapes/op, log-uniform over an activation-like 3-D space.
 
 **Shape-only by design:** the models take no op *attributes* (transpose permutation,
@@ -39,27 +44,31 @@ approximation that bakes in the sampled configuration (see limitations).
 
 ## b. Accuracy (TPU v4, bf16; held-out val MAPE)
 
-25 ops. Target was the existing 5 models' ~5–7%; most ops meet it.
+25 ops, **pure device-span** label (mean 10.2%, median 9.1%). Relative error is
+higher than the loop-method signal (~5%) because the pure span is a tiny absolute
+kernel time (sub-µs to a few µs), so the xprof timeline's fixed resolution/jitter is a
+larger *relative* error — the target is noisier in relative terms, not the model worse.
 
 | op | MAPE | | op | MAPE |
 |----|-----:|-|----|-----:|
-| concatenate | 3.54% | | reshape | 4.95% |
-| slice | 3.62% | | maximum | 4.97% |
-| negate | 3.77% | | multiply | 5.16% |
-| batch_norm_training | 4.13% | | rsqrt | 5.26% |
-| exponential | 4.19% | | divide | 5.29% |
-| power | 4.20% | | select | 5.37% |
-| tanh | 4.22% | | logistic | 5.49% |
-| compare | 4.34% | | and | 5.56% |
-| transpose | 4.43% | | cosine | 8.48% |
-| reduce | 4.50% | | sine | 8.49% |
-| convert | 4.92% | | broadcast_in_dim | 9.54% |
-| add 4.06 · subtract 4.12 · minimum 4.25 | | | | |
+| slice | 7.2% | | rsqrt | 9.3% |
+| maximum | 7.7% | | concatenate | 9.8% |
+| and | 7.8% | | batch_norm_training | 9.9% |
+| tanh | 7.8% | | logistic | 10.1% |
+| multiply | 7.9% | | exponential | 11.7% |
+| select | 8.1% | | convert | 12.0% |
+| transpose | 8.1% | | reduce | 12.5% |
+| divide | 8.2% | | sine | 13.2% |
+| compare | 8.3% | | broadcast_in_dim | 13.7% |
+| subtract | 8.3% | | cosine | 13.8% |
+| add | 8.6% | | reshape | 23.5% |
+| negate 8.9 · minimum 9.1 · power 9.1 | | | | |
 
-- **21 / 25 within 5–7%.** Outliers: `sine`/`cosine` (~8.5%, transcendental, high
-  variance) and `broadcast_in_dim` (9.5%).
-- **Methodology check (M0):** the re-collected `add` reaches 4.06% vs the
-  originally-shipped 6.6% — the pipeline reproduces and slightly beats the reference.
+- **Outliers:** `reshape` (23.5% — near-free op, the floor swamps the tiny shape
+  signal), then `cosine`/`sine`/`broadcast_in_dim`/`reduce` (~12–14%). These are all
+  small/floor-dominated ops where per-launch jitter dominates.
+- The loop-method (floor-subtracted) models fit ~2× tighter (3.5–9.5%) but to a
+  different target; the pure span is used because it is the honest standalone cost.
 
 **Limitations (read before trusting a per-op number):**
 - **Train/serve shape skew** for `broadcast_in_dim` (and would-be `gather`): trained
@@ -202,7 +211,22 @@ wrapper) span, and the python-timer wall.
 > "kernel floor" that was really 1.2 µs of `fusion` + ~11 µs per-launch overhead.
 > The collector now sums the **inner op spans** (`fusion`, copy, …) for `kernel_us`
 > and reports the wrapper separately as `program_us`. This also fixes ops like
-> `reshape` (a free bitcast: ~0 real kernel, was inflated by the wrapper).
+> `reshape` — a memory copy whose real kernel is ~1.3 µs (128×768) to ~26 µs
+> (128×50257), but was reported at ~13–460 µs when the ~10 µs wrapper floor was
+> read as the kernel. (The first re-collection's datasets still had this floor; the
+> *datasets* were re-collected 2026-06-26 with the rule below.)
+
+**Per-op inclusion rule (audited across all 24 ops, 2026-06-26).**
+`kernel_us` = **sum of the `dur` of every device-stream event nested inside the
+`jit_*` wrapper, excluding the wrapper itself**. Verified per op:
+- **Simple ops** (add/mul/…/slice/convert/select, and `transpose`→`copy`,
+  `reshape`→`copy`, `concatenate`→`pad_*_fusion`): exactly **one** real kernel.
+- **Composite ops** emit several genuine sub-kernels that all belong to the op and
+  are all summed: `batch_norm_training` (LayerNorm) = 5 fusions (`convert_reduce` +
+  `fusion.1` + `subtract_multiply` + `fusion.3` + `fusion.4`); `reduce` = `reduce`+
+  `reshape`; `broadcast` = `broadcast`+`reduce`.
+- **Scheduling markers** (`dependency-wait`, `copy-start`, `copy-done`) are ~0 µs and
+  harmless to include. No op needs special-casing — the uniform sum is correct.
 
 **Method notes / gotchas (baked into the script):**
 - The TPU device-stream PID is **auto-detected** from the trace `process_name`
@@ -213,9 +237,10 @@ wrapper) span, and the python-timer wall.
   kernel, NOT the dominant span (the wrapper nests them — that was the bug above).
 - Summing per-event `dur` overstates a *multi-op* graph's span (MXU/VPU overlap);
   fine for a single-kernel op, but for a whole graph use `max(end)−min(start)`.
-- xprof tracing is slower than the loop method (one trace/parse per shape), so keep
-  `--n` modest (default 300) — this is an **audit / constant-pinning** tool, while
-  the §a loop method remains the one used to *train* the size-driven models.
+- xprof tracing is slower than the loop method (one trace/parse per shape), so `--n`
+  is kept modest (400 here vs the loop method's ~1500). This is now the method used to
+  **train** the shipped `tpuv4` models (the pure device-span is the honest standalone
+  cost the whole-model sum needs); the §a loop method is the floor-removed alternate.
 
 **Usage:**
 ```bash

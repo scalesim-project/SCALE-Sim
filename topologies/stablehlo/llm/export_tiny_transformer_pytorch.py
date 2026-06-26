@@ -53,7 +53,7 @@ class TinyTransformer(nn.Module):
 def main():
     ids = torch.arange(SEQ, dtype=torch.long).remainder(VOCAB).reshape(1, SEQ)
     with torch.no_grad():
-        ep = torch.export.export(TinyTransformer().eval().half(), (ids,))   # f16
+        ep = torch.export.export(TinyTransformer().eval(), (ids,))   # f32 (default)
     text = exported_program_to_stablehlo(ep).get_stablehlo_text()
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tiny_transformer_pytorch.stablehlo.mlir")
     open(out, "w").write(text)

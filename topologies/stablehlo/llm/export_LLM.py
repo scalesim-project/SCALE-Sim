@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Export LLM forward graphs to StableHLO MLIR for SCALE-Sim (f16, seq fixed, eager
+"""Export LLM forward graphs to StableHLO MLIR for SCALE-Sim (f32, seq fixed, eager
 attention so matmuls stay explicit). StableHLO is target-independent; export runs on
-CPU and is identical to what XLA-TPU consumes."""
+CPU and is identical to what XLA-TPU consumes.
+
+f32 (uniform dtype): the graph is one dtype throughout, so it has none of the f16/bf16
+softmax/GELU/LayerNorm f16<->f32 convert islands (gpt2: 5 converts vs 137 in f16).
+SCALE-Sim is shape-only for non-compute ops and uses a fixed bf16 byte width for GEMM,
+so the element dtype does not change any predicted shape or cycle count."""
 
 import argparse
 import os
@@ -32,7 +37,7 @@ class LogitsOnly(nn.Module):
 
 def export_one(name, model_id, seq_len, out_dir):
     model = AutoModelForCausalLM.from_pretrained(
-        model_id, torch_dtype=torch.float16, attn_implementation="eager").eval()
+        model_id, dtype=torch.float32, attn_implementation="eager").eval()
     vocab = model.config.vocab_size
     input_ids = torch.arange(seq_len, dtype=torch.long).remainder(vocab).reshape(1, seq_len)
     with torch.no_grad():

@@ -32,7 +32,7 @@ def block(x, p):
     return x + linear(h, p["fc2_w"], p["fc2_b"])
 
 
-DT = jnp.float16
+DT = jnp.float32
 
 
 def init():
