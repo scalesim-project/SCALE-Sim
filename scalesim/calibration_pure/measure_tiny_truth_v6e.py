@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..",
                                 "topologies", "stablehlo", "llm"))
 import torch
 import torch_xla.core.xla_model as xm
-from export_tiny_transformer import TinyTransformer, SEQ, VOCAB
+from export_tiny_transformer_pytorch import TinyTransformer, SEQ, VOCAB
 
 m = TinyTransformer().eval()
 dev = xm.xla_device(); m = m.to(dev)

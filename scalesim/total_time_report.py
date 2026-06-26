@@ -73,29 +73,35 @@ def dispatch_for_generation(generation):
 #   SCOPE: batch-1 composition. batch>1 parallelizes across the chip -- multiply
 #   the TOTAL by the occupancy factor (fit_occupancy_model.py), not modeled here.
 COMPENSATION_BY_GEN = {
-    # Batch-1 whole-model model, fit against the CORRECTED GEMM term (fusion + batch
-    # fix). a0 PINNED to 1.0 (GEMM passes through: single_op_us is the right
-    # magnitude, validated Sum(GEMM)<truth). a1 = non-compute fusion survival.
-    # The per-forward overhead is SIZE-DEPENDENT, not a fixed constant:
-    #     C_forward = C0_forward + C1_per_gemm * (#GEMM kernels)
-    # C0~=81us is the per-execute device floor (matches the ~65us measured single-
-    # kernel floor) and each GEMM kernel adds ~0.25us launch/drain overhead. A fixed
-    # C (was 185, fit on the 3 mid-size LLMs) over-predicted a tiny model by +75%;
-    # the size-dependent form fixes that (+3%) while holding the LLMs (~11% MAPE).
-    # Calibrated batch-1 on 3 LLMs x 3 seq + a tiny transformer. Batch>1 occupancy
-    # NOT modelled. See SCALE-Sim_TPU/e2e_work/compensation/.
-    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0359,
-              "c_c": 0.0, "c_n": 0.0, "C0_forward": 81.0, "C1_per_gemm": 0.253},
-    # v6e: same model + structure as v4 (a0=1, size-dependent C0 + C1*n_gemm). The
-    # non-compute single_op uses the PURE-DEVICE per-op models (model/tpuv6e_pure/,
-    # xprof kernel time incl. floor) -- NonComputeLatencyPredictor maps TPUv6e ->
-    # tpuv6e_pure. On this (larger, floor-inclusive) Sn basis the free 3-param solve
-    # is well-conditioned (a1,C1 > 0; no pinning needed, unlike the loop-method basis
-    # which was degenerate). Calibrated batch-1 on 3 LLMs x seq{128,256,512,1024} +
-    # tiny_transformer -> calib_tpuv6e.csv via fit_compensation_v6e.py. a1=0.0199
-    # (non-compute fusion survival on the pure basis), C0=331us (large constant
-    # per-forward floor, vs v4's 81us -- the real generational difference),
-    # C1=0.846us/GEMM. In-sample 10.9% MAPE (~v4's 11.9%). Batch>1 NOT modelled.
+    # Batch-1 whole-model model: T = a0*Sc + a1*Sn + C_forward.  a0 PINNED to 1.0
+    # (GEMM passes through: single_op_us is the right magnitude, validated Sum(GEMM)<
+    # truth).  a1 = non-compute fusion-survival factor.  C_forward = C0 (fixed; C1_per_
+    # gemm = 0 -- a size-dependent C1*n_gemm term is collinear with Sn and hurts cross-
+    # model generalization, so it is dropped).  C0~=92us is the per-execute device
+    # floor (~the loop fit's 81us).
+    #   PURE per-op models (scalesim/model/tpuv4 = xprof single-op spans, the lean
+    # standalone kernel time -- SMALLER per op than the loop-method marginal, which
+    # carried per-iteration loop overhead).  Calibrated on the f32 StableHLO graphs
+    # (uniform dtype -> none of the f16<->f32 softmax/GELU/LayerNorm convert islands),
+    # 3 LLMs x seq{128,256,512,1024} + a tiny_transformer anchor (pins C0 down --
+    # without it C0 free-fits to ~257us and over-predicts tiny by +120%) vs v4 device-
+    # busy truth (e2e_work/e2e_device_truth.csv + measured tiny) via calibration_pure/
+    # fit_compensation_v4_pure.py -> calib_v4_pure.csv, coeffs_v4_pure.json: in-sample
+    # 11.9% MAPE, tiny 8%.  Batch>1 occupancy NOT modelled.
+    #   NOTE: a1=0.0092 is NOT comparable to the old loop fit's 0.0359 -- a1 only maps
+    # this pipeline's Sn magnitude onto the truth; the meaningful invariant is the
+    # surviving fused non-compute time a1*Sn (~100us for gpt2/128).
+    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0092,
+              "c_c": 0.0, "c_n": 0.0, "C0_forward": 92.0, "C1_per_gemm": 0.0},
+    # v6e: same model + structure as v4 (a0=1). Non-compute single_op uses the PURE-
+    # DEVICE per-op models (model/tpuv6e_pure/; NonComputeLatencyPredictor maps TPUv6e
+    # -> tpuv6e_pure), matching v4's pure-model basis. Calibrated batch-1 on 3 LLMs x
+    # seq{128,256,512,1024} + tiny_transformer -> calib_tpuv6e.csv via
+    # fit_compensation_v6e.py. a1=0.0199 (pure-basis fusion survival), C0=331us (large
+    # constant per-forward floor, vs v4's 92us -- the real generational difference),
+    # C1=0.846us/GEMM. In-sample 10.9% MAPE. NOTE: unlike the new v4, v6e currently
+    # keeps a positive C1 (the pure-basis free fit is well-conditioned here); aligning
+    # v6e to v4's C1=0 (drop the collinear term) is a pending refit. Batch>1 NOT modelled.
     "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0199,
                "c_c": 0.0, "c_n": 0.0, "C0_forward": 330.9, "C1_per_gemm": 0.8457},
 }

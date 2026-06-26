@@ -44,15 +44,15 @@ module @jit_forward attributes {mhlo.num_partitions = 1 : i32, mhlo.num_replicas
     %35 = stablehlo.reshape %34 : (tensor<1x128x1536xf32>) -> tensor<1x128x3x4x128xf32>
     %36 = stablehlo.slice %35 [0:1, 0:128, 0:1, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
     %37 = stablehlo.reshape %36 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %38 = stablehlo.slice %35 [0:1, 0:128, 1:2, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
-    %39 = stablehlo.reshape %38 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %40 = stablehlo.slice %35 [0:1, 0:128, 2:3, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
-    %41 = stablehlo.reshape %40 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %42 = stablehlo.transpose %37, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %43 = stablehlo.transpose %39, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %44 = stablehlo.transpose %41, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %45 = stablehlo.transpose %43, dims = [0, 1, 3, 2] : (tensor<1x4x128x128xf32>) -> tensor<1x4x128x128xf32>
-    %46 = stablehlo.reshape %42 : (tensor<1x4x128x128xf32>) -> tensor<4x128x128xf32>
+    %38 = stablehlo.transpose %37, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %39 = stablehlo.slice %35 [0:1, 0:128, 1:2, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
+    %40 = stablehlo.reshape %39 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
+    %41 = stablehlo.transpose %40, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %42 = stablehlo.slice %35 [0:1, 0:128, 2:3, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
+    %43 = stablehlo.reshape %42 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
+    %44 = stablehlo.transpose %43, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %45 = stablehlo.transpose %41, dims = [0, 1, 3, 2] : (tensor<1x4x128x128xf32>) -> tensor<1x4x128x128xf32>
+    %46 = stablehlo.reshape %38 : (tensor<1x4x128x128xf32>) -> tensor<4x128x128xf32>
     %47 = stablehlo.dot_general %46, %45, batching_dims = [0] x [1], contracting_dims = [2] x [2], precision = [DEFAULT, DEFAULT] : (tensor<4x128x128xf32>, tensor<1x4x128x128xf32>) -> tensor<4x128x1x128xf32>
     %48 = stablehlo.transpose %47, dims = [2, 0, 1, 3] : (tensor<4x128x1x128xf32>) -> tensor<1x4x128x128xf32>
     %cst_4 = stablehlo.constant dense<0.0883883461> : tensor<f32>
@@ -167,15 +167,15 @@ module @jit_forward attributes {mhlo.num_partitions = 1 : i32, mhlo.num_replicas
     %146 = stablehlo.reshape %145 : (tensor<1x128x1536xf32>) -> tensor<1x128x3x4x128xf32>
     %147 = stablehlo.slice %146 [0:1, 0:128, 0:1, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
     %148 = stablehlo.reshape %147 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %149 = stablehlo.slice %146 [0:1, 0:128, 1:2, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
-    %150 = stablehlo.reshape %149 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %151 = stablehlo.slice %146 [0:1, 0:128, 2:3, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
-    %152 = stablehlo.reshape %151 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %153 = stablehlo.transpose %148, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %154 = stablehlo.transpose %150, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %155 = stablehlo.transpose %152, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %156 = stablehlo.transpose %154, dims = [0, 1, 3, 2] : (tensor<1x4x128x128xf32>) -> tensor<1x4x128x128xf32>
-    %157 = stablehlo.reshape %153 : (tensor<1x4x128x128xf32>) -> tensor<4x128x128xf32>
+    %149 = stablehlo.transpose %148, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %150 = stablehlo.slice %146 [0:1, 0:128, 1:2, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
+    %151 = stablehlo.reshape %150 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
+    %152 = stablehlo.transpose %151, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %153 = stablehlo.slice %146 [0:1, 0:128, 2:3, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
+    %154 = stablehlo.reshape %153 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
+    %155 = stablehlo.transpose %154, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %156 = stablehlo.transpose %152, dims = [0, 1, 3, 2] : (tensor<1x4x128x128xf32>) -> tensor<1x4x128x128xf32>
+    %157 = stablehlo.reshape %149 : (tensor<1x4x128x128xf32>) -> tensor<4x128x128xf32>
     %158 = stablehlo.dot_general %157, %156, batching_dims = [0] x [1], contracting_dims = [2] x [2], precision = [DEFAULT, DEFAULT] : (tensor<4x128x128xf32>, tensor<1x4x128x128xf32>) -> tensor<4x128x1x128xf32>
     %159 = stablehlo.transpose %158, dims = [2, 0, 1, 3] : (tensor<4x128x1x128xf32>) -> tensor<1x4x128x128xf32>
     %160 = stablehlo.broadcast_in_dim %cst_4, dims = [] : (tensor<f32>) -> tensor<1x4x128x128xf32>
@@ -284,15 +284,15 @@ module @jit_forward attributes {mhlo.num_partitions = 1 : i32, mhlo.num_replicas
     %257 = stablehlo.reshape %256 : (tensor<1x128x1536xf32>) -> tensor<1x128x3x4x128xf32>
     %258 = stablehlo.slice %257 [0:1, 0:128, 0:1, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
     %259 = stablehlo.reshape %258 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %260 = stablehlo.slice %257 [0:1, 0:128, 1:2, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
-    %261 = stablehlo.reshape %260 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %262 = stablehlo.slice %257 [0:1, 0:128, 2:3, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
-    %263 = stablehlo.reshape %262 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
-    %264 = stablehlo.transpose %259, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %265 = stablehlo.transpose %261, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %266 = stablehlo.transpose %263, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
-    %267 = stablehlo.transpose %265, dims = [0, 1, 3, 2] : (tensor<1x4x128x128xf32>) -> tensor<1x4x128x128xf32>
-    %268 = stablehlo.reshape %264 : (tensor<1x4x128x128xf32>) -> tensor<4x128x128xf32>
+    %260 = stablehlo.transpose %259, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %261 = stablehlo.slice %257 [0:1, 0:128, 1:2, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
+    %262 = stablehlo.reshape %261 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
+    %263 = stablehlo.transpose %262, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %264 = stablehlo.slice %257 [0:1, 0:128, 2:3, 0:4, 0:128] : (tensor<1x128x3x4x128xf32>) -> tensor<1x128x1x4x128xf32>
+    %265 = stablehlo.reshape %264 : (tensor<1x128x1x4x128xf32>) -> tensor<1x128x4x128xf32>
+    %266 = stablehlo.transpose %265, dims = [0, 2, 1, 3] : (tensor<1x128x4x128xf32>) -> tensor<1x4x128x128xf32>
+    %267 = stablehlo.transpose %263, dims = [0, 1, 3, 2] : (tensor<1x4x128x128xf32>) -> tensor<1x4x128x128xf32>
+    %268 = stablehlo.reshape %260 : (tensor<1x4x128x128xf32>) -> tensor<4x128x128xf32>
     %269 = stablehlo.dot_general %268, %267, batching_dims = [0] x [1], contracting_dims = [2] x [2], precision = [DEFAULT, DEFAULT] : (tensor<4x128x128xf32>, tensor<1x4x128x128xf32>) -> tensor<4x128x1x128xf32>
     %270 = stablehlo.transpose %269, dims = [2, 0, 1, 3] : (tensor<4x128x1x128xf32>) -> tensor<1x4x128x128xf32>
     %271 = stablehlo.broadcast_in_dim %cst_4, dims = [] : (tensor<f32>) -> tensor<1x4x128x128xf32>
