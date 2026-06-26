@@ -93,17 +93,19 @@ COMPENSATION_BY_GEN = {
     # surviving fused non-compute time a1*Sn (~100us for gpt2/128).
     "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0092,
               "c_c": 0.0, "c_n": 0.0, "C0_forward": 92.0, "C1_per_gemm": 0.0},
-    # v6e: same model + structure as v4 (a0=1). Non-compute single_op uses the PURE-
-    # DEVICE per-op models (model/tpuv6e_pure/; NonComputeLatencyPredictor maps TPUv6e
-    # -> tpuv6e_pure), matching v4's pure-model basis. Calibrated batch-1 on 3 LLMs x
-    # seq{128,256,512,1024} + tiny_transformer -> calib_tpuv6e.csv via
-    # fit_compensation_v6e.py. a1=0.0199 (pure-basis fusion survival), C0=331us (large
-    # constant per-forward floor, vs v4's 92us -- the real generational difference),
-    # C1=0.846us/GEMM. In-sample 10.9% MAPE. NOTE: unlike the new v4, v6e currently
-    # keeps a positive C1 (the pure-basis free fit is well-conditioned here); aligning
-    # v6e to v4's C1=0 (drop the collinear term) is a pending refit. Batch>1 NOT modelled.
-    "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0199,
-               "c_c": 0.0, "c_n": 0.0, "C0_forward": 330.9, "C1_per_gemm": 0.8457},
+    # v6e: same pure-model pipeline as v4 (PURE per-op models in model/tpuv6e,
+    # re-collected with the fixed inner-span collector + n=1000 sampler; f32 calib_mlir
+    # graphs; device-busy truth). ONE structural difference from v4: a0 is FREE, not
+    # pinned to 1. v6e is fast enough that Sum(GEMM) (the standalone fusion floors of
+    # GEMM-heavy models -- smollm2 has 272 GEMMs) EXCEEDS the fused device-busy truth
+    # for 4/12 points, so a0=1 forces a1 negative; freeing a0 gives a0=0.47 (GEMM
+    # contributes ~47% of its standalone-fusion sum once fused) with positive a1.
+    # Calibrated batch-1 on 3 LLMs x seq{128,256,512,1024} + tiny_transformer via
+    # fit_compensation_pure.py --gen tpuv6e --free-a0 -> calib_tpuv6e_pure.csv,
+    # coeffs_tpuv6e_pure.json: in-sample 13.5% MAPE, leave-one-model-out 22.6%.
+    # (C1=0, dropped as in v4.) Batch>1 occupancy NOT modelled.
+    "TPUv6e": {"a0_mxu": 0.4698, "a1_vpu": 0.0246,
+               "c_c": 0.0, "c_n": 0.0, "C0_forward": 161.1, "C1_per_gemm": 0.0},
 }
 
 

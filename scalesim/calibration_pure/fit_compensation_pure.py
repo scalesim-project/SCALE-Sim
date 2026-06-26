@@ -125,24 +125,35 @@ def mape(y, p):
     return float(np.mean(np.abs((y - p) / y)) * 100)
 
 
-def fit(rows):
+def fit(rows, free_a0=False):
+    """Fit T = a0*Sc + a1*Sn + C0.  Default pins a0=1 (GEMM passthrough, as v4).
+    free_a0=True also fits a0 -- needed when Sum(GEMM) > device-busy truth (a fast
+    generation like v6e where the standalone GEMM-fusion floors over-count the fused
+    total, so a0 pinned to 1 forces a1 negative)."""
     Sc = np.array([r["Sc_us"] for r in rows])
     Sn = np.array([r["Sn_us"] for r in rows])
     Y = np.array([r["truth_us"] for r in rows])
     mdl = [r["model"] for r in rows]
     w = 1.0 / Y ** 2
-    R = Y - Sc                                         # a0 pinned to 1
-    X = np.stack([Sn, np.ones(len(Sn))], 1)            # [a1, C0]
-    a1, C0 = wls(X, R, w)
-    pred = Sc + X @ [a1, C0]
+    if free_a0:
+        X = np.stack([Sc, Sn, np.ones(len(Sn))], 1)    # [a0, a1, C0]
+        coef = wls(X, Y, w); pred = X @ coef
+        a0, a1, C0 = float(coef[0]), float(coef[1]), float(coef[2])
+    else:
+        X = np.stack([Sn, np.ones(len(Sn))], 1)        # [a1, C0]; R = Y - Sc (a0=1)
+        coef = wls(X, Y - Sc, w); pred = Sc + X @ coef
+        a0, a1, C0 = 1.0, float(coef[0]), float(coef[1])
     ins = mape(Y, pred)
-    preds = np.zeros(len(Y))                           # leave-one-model-out CV
+    preds = np.zeros(len(Y))                            # leave-one-model-out CV
     for mo in sorted(set(mdl)):
         tr = np.array([i for i, mm in enumerate(mdl) if mm != mo])
         ts = np.array([i for i, mm in enumerate(mdl) if mm == mo])
-        preds[ts] = Sc[ts] + X[ts] @ wls(X[tr], R[tr], w[tr])
+        if free_a0:
+            preds[ts] = X[ts] @ wls(X[tr], Y[tr], w[tr])
+        else:
+            preds[ts] = Sc[ts] + X[ts] @ wls(X[tr], (Y - Sc)[tr], w[tr])
     cv = mape(Y, preds)
-    return a1, C0, ins, cv, pred, Y, mdl, [r["seq"] for r in rows]
+    return a0, a1, C0, ins, cv, pred, Y, mdl, [r["seq"] for r in rows]
 
 
 def main():
@@ -156,6 +167,9 @@ def main():
     ap.add_argument("--tiny-truth", type=float, default=None,
                     help="measured tiny_transformer device-busy us on this gen (anchors C0)")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--free-a0", action="store_true",
+                    help="also fit a0 (GEMM factor) instead of pinning it to 1.0 -- "
+                         "use when Sum(GEMM) > device-busy truth (e.g. v6e)")
     args = ap.parse_args()
 
     g = GEN[args.gen]
@@ -168,23 +182,23 @@ def main():
     print("building calib (current pipeline, PURE models):")
     rows = build_calib(args.mlir_root, truth, g["cfg"], tiny_truth, out_csv)
 
-    a1, C0, ins, cv, pred, Y, mdl, seqs = fit(rows)
-    print(f"\nFIT (a0=1 pinned):  a1={a1:.4f}  C0={C0:.2f}  C1=0")
+    a0, a1, C0, ins, cv, pred, Y, mdl, seqs = fit(rows, free_a0=args.free_a0)
+    print(f"\nFIT (a0={'FREE' if args.free_a0 else 'pinned'}):  a0={a0:.4f}  a1={a1:.4f}  C0={C0:.2f}  C1=0")
     print(f"  in-sample MAPE={ins:.1f}%   leave-one-model-out CV={cv:.1f}%\n")
     print(f"{'model':16}{'seq':>5}{'pred':>9}{'truth':>9}{'err%':>7}")
     for m, s, pp, yy in zip(mdl, seqs, pred, Y):
         print(f"{m:16}{s:>5}{pp:>9.0f}{yy:>9.0f}{abs(pp-yy)/yy*100:>6.0f}%")
 
     import json
-    coeffs = {"a0_mxu": 1.0, "a1_vpu": float(a1), "c_c": 0.0, "c_n": 0.0,
+    coeffs = {"a0_mxu": float(a0), "a1_vpu": float(a1), "c_c": 0.0, "c_n": 0.0,
               "C0_forward": float(C0), "C1_per_gemm": 0.0,
               "in_sample_mape": ins, "lomo_cv_mape": cv, "n_points": len(rows),
-              "gen": args.gen, "basis": "PURE per-op models; T=Sc+a1*Sn+C0; f32 graphs"}
+              "gen": args.gen, "basis": "PURE per-op models; T=a0*Sc+a1*Sn+C0; f32 graphs"}
     jp = os.path.join(HERE, f"coeffs_{args.gen}_pure.json")
     json.dump(coeffs, open(jp, "w"), indent=2)
     print(f"\nwrote {out_csv} and {jp}")
     print(f'paste into COMPENSATION_BY_GEN["{"TPUv4" if args.gen=="tpuv4" else "TPUv6e"}"]: '
-          f'a1_vpu={a1:.4f}, C0_forward={C0:.1f}, C1_per_gemm=0.0')
+          f'a0_mxu={a0:.4f}, a1_vpu={a1:.4f}, C0_forward={C0:.1f}, C1_per_gemm=0.0')
 
 
 if __name__ == "__main__":
