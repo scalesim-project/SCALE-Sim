@@ -28,7 +28,7 @@ and the whole-model compensation in scalesim/total_time_report.py).
 Requirements: exclusive PJRT TPU access, `pip install jax[tpu]`, bf16.
 Usage:
     PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py --ops add multiply reduce \
-        --n 300 --iters 30 --outdir datasets_pure_tpuv4
+        --n 1000 --outdir datasets_pure_tpuv4   (defaults: n=1000 iters=10 warmup=1 reps=1)
 Outputs one `<op>_pure_dataset.csv` per op.
 """
 import os
@@ -111,11 +111,12 @@ def measure(kind, fn, d0, d1, d2, warmup, iters, reps):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--ops", nargs="+", required=True)
-    p.add_argument("--n", type=int, default=300,
-                   help="shapes/op (xprof is slower than the loop method; keep modest)")
-    p.add_argument("--iters", type=int, default=30, help="executes traced per shape")
-    p.add_argument("--warmup", type=int, default=8)
-    p.add_argument("--reps", type=int, default=15, help="wall-clock reps (median)")
+    p.add_argument("--n", type=int, default=1000, help="shapes/op")
+    p.add_argument("--iters", type=int, default=10,
+                   help="executes traced per shape; kernel_us = mean device span over these")
+    p.add_argument("--warmup", type=int, default=1, help="throwaway executes before timing")
+    p.add_argument("--reps", type=int, default=1,
+                   help="wall-clock reps for wall_us/host_us (audit only; not the kernel label)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--outdir", default=os.path.dirname(__file__))
     args = p.parse_args()
