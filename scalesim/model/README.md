@@ -34,7 +34,11 @@ Same recipe for every op (matches the originally-shipped 5 models):
   loop-body/control overhead that a single clean kernel does not. The pure span is the
   honest standalone device cost, so the whole-model fit sums it. bf16, single device,
   no SPMD.
-- **Sampling:** ~1500 shapes/op, log-uniform over an activation-like 3-D space.
+- **Sampling (`sample_shapes`):** distinct 3-D shapes in two buckets — **60%
+  LLM-anchored** (small batch/head `d0`, seq-menu `d1`, `d2` log-uniform up to 160k =
+  hidden → FFN → vocab, covering qwen/llama vocab too) + **40% broad/general** (wide
+  `d0/d1/d2` so non-LLM shapes degrade gracefully). The shipped pure models use
+  **1000 shapes/op** (the loop-method sets used ~1500).
 
 **Shape-only by design:** the models take no op *attributes* (transpose permutation,
 reduce axis, …). For size-driven ops this is exact; for a few ops it is an
@@ -89,7 +93,7 @@ To build the models for a different TPU, re-run `calibration/` **on that TPU** a
 write the `.pkl`s into a new `model/<generation>/` directory.
 
 **Requirements:** exclusive PJRT access (no other process on `/dev/accel*`),
-`pip install jax[tpu] scikit-learn pandas`, bf16. ~25 ops × 1500 shapes ≈ ~1 hr.
+`pip install jax[tpu] scikit-learn pandas`, bf16. ~25 ops × 1000 shapes.
 
 ```bash
 cd scalesim/model/calibration
@@ -247,7 +251,7 @@ wrapper) span, and the python-timer wall.
 cd scalesim/model/calibration
 PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py \
     --ops add multiply reduce transpose reshape broadcast \
-    --n 300 --iters 30 --outdir datasets_pure_tpuv4     # -> <op>_pure_dataset.csv
+    --outdir datasets_pure_tpuv4     # defaults: n=1000, iters=10, warmup=1, reps=1
 ```
 
 > Whole-model use of these constants (the two-factor MXU/VPU + per-forward-host
@@ -257,6 +261,13 @@ PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py \
 ---
 
 ## g. TPU v6e pure-device single-op set (`model/tpuv6e_pure/`) (2026-06-24)
+
+> **SUPERSEDED (2026-06-26).** The framing below ("pure = audit, loop = production")
+> is outdated: pure is now the **production** method (§f), and the v4 pure models were
+> re-collected with the **fixed inner-span trace rule** + the 60/40 `n=1000` sampler.
+> The numbers in this section are the **pre-fix** v6e audit collection (n=300, and the
+> old ~10µs-floor labels), kept for history; re-collect v6e per the CALIBRATION_RUNBOOK
+> to refresh them.
 
 Rebuilt all 25 v6e per-op models on **trace-authoritative pure-kernel labels**
 (`collect_pure_device_tpu.py`, xprof device-span, n=300/op, iters=12; data in

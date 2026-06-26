@@ -106,6 +106,11 @@ wall-clock subtraction).
 gave ~12.6 µs). This **validates** the xprof floor measurement.
 
 ## Per-op val MAPE (pure kernel, n=400/op, 80/20)
+> **SUPERSEDED (2026-06-26):** these are the **pre-fix** pure datasets (n=400, ~10µs
+> per-launch floor baked into every label by the old trace extractor). The pure sets
+> were re-collected with the fixed inner-span rule + 60/40 `n=1000` sampler; re-run
+> `fit`/`train_ops` to refresh these numbers.
+
 Best→worst: slice 7.2 · maximum 7.7 · and 7.8 · tanh 7.8 · multiply 7.9 · select 8.1 ·
 transpose 8.1 · divide 8.2 · compare 8.3 · subtract 8.3 · add 8.6 · negate 8.9 ·
 minimum 9.1 · power 9.1 · rsqrt 9.3 · concatenate 9.8 · batch_norm 9.9 · logistic 10.1 ·
@@ -251,42 +256,43 @@ three levels (1 / 2-5 / >=6 tiles) -> 12 regions. After this, Sum(GEMM)<truth ho
 for all 3 LLMs x seq{128,256,512}. A 2nd bar on N or K was tested and rejected:
 only ~0.5% gain, creates empty regions, and has no additive-fill physical cause.
 
-### Whole-model (batch-1)
+### Whole-model (batch-1) — TPU v4, PURE per-op models, f32 graphs
     T_device ~= a0*Sum(GEMM) + a1*Sum(non-compute) + C_forward
-    a0 = 1.0 (GEMM passthrough; Sum(GEMM) is the right magnitude, validated by the
-              incompressibility bound -- pinned, not fit, for robustness),
-    a1 ~= 0.036 (non-compute fusion survival, ~97% fused away),
-    C_forward = C0 + C1*N_gemm = 81 + 0.253*(#GEMM kernels)   [SIZE-DEPENDENT]
+    a0 = 1.0  (GEMM passthrough; Sum(GEMM) is the right magnitude, validated by the
+               incompressibility bound -- pinned, not fit, for robustness),
+    a1 = 0.0092 (non-compute fusion survival, fit against the PURE per-op Sn),
+    C_forward = C0 = 92us   [FIXED -- C1=0]
 Lives in the `tuned_us` column of TIME_REPORT.csv (a0*single for GEMM, a1*single for
-non-compute, C in the TOTAL row, computed from the model's GEMM-kernel count).
+non-compute, C0 in the TOTAL row).
 
-**C_forward is size-dependent, not a fixed constant.** A fixed C (=185us, fit on the
-3 mid-size LLMs) over-predicted a tiny transformer (133us measured) by +75% -- the
-constant alone exceeded the whole model's time. Making it `C0 + C1*N_gemm` fixes that
-(+4%) while holding the LLMs (~11% MAPE). Physical: C0~=81us is the per-execute device
-floor (matches the ~65us measured single-kernel floor, measure_xprof.py); each GEMM
-kernel adds ~0.25us launch/drain. Calibrated on 3 LLMs x 3 seq + a tiny transformer.
-Spans tiny (133us) -> large LLM (7ms). Tradeoff: the smallest LLM point (gpt2 seq128)
-shifts to ~-14% as C re-scales; overall MAPE ~unchanged.
-Batch>1 (inference) occupancy deliberately NOT modelled (keeps the system simple).
-Weak spot: qwen seq128 (-26%) -- large vocab, embedding/LM-head overhead the a1 term
-under-weights. More calibration models would tighten the 2 constants.
+**C_forward is FIXED for the pure models (C1=0).** With the PURE per-op models the
+op-count dependence is already inside `Sn` (each op carries its own kernel time), so a
+size-dependent `C1*n_gemm` term is collinear with `Sn` and *hurts* generalization
+(leave-one-model-out CV 55% -> 17% when dropped). C0~=92us is the per-execute device
+floor (~the loop fit's 81us). A tiny_transformer anchor pins C0 down (without it C0
+free-fits to ~257us and over-predicts the tiny model +120%). Calibrated on 3 LLMs x
+seq{128,256,512,1024} + tiny. Batch>1 occupancy deliberately NOT modelled.
+> NOTE (history): the earlier loop-method v4 model used a SIZE-DEPENDENT
+> `C_forward = 81 + 0.253*n_gemm` with a1=0.036. Switching to pure per-op models moved
+> the op-count signal into `Sn`, so C became a fixed constant. v6e still uses the loop
+> models + size-dependent C (see the v6e section below) until it is migrated to pure.
 
-### Whole-model validation (size-dependent C, batch-1, tuned_us TOTAL vs measured)
+### Whole-model validation (TPU v4 pure, batch-1, tuned_us TOTAL vs measured)
+> Current fit on the **pre-fix** pure models (still floored). These numbers will be
+> refreshed once the re-collected (fixed inner-span, 60/40 n=1000) datasets retrain.
 
 | model | seq | tuned us | truth us | err |
 |---|---|---|---|---|
-| gpt2 | 128/256/512/1024 | 427/777/1081/2491 | 495/724/1175/2378 | -14/+7/-8/+5% |
-| qwen2.5-0.5b | 128/256/512/1024 | 1095/2231/3091/7800 | 1462/2024/3386/7000 | -25/+10/-9/+11% |
-| smollm2-135m | 128/256/512/1024 | 888/1384/1964/4101 | 950/1155/1765/3506 | -6/+20/+11/+17% |
-| tiny_transformer | 128 | 139 | 133 | +4% |
+| gpt2 | 128/256/512/1024 | 398/713/939/2439 | 495/724/1175/2378 | -20/-2/-20/+3% |
+| qwen2.5-0.5b | 128/256/512/1024 | 1074/2136/2789/7682 | 1462/2024/3386/7000 | -27/+6/-18/+10% |
+| smollm2-135m | 128/256/512/1024 | 911/1349/1750/4257 | 950/1155/1765/3506 | -4/+17/-1/+21% |
+| tiny_transformer | 128 | 150 | 138 | +8% |
 
-**mean |err| = 11.9% over the 12 LLM points, +4% on the tiny model** (same coeffs).
-Errors split both ways (no systematic bias). Worst: qwen seq128 (-25%, large-vocab
-embedding/LM-head overhead the flat a1 under-weights) -- the next lever is the
-non-compute term, independent of the GEMM/C layers. The tiny model (+4%, was +75%
-with fixed C) confirms the size-dependent C_forward generalizes across the full
-size range (133 us -> 7 ms).
+**mean |err| = 11.9% over the 12 LLM points, +8% on the tiny model.** Errors split both
+ways. Worst: qwen seq128 (-27%, large-vocab embedding/LM-head overhead the flat a1
+under-weights) and the seq=128 points generally (pure Sn under-captures the short-seq
+embedding/launch floor). The tiny anchor (+8%) confirms the fixed C0 generalizes from
+the small model up to the large LLMs.
 
 ## v6e whole-model compensation (2026-06-25) — v6e now mirrors v4
 
