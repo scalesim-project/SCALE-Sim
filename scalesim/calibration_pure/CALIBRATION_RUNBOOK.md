@@ -67,7 +67,15 @@ PJRT_DEVICE=TPU python3 collect_pure_device_tpu.py --ops $OPS \
     #           iters=10 warmup=1 reps=1. Verify it prints "device=TPU <gen>".
 python3 train_ops.py \
     --datadir ../../calibration_pure/datasets_pure_<gen>_fixed --outdir ../<gen>   # -> model/<gen>/*.pkl
+# reshape is NOT shape-predictable (bimodal: metadata ~0 vs relayout ~1000s us) -> it
+# over-predicts ~37x at vocab sizes and dominates Sn. Replace it with a constant median:
+python3 ../../calibration_pure/set_reshape_median.py --model-dir ../<gen> \
+    --dataset ../../calibration_pure/datasets_pure_<gen>_fixed/reshape_dataset.csv
 ```
+Train on the **LLM-bucket** subset (the 60% LLM-anchored shapes) -- the 40% broad shapes
+add irreducible variance to the layout ops (reshape/reduce/broadcast) and hurt the
+LLM-regime fit. (Filter the datasets to `d0 in {1,2,4,8,12,14,16,32}` and `d1 in
+{1,8,16,64,128,256,512,1024}` before train_ops, or collect with `llm_frac=1.0`.)
 `NonComputeLatencyPredictor` auto-selects `model/<gen>/` from the config's
 `TimeLinearModel:` key (falls back to tpuv4 if absent), so the new models go live once
 written. (The loop-method `collect_ops_tpu.py` is the floor-removed alternate; the

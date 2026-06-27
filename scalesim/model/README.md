@@ -48,31 +48,32 @@ approximation that bakes in the sampled configuration (see limitations).
 
 ## b. Accuracy (TPU v4, bf16; held-out val MAPE)
 
-25 ops, **pure device-span** label (mean 10.2%, median 9.1%). Relative error is
-higher than the loop-method signal (~5%) because the pure span is a tiny absolute
-kernel time (sub-µs to a few µs), so the xprof timeline's fixed resolution/jitter is a
-larger *relative* error — the target is noisier in relative terms, not the model worse.
+25 ops, **deflated pure device-span** label (fixed inner-span trace rule, LLM-bucket
+n~600/op): **mean 7.0%, median 5.7%** (was ~10% with the pre-fix floored labels).
 
 | op | MAPE | | op | MAPE |
 |----|-----:|-|----|-----:|
-| slice | 7.2% | | rsqrt | 9.3% |
-| maximum | 7.7% | | concatenate | 9.8% |
-| and | 7.8% | | batch_norm_training | 9.9% |
-| tanh | 7.8% | | logistic | 10.1% |
-| multiply | 7.9% | | exponential | 11.7% |
-| select | 8.1% | | convert | 12.0% |
-| transpose | 8.1% | | reduce | 12.5% |
-| divide | 8.2% | | sine | 13.2% |
-| compare | 8.3% | | broadcast_in_dim | 13.7% |
-| subtract | 8.3% | | cosine | 13.8% |
-| add | 8.6% | | reshape | 23.5% |
-| negate 8.9 · minimum 9.1 · power 9.1 | | | | |
+| power | 4.0% | | divide | 6.1% |
+| tanh | 4.5% | | rsqrt | 6.1% |
+| negate | 4.5% | | select | 7.0% |
+| exponential | 5.1% | | slice | 7.4% |
+| multiply | 5.4% | | convert | 8.5% |
+| add | 5.5% | | broadcast_in_dim | 11.0% |
+| logistic | 5.5% | | cosine | 12.0% |
+| transpose | 5.5% | | sine | 12.1% |
+| maximum | 5.6% | | concatenate | 15.5% |
+| batch_norm_training | 5.7% | | reduce | 15.7% |
+| and 5.7 · subtract 5.7 · compare 5.9 · minimum 6.0 | | **reshape** | **const median ~7µs** |
 
-- **Outliers:** `reshape` (23.5% — near-free op, the floor swamps the tiny shape
-  signal), then `cosine`/`sine`/`broadcast_in_dim`/`reduce` (~12–14%). These are all
-  small/floor-dominated ops where per-launch jitter dominates.
-- The loop-method (floor-subtracted) models fit ~2× tighter (3.5–9.5%) but to a
-  different target; the pure span is used because it is the honest standalone cost.
+- **22 elementwise/compute ops are 4–8%.** The floor fix (inner-span trace rule)
+  brought these down from ~8–12%.
+- **`reshape` is a constant = the median (~7µs)**, NOT a shape model. reshape latency
+  is bimodal (metadata ~0 vs relayout ~1000s µs; dataset mean 276µs) and unpredictable
+  from shape — the regressor over-predicted it ~37× at vocab sizes and dominated the
+  whole-model `Sn` (63%). The median constant fixes the whole-model (10.3% vs 16% with
+  the HGBR reshape). See `total_time_report.py` and RESULTS.md.
+- **Layout/transcendental ops** (`reduce`, `concatenate`, `sine`, `cosine`,
+  `broadcast_in_dim`) are 11–16% — the shape-only model has no axis feature.
 
 **Limitations (read before trusting a per-op number):**
 - **Train/serve shape skew** for `broadcast_in_dim` (and would-be `gather`): trained

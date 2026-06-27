@@ -77,22 +77,20 @@ COMPENSATION_BY_GEN = {
     # (GEMM passes through: single_op_us is the right magnitude, validated Sum(GEMM)<
     # truth).  a1 = non-compute fusion-survival factor.  C_forward = C0 (fixed; C1_per_
     # gemm = 0 -- a size-dependent C1*n_gemm term is collinear with Sn and hurts cross-
-    # model generalization, so it is dropped).  C0~=92us is the per-execute device
-    # floor (~the loop fit's 81us).
-    #   PURE per-op models (scalesim/model/tpuv4 = xprof single-op spans, the lean
-    # standalone kernel time -- SMALLER per op than the loop-method marginal, which
-    # carried per-iteration loop overhead).  Calibrated on the f32 StableHLO graphs
-    # (uniform dtype -> none of the f16<->f32 softmax/GELU/LayerNorm convert islands),
-    # 3 LLMs x seq{128,256,512,1024} + a tiny_transformer anchor (pins C0 down --
-    # without it C0 free-fits to ~257us and over-predicts tiny by +120%) vs v4 device-
-    # busy truth (e2e_work/e2e_device_truth.csv + measured tiny) via calibration_pure/
-    # fit_compensation_pure.py --gen tpuv4 -> calib_tpuv4_pure.csv: in-sample
-    # 11.9% MAPE, tiny 8%.  Batch>1 occupancy NOT modelled.
-    #   NOTE: a1=0.0092 is NOT comparable to the old loop fit's 0.0359 -- a1 only maps
-    # this pipeline's Sn magnitude onto the truth; the meaningful invariant is the
-    # surviving fused non-compute time a1*Sn (~100us for gpt2/128).
-    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0092,
-              "c_c": 0.0, "c_n": 0.0, "C0_forward": 92.0, "C1_per_gemm": 0.0},
+    # model generalization, so it is dropped).  C0=83.8us = the per-execute device floor
+    # (~the loop fit's 81us, physical).
+    #   PURE per-op models (scalesim/model/tpuv4 = xprof single-op spans, fixed inner-
+    # span trace rule, no ~10us launch floor; 60/40-sampler n=1000 re-collection,
+    # trained on the LLM-bucket subset).  RESHAPE is a constant = the median standalone
+    # reshape latency (~7us): reshape latency is bimodal (metadata ~0 vs relayout
+    # ~1000s us) and NOT predictable from shape, and the HGBR over-predicted it ~37x at
+    # vocab sizes, dominating Sn (63%) and wrecking the fit -- the median constant fixes
+    # that.  Calibrated on f32 StableHLO graphs, 3 LLMs x seq{128,256,512,1024} + a
+    # tiny_transformer anchor (pins C0 down) vs v4 device-busy truth via calibration_
+    # pure/fit_compensation_pure.py --gen tpuv4: in-sample 10.3% MAPE, tiny +5%.
+    # Batch>1 occupancy NOT modelled.
+    "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0491,
+              "c_c": 0.0, "c_n": 0.0, "C0_forward": 83.8, "C1_per_gemm": 0.0},
     # v6e: same model + structure as v4 (a0=1, size-dependent C0 + C1*n_gemm).
     # Calibrated batch-1 on 3 LLMs x seq{128,256,512} + tiny_transformer (the small-
     # model anchor) -> calib_tpuv6e.csv via fit_compensation_v6e.py. a1=0.0295 is

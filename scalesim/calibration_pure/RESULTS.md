@@ -105,12 +105,17 @@ wall-clock subtraction).
 `B` jumped 1.47 → 14.1 µs = the measured single-kernel device floor (`measure_xprof.py`
 gave ~12.6 µs). This **validates** the xprof floor measurement.
 
-## Per-op val MAPE (pure kernel, n=400/op, 80/20)
-> **SUPERSEDED (2026-06-26):** these are the **pre-fix** pure datasets (n=400, ~10µs
-> per-launch floor baked into every label by the old trace extractor). The pure sets
-> were re-collected with the fixed inner-span rule + 60/40 `n=1000` sampler; re-run
-> `fit`/`train_ops` to refresh these numbers.
+## Per-op val MAPE (FINAL: deflated pure kernel, fixed trace rule, LLM-bucket n~600/op)
+Mean **7.0%**, median 5.7% (was ~10% with the pre-fix floored labels). Best→worst:
+power 4.0 · tanh 4.5 · negate 4.5 · exponential 5.1 · multiply 5.4 · add 5.5 ·
+logistic 5.5 · transpose 5.5 · maximum 5.6 · batch_norm 5.7 · and 5.7 · subtract 5.7 ·
+compare 5.9 · minimum 6.0 · divide 6.1 · rsqrt 6.1 · select 7.0 · slice 7.4 · convert
+8.5 · broadcast_in_dim 11.0 · cosine 12.0 · sine 12.1 · concatenate 15.5 · reduce 15.7
+(%). **reshape = constant median (~7µs)** -- not shape-predictable (see whole-model
+section). The 22 elementwise/compute ops are 4-8%; the layout/transcendental ops
+(broadcast/sine/cosine/concat/reduce) are 11-16% (shape-only model, no axis feature).
 
+<details><summary>pre-fix (floored, n=400) per-op MAPE, for history</summary>
 Best→worst: slice 7.2 · maximum 7.7 · and 7.8 · tanh 7.8 · multiply 7.9 · select 8.1 ·
 transpose 8.1 · divide 8.2 · compare 8.3 · subtract 8.3 · add 8.6 · negate 8.9 ·
 minimum 9.1 · power 9.1 · rsqrt 9.3 · concatenate 9.8 · batch_norm 9.9 · logistic 10.1 ·
@@ -118,8 +123,14 @@ exponential 11.7 · convert 12.0 · reduce 12.5 · sine 13.2 · broadcast_in_dim
 cosine 13.8 · reshape 23.5  (%)
 
 vs the shipped loop-method models' 3.5–9.5% (most < 5%). Pure-kernel is ~2× worse.
+</details>
 
-## Conclusion — these are NOT a drop-in replacement for the shipped models
+> **UPDATE (2026-06-26):** the Conclusion below is **overtaken**. It was written about
+> the *floored* pure datasets. After the trace-rule fix (deflated labels) + reshape=
+> median, the pure per-op models reach **7.0% mean** and ARE now the shipped v4 models
+> (whole-model 10.3%, beating the old 11.9%). The text below is historical.
+
+## Conclusion (historical) — the FLOORED pure set was not a drop-in replacement
 
 Same root cause behind the higher floor and the worse MAPE: **pure single-op kernel
 time carries a large per-LAUNCH floor (~14 µs) that is per-execute, not per-op.**
@@ -260,39 +271,43 @@ only ~0.5% gain, creates empty regions, and has no additive-fill physical cause.
     T_device ~= a0*Sum(GEMM) + a1*Sum(non-compute) + C_forward
     a0 = 1.0  (GEMM passthrough; Sum(GEMM) is the right magnitude, validated by the
                incompressibility bound -- pinned, not fit, for robustness),
-    a1 = 0.0092 (non-compute fusion survival, fit against the PURE per-op Sn),
-    C_forward = C0 = 92us   [FIXED -- C1=0]
+    a1 = 0.0491 (non-compute fusion survival, fit against the PURE per-op Sn),
+    C_forward = C0 = 83.8us   [FIXED -- C1=0]
 Lives in the `tuned_us` column of TIME_REPORT.csv (a0*single for GEMM, a1*single for
 non-compute, C0 in the TOTAL row).
 
 **C_forward is FIXED for the pure models (C1=0).** With the PURE per-op models the
 op-count dependence is already inside `Sn` (each op carries its own kernel time), so a
 size-dependent `C1*n_gemm` term is collinear with `Sn` and *hurts* generalization
-(leave-one-model-out CV 55% -> 17% when dropped). C0~=92us is the per-execute device
-floor (~the loop fit's 81us). A tiny_transformer anchor pins C0 down (without it C0
-free-fits to ~257us and over-predicts the tiny model +120%). Calibrated on 3 LLMs x
-seq{128,256,512,1024} + tiny. Batch>1 occupancy deliberately NOT modelled.
+(leave-one-model-out CV 55% -> 20% when dropped). C0=83.8us is the per-execute device
+floor (~the loop fit's 81us, physical). A tiny_transformer anchor pins C0 down (without
+it C0 free-fits to ~257us and over-predicts the tiny model +120%). Calibrated on 3 LLMs
+x seq{128,256,512,1024} + tiny. Batch>1 occupancy deliberately NOT modelled.
+
+**RESHAPE = constant median (~7us).** reshape latency is bimodal (metadata ~0us vs
+physical relayout ~1000s us; dataset mean 276us, median 7us) and NOT predictable from
+shape -- the HGBR over-predicted it ~37x at vocab sizes, making it 63% of `Sn` and
+wrecking the fit. Replacing it with the median constant restored a clean fit and a
+physically meaningful a1 (0.049, vs 0.0092 when reshape dominated Sn).
 > NOTE (history): the earlier loop-method v4 model used a SIZE-DEPENDENT
-> `C_forward = 81 + 0.253*n_gemm` with a1=0.036. Switching to pure per-op models moved
-> the op-count signal into `Sn`, so C became a fixed constant. v6e still uses the loop
-> models + size-dependent C (see the v6e section below) until it is migrated to pure.
+> `C_forward = 81 + 0.253*n_gemm` with a1=0.036. The pure per-op models (deflated,
+> fixed trace rule) + reshape=median moved the op-count signal into `Sn`, so C became a
+> fixed constant. v6e still uses the loop models + size-dependent C (v6e section below).
 
 ### Whole-model validation (TPU v4 pure, batch-1, tuned_us TOTAL vs measured)
-> Current fit on the **pre-fix** pure models (still floored). These numbers will be
-> refreshed once the re-collected (fixed inner-span, 60/40 n=1000) datasets retrain.
 
 | model | seq | tuned us | truth us | err |
 |---|---|---|---|---|
-| gpt2 | 128/256/512/1024 | 398/713/939/2439 | 495/724/1175/2378 | -20/-2/-20/+3% |
-| qwen2.5-0.5b | 128/256/512/1024 | 1074/2136/2789/7682 | 1462/2024/3386/7000 | -27/+6/-18/+10% |
-| smollm2-135m | 128/256/512/1024 | 911/1349/1750/4257 | 950/1155/1765/3506 | -4/+17/-1/+21% |
-| tiny_transformer | 128 | 150 | 138 | +8% |
+| gpt2 | 128/256/512/1024 | 413/731/994/2426 | 495/724/1175/2378 | -17/+1/-15/+2% |
+| qwen2.5-0.5b | 128/256/512/1024 | 1128/2207/2897/7676 | 1462/2024/3386/7000 | -23/+9/-14/+10% |
+| smollm2-135m | 128/256/512/1024 | 934/1378/1835/3951 | 950/1155/1765/3506 | -2/+19/+4/+13% |
+| tiny_transformer | 128 | 145 | 138 | +5% |
 
-**mean |err| = 11.9% over the 12 LLM points, +8% on the tiny model.** Errors split both
-ways. Worst: qwen seq128 (-27%, large-vocab embedding/LM-head overhead the flat a1
-under-weights) and the seq=128 points generally (pure Sn under-captures the short-seq
-embedding/launch floor). The tiny anchor (+8%) confirms the fixed C0 generalizes from
-the small model up to the large LLMs.
+**mean |err| = 10.3% over the 12 LLM points, +5% on the tiny model.** Errors split both
+ways. Worst: qwen seq128 (-23%, large-vocab embedding/LM-head overhead the flat a1
+under-weights) and the seq=128 points generally (short-seq embedding/launch floor).
+The tiny anchor (+5%) confirms the fixed C0 generalizes from the small model up to the
+large LLMs.
 
 ## v6e whole-model compensation (2026-06-25) — v6e now mirrors v4
 

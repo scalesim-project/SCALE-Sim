@@ -52,19 +52,19 @@ python3 -m scalesim.scale -b -c configs/tpuv4.cfg \
 ## Reference: measured device-busy latency (TPU v4, bf16, seq=128, batch=1)
 
 Predictions use the **pure** per-op models (`scalesim/model/tpuv4`, xprof single-op
-spans); the whole-model compensation is `T = Sc + a1·Sn + C0` (a0=1, a1=0.0092,
-C0=92 µs), refit on the **f32** graphs of these 3 LLMs × seq{128,256,512,1024} + the
-tiny anchor.
+spans, deflated; `reshape` = constant median ~7µs); the whole-model compensation is
+`T = Sc + a1·Sn + C0` (a0=1, a1=0.0491, C0=83.8 µs), refit on the **f32** graphs of
+these 3 LLMs × seq{128,256,512,1024} + the tiny anchor.
 
 | model | measured device-busy | SCALE-Sim `tuned_us` TOTAL (seq 128) |
 |-------|---------------------:|---------------------------:|
-| gpt2          | ~495 µs  | ~398 µs |
+| gpt2          | ~495 µs  | ~413 µs |
 | qwen2.5-0.5b  | ~1462 µs | (see bypass) |
 | smollm2-135m  | ~950 µs  | (see bypass) |
-| tiny_transformer | ~138 µs | ~150 µs |
+| tiny_transformer | ~138 µs | ~145 µs |
 
-(seq=128 is the worst case — pure `Sn` under-captures the embedding/launch floor at
-short sequences; e.g. gpt2 lands within ~2% at seq≥256. In-sample MAPE ~11.7%.)
+(seq=128 is the worst case — short-seq embedding/vocab overhead the flat `a1`
+under-weights; e.g. gpt2 lands within ~1–2% at seq≥256. In-sample MAPE ~10.3%.)
 
 **Device-busy, not wall-clock.** `profile_model_on_tpu.py` uses
 `torch.compile(backend="openxla")` (compile once, re-execute) and isolates device time
