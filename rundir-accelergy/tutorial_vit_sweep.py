@@ -199,6 +199,16 @@ def plot_results(results, workloads, sizes, df, path):
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
 
+    plt.rcParams.update({
+        'font.size': 16,
+        'axes.titlesize': 22,
+        'axes.labelsize': 20,
+        'xtick.labelsize': 18,
+        'ytick.labelsize': 18,
+        'legend.fontsize': 16,
+        'legend.title_fontsize': 17,
+    })
+
     idx = {(r['workload'], r['size']): r for r in results}
     wl_present = [w for w in workloads if any(w == r['workload'] for r in results)]
     x = np.arange(len(wl_present))
@@ -209,7 +219,7 @@ def plot_results(results, workloads, sizes, df, path):
 
     n = len(sizes)
     width = 0.8 / max(n, 1)
-    fig, ax = plt.subplots(figsize=(max(8, 2.6 * len(wl_present)), 5.5))
+    fig, ax = plt.subplots(figsize=(max(12, 3.4 * len(wl_present)), 6.5))
 
     for si, size in enumerate(sizes):
         offset = (si - (n - 1) / 2) * width
@@ -227,7 +237,6 @@ def plot_results(results, workloads, sizes, df, path):
     ax.set_xticklabels(wl_present)
     ax.set_xlabel('Workload')
     ax.set_ylabel('Energy (uJ)')
-    ax.set_title(f'Energy distribution (MAC vs SRAM) - {df.upper()} dataflow')
     ax.grid(axis='y', linestyle='--', alpha=0.4)
 
     # Two-part legend: color -> component, hatch -> array size.
