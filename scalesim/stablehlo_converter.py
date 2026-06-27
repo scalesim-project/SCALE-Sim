@@ -200,7 +200,7 @@ class NonComputeLatencyPredictor:
             model_dir: Directory containing pre-trained model .pkl files.
                        If None, the directory is resolved from `generation`.
             generation: TPU generation (e.g. 'TPUv4', 'TPUv6e'); selects the
-                        per-generation subdir under scalesim/model/ (tpuv4, tpuv6e,
+                        per-generation subdir under scalesim/latency_model/ml_model/ (tpuv4, tpuv6e,
                         ...). Ignored if `model_dir` is given. Falls back to tpuv4
                         if the requested generation's dir does not exist.
             verbose: Whether to print loading progress
@@ -223,15 +223,15 @@ class NonComputeLatencyPredictor:
     _GENERATION_DIRS = {
         # model/<gen> holds the PURE-device (xprof inner-span) per-op models for each
         # generation (v4 and v6e both re-collected with the fixed collector + n=1000
-        # sampler; see CALIBRATION_RUNBOOK). Identity mapping -- no _pure suffix.
-        "tpuv4": "tpuv4", "tpuv5e": "tpuv5e", "tpuv6e": "tpuv6e",
+        # sampler; see calibration/README.md). Identity mapping -- no _pure suffix.
+        "tpuv4": "tpuv4", "tpuv6e": "tpuv6e",
     }
 
     @staticmethod
     def _resolve_model_dir(generation: str, verbose: bool = True) -> Path:
-        """Map a TPU generation (e.g. 'TPUv6e') to its scalesim/model/<gen> dir.
+        """Map a TPU generation (e.g. 'TPUv6e') to its scalesim/latency_model/ml_model/<gen> dir.
         Falls back to tpuv4 when generation is unknown/None or its dir is absent."""
-        base = Path(__file__).parent / "model"
+        base = Path(__file__).parent / "latency_model" / "ml_model"
         default = base / "tpuv4"
         if not generation:
             return default
@@ -1232,7 +1232,7 @@ def convert_mlir_if_needed(
         # which merges it with the simulator's per-layer compute times into the
         # single unified TIME_REPORT.csv (see scalesim/total_time_report.py).
         # Resolve the TPU generation from the config so the op-latency models match
-        # the configured TimeLinearModel (e.g. TPUv6e -> scalesim/model/tpuv6e/).
+        # the configured TimeLinearModel (e.g. TPUv6e -> scalesim/latency_model/ml_model/tpuv6e/).
         generation = None
         if config_file:
             try:

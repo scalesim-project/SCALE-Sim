@@ -29,7 +29,7 @@ class scalesim:
 
         bypass_compute: if True, skip the cycle-accurate systolic-array
         simulation and compute each layer's cycles from the closed-form
-        analytical model (scalesim/bypass_compute.py). Much faster; emits
+        analytical model (scalesim/latency_model/calibration/bypass_compute.py). Much faster; emits
         COMPUTE_REPORT.csv + TIME_REPORT.csv only (no SRAM/DRAM traces).
         """
         # Data structures
@@ -124,7 +124,7 @@ class scalesim:
 
         # Fast path: closed-form analytical cycles, no systolic-array simulation
         if self.bypass_compute:
-            from scalesim.bypass_compute import run_bypass
+            from scalesim.latency_model.calibration.bypass_compute import run_bypass
             if self.verbose_flag:
                 self.print_run_configs()
                 print("************ Running in BYPASS (analytical) mode ************")
