@@ -101,11 +101,14 @@ COMPENSATION_BY_GEN = {
     # for 4/12 points, so a0=1 forces a1 negative; freeing a0 gives a0=0.47 (GEMM
     # contributes ~47% of its standalone-fusion sum once fused) with positive a1.
     # Calibrated batch-1 on 3 LLMs x seq{128,256,512,1024} + tiny_transformer via
-    # fit_compensation_pure.py --gen tpuv6e --free-a0 -> calib_tpuv6e_pure.csv,
-    # coeffs_tpuv6e_pure.json: in-sample 13.5% MAPE, leave-one-model-out 22.6%.
-    # (C1=0, dropped as in v4.) Batch>1 occupancy NOT modelled.
-    "TPUv6e": {"a0_mxu": 0.4698, "a1_vpu": 0.0246,
-               "c_c": 0.0, "c_n": 0.0, "C0_forward": 161.1, "C1_per_gemm": 0.0},
+    # fit_compensation_pure.py --gen tpuv6e --free-a0 --mape-min -> calib_tpuv6e_pure
+    # .csv, coeffs_tpuv6e_pure.json. The fit MINIMIZES MAPE directly under physical
+    # bounds (0<a0<1, a1>0, C0>=0) rather than WLS -- gives a physical fit AND better
+    # accuracy: in-sample 12.1% MAPE, leave-one-model-out 17.7% (vs WLS 13.5%/22.6%).
+    # a0=0.73 (GEMM fusion-floor overlap on fast v6e), a1=0.0098, C0=156us. (C1=0,
+    # dropped as in v4.) Batch>1 occupancy NOT modelled.
+    "TPUv6e": {"a0_mxu": 0.7263, "a1_vpu": 0.0098,
+               "c_c": 0.0, "c_n": 0.0, "C0_forward": 156.2, "C1_per_gemm": 0.0},
 }
 
 
