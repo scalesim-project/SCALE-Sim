@@ -91,18 +91,23 @@ COMPENSATION_BY_GEN = {
     # Batch>1 occupancy NOT modelled.
     "TPUv4": {"a0_mxu": 1.0, "a1_vpu": 0.0491,
               "c_c": 0.0, "c_n": 0.0, "C0_forward": 83.8, "C1_per_gemm": 0.0},
-    # v6e: same model + structure as v4 (a0=1, size-dependent C0 + C1*n_gemm).
-    # Calibrated batch-1 on 3 LLMs x seq{128,256,512} + tiny_transformer (the small-
-    # model anchor) -> calib_tpuv6e.csv via fit_compensation_v6e.py. a1=0.0295 is
-    # PINNED (non-compute fusion survival; Sn and n_gemm are confounded, so the free
-    # 3-param solve is degenerate -- a1 from the robust LLM fit, ~v4's 0.036). v6e's
-    # floor is large+constant (C0=321us) with a small positive per-kernel term
-    # (C1=0.80us) -- C0 >> v4's 81us, the real generational difference. In-sample
-    # 10.8% MAPE (~v4's 11.9%); tiny model now +13% (was +59% with a fixed C=490 fit
-    # only on the LLMs). Calibrated on 3 LLMs x seq{128,256,512,1024} + tiny. Batch>1
-    # occupancy NOT modelled.
-    "TPUv6e": {"a0_mxu": 1.0, "a1_vpu": 0.0295,
-               "c_c": 0.0, "c_n": 0.0, "C0_forward": 329.8, "C1_per_gemm": 0.7559},
+    # v6e: same pure-model pipeline as v4 (PURE per-op models in model/tpuv6e,
+    # re-collected with the fixed inner-span collector + n=1000 sampler; f32 calib_mlir
+    # graphs; device-busy truth). ONE structural difference from v4: a0 is FREE, not
+    # pinned to 1. v6e is fast enough that Sum(GEMM) (the standalone fusion floors of
+    # GEMM-heavy models -- smollm2 has 272 GEMMs) EXCEEDS the fused device-busy truth
+    # for 4/12 points, so a0=1 forces a1 negative; freeing a0 gives a0=0.73 (GEMM
+    # contributes ~73% of its standalone-fusion sum once fused) with positive a1.
+    # Calibrated batch-1 on 3 LLMs x seq{128,256,512,1024} + tiny_transformer via
+    # fit_compensation_pure.py --gen tpuv6e --free-a0 --mape-min -> calib_tpuv6e_pure
+    # .csv, coeffs_tpuv6e_pure.json. The fit MINIMIZES MAPE directly under physical
+    # bounds (0<a0<1, a1>0, C0>=0) rather than WLS -- gives a physical fit AND better
+    # accuracy: in-sample 12.1% MAPE, leave-one-model-out 17.7% (vs WLS 13.5%/22.6%).
+    # a0=0.73 (GEMM fusion-floor overlap on fast v6e), a1=0.0098, C0=156us. (C1=0,
+    # dropped as in v4.)  NOTE: v4 reshape=median is NOT yet applied to v6e's models;
+    # re-run set_reshape_median.py on model/tpuv6e if porting. Batch>1 NOT modelled.
+    "TPUv6e": {"a0_mxu": 0.7263, "a1_vpu": 0.0098,
+               "c_c": 0.0, "c_n": 0.0, "C0_forward": 156.2, "C1_per_gemm": 0.0},
 }
 
 

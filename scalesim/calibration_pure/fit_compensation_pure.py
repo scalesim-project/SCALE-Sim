@@ -125,24 +125,55 @@ def mape(y, p):
     return float(np.mean(np.abs((y - p) / y)) * 100)
 
 
-def fit(rows):
+def _fit_coef(Sc, Sn, Y, free_a0, mape_min):
+    """Return (a0, a1, C0). WLS (default) or MAPE-minimizing with physical bounds
+    (mape_min): 0 < a0 < 1 (if free_a0; else a0=1), a1 > 0, C0 >= 0 -- optimizes the
+    reported metric directly and guarantees a physical fit."""
+    w = 1.0 / Y ** 2
+    if not mape_min:
+        if free_a0:
+            X = np.stack([Sc, Sn, np.ones(len(Sn))], 1)
+            a0, a1, C0 = wls(X, Y, w)
+        else:
+            a1, C0 = wls(np.stack([Sn, np.ones(len(Sn))], 1), Y - Sc, w)
+            a0 = 1.0
+        return float(a0), float(a1), float(C0)
+    from scipy.optimize import minimize
+    def obj(c):
+        a0, a1, C0 = (c[0], c[1], c[2]) if free_a0 else (1.0, c[0], c[1])
+        return float(np.mean(np.abs((a0 * Sc + a1 * Sn + C0 - Y) / Y)))
+    if free_a0:
+        bnds = [(1e-3, 0.999), (1e-6, 1.0), (0.0, 5000.0)]
+        starts = [[0.5, 0.02, 150], [0.3, 0.03, 100], [0.7, 0.01, 160]]
+    else:
+        bnds = [(1e-6, 1.0), (0.0, 5000.0)]
+        starts = [[0.02, 150], [0.03, 100]]
+    best = min((minimize(obj, x0, method="Nelder-Mead", bounds=bnds,
+                         options={"xatol": 1e-5, "fatol": 1e-5, "maxiter": 8000})
+                for x0 in starts), key=lambda r: r.fun)
+    c = best.x
+    return (float(c[0]), float(c[1]), float(c[2])) if free_a0 else (1.0, float(c[0]), float(c[1]))
+
+
+def fit(rows, free_a0=False, mape_min=False):
+    """Fit T = a0*Sc + a1*Sn + C0.  Default WLS, a0=1 (as v4). free_a0 also fits a0
+    (needed when Sum(GEMM) > device-busy truth, e.g. v6e). mape_min optimizes MAPE
+    directly with physical bounds (0<a0<1, a1>0, C0>=0) instead of WLS."""
     Sc = np.array([r["Sc_us"] for r in rows])
     Sn = np.array([r["Sn_us"] for r in rows])
     Y = np.array([r["truth_us"] for r in rows])
     mdl = [r["model"] for r in rows]
-    w = 1.0 / Y ** 2
-    R = Y - Sc                                         # a0 pinned to 1
-    X = np.stack([Sn, np.ones(len(Sn))], 1)            # [a1, C0]
-    a1, C0 = wls(X, R, w)
-    pred = Sc + X @ [a1, C0]
+    a0, a1, C0 = _fit_coef(Sc, Sn, Y, free_a0, mape_min)
+    pred = a0 * Sc + a1 * Sn + C0
     ins = mape(Y, pred)
-    preds = np.zeros(len(Y))                           # leave-one-model-out CV
+    preds = np.zeros(len(Y))                            # leave-one-model-out CV
     for mo in sorted(set(mdl)):
         tr = np.array([i for i, mm in enumerate(mdl) if mm != mo])
         ts = np.array([i for i, mm in enumerate(mdl) if mm == mo])
-        preds[ts] = Sc[ts] + X[ts] @ wls(X[tr], R[tr], w[tr])
+        b0, b1, bC = _fit_coef(Sc[tr], Sn[tr], Y[tr], free_a0, mape_min)
+        preds[ts] = b0 * Sc[ts] + b1 * Sn[ts] + bC
     cv = mape(Y, preds)
-    return a1, C0, ins, cv, pred, Y, mdl, [r["seq"] for r in rows]
+    return a0, a1, C0, ins, cv, pred, Y, mdl, [r["seq"] for r in rows]
 
 
 def main():
@@ -156,6 +187,12 @@ def main():
     ap.add_argument("--tiny-truth", type=float, default=None,
                     help="measured tiny_transformer device-busy us on this gen (anchors C0)")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--free-a0", action="store_true",
+                    help="also fit a0 (GEMM factor) instead of pinning it to 1.0 -- "
+                         "use when Sum(GEMM) > device-busy truth (e.g. v6e)")
+    ap.add_argument("--mape-min", action="store_true",
+                    help="minimize MAPE with physical bounds (0<a0<1, a1>0, C0>=0) "
+                         "instead of WLS -- guarantees a physical fit + better MAPE")
     args = ap.parse_args()
 
     g = GEN[args.gen]
@@ -168,23 +205,25 @@ def main():
     print("building calib (current pipeline, PURE models):")
     rows = build_calib(args.mlir_root, truth, g["cfg"], tiny_truth, out_csv)
 
-    a1, C0, ins, cv, pred, Y, mdl, seqs = fit(rows)
-    print(f"\nFIT (a0=1 pinned):  a1={a1:.4f}  C0={C0:.2f}  C1=0")
+    a0, a1, C0, ins, cv, pred, Y, mdl, seqs = fit(rows, free_a0=args.free_a0, mape_min=args.mape_min)
+    print(f"\nFIT (a0={'FREE' if args.free_a0 else 'pinned'}, "
+          f"{'MAPE-min bounded' if args.mape_min else 'WLS'}):  "
+          f"a0={a0:.4f}  a1={a1:.4f}  C0={C0:.2f}  C1=0")
     print(f"  in-sample MAPE={ins:.1f}%   leave-one-model-out CV={cv:.1f}%\n")
     print(f"{'model':16}{'seq':>5}{'pred':>9}{'truth':>9}{'err%':>7}")
     for m, s, pp, yy in zip(mdl, seqs, pred, Y):
         print(f"{m:16}{s:>5}{pp:>9.0f}{yy:>9.0f}{abs(pp-yy)/yy*100:>6.0f}%")
 
     import json
-    coeffs = {"a0_mxu": 1.0, "a1_vpu": float(a1), "c_c": 0.0, "c_n": 0.0,
+    coeffs = {"a0_mxu": float(a0), "a1_vpu": float(a1), "c_c": 0.0, "c_n": 0.0,
               "C0_forward": float(C0), "C1_per_gemm": 0.0,
               "in_sample_mape": ins, "lomo_cv_mape": cv, "n_points": len(rows),
-              "gen": args.gen, "basis": "PURE per-op models; T=Sc+a1*Sn+C0; f32 graphs"}
+              "gen": args.gen, "basis": "PURE per-op models; T=a0*Sc+a1*Sn+C0; f32 graphs"}
     jp = os.path.join(HERE, f"coeffs_{args.gen}_pure.json")
     json.dump(coeffs, open(jp, "w"), indent=2)
     print(f"\nwrote {out_csv} and {jp}")
     print(f'paste into COMPENSATION_BY_GEN["{"TPUv4" if args.gen=="tpuv4" else "TPUv6e"}"]: '
-          f'a1_vpu={a1:.4f}, C0_forward={C0:.1f}, C1_per_gemm=0.0')
+          f'a0_mxu={a0:.4f}, a1_vpu={a1:.4f}, C0_forward={C0:.1f}, C1_per_gemm=0.0')
 
 
 if __name__ == "__main__":

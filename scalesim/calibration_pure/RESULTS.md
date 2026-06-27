@@ -339,27 +339,39 @@ in-sample 10.8%.
 
 ### Predicted vs real latency, batch-1 (3 LLMs x seq) — `prediction_vs_real_tpuv6e.csv`
 
-Predicted = SCALE-Sim `tuned_us` TOTAL (`scale.py -b -c configs/tpuv6e.cfg`);
-real = torch.compile device-busy (`e2e_device_truth_tpuv6e.csv`).
+FINAL (current pure pipeline, 2026-06-27): non-compute single_op from the re-collected
+PURE models (`model/tpuv6e`, fixed inner-span collector + n=1000 sampler); canonical
+f32 `calib_mlir/` graphs; **device-busy** truth (`e2e_device_truth_tpuv6e.csv`).
+Compensation **a0=0.7263, a1=0.0098, C0=156.2, C1=0** -- fit by MINIMIZING MAPE under
+physical bounds (0<a0<1, a1>0). Predicted = `scale.py -b -c configs/tpuv6e.cfg` `tuned_us` TOTAL.
 
-| model | seq | predicted (us) | real (us) | err |
-|-------|----:|---------------:|----------:|----:|
-| gpt2 | 128 | 618.8 | 763.5 | −19.0% |
-| gpt2 | 256 | 737.2 | 792.3 | −7.0% |
-| gpt2 | 512 | 878.7 | 953.6 | −7.9% |
-| gpt2 | 1024 | 1517.9 | 1965.5 | −22.8% |
-| qwen2.5-0.5b | 128 | 1239.4 | 1521.2 | −18.5% |
-| qwen2.5-0.5b | 256 | 1607.8 | 1663.8 | −3.4% |
-| qwen2.5-0.5b | 512 | 1972.7 | 2154.9 | −8.5% |
-| qwen2.5-0.5b | 1024 | 3912.5 | 3750.0 | +4.3% |
-| smollm2-135m | 128 | 1128.8 | 1091.2 | +3.4% |
-| smollm2-135m | 256 | 1359.1 | 1177.3 | +15.4% |
-| smollm2-135m | 512 | 1611.5 | 1469.5 | +7.9% |
-| smollm2-135m | 1024 | 2677.5 | 2554.2 | +4.8% |
+| model | seq | predicted (us) | real device-busy (us) | err |
+|-------|----:|---------------:|----------------------:|----:|
+| gpt2 | 128 | 307 | 312 | −1.6% |
+| gpt2 | 256 | 389 | 390 | −0.4% |
+| gpt2 | 512 | 486 | 499 | −2.6% |
+| gpt2 | 1024 | 1039 | 1484 | −30.0% |
+| qwen2.5-0.5b | 128 | 647 | 813 | −20.4% |
+| qwen2.5-0.5b | 256 | 919 | 919 | −0.0% |
+| qwen2.5-0.5b | 512 | 1189 | 1421 | −16.4% |
+| qwen2.5-0.5b | 1024 | 2935 | 2935 | −0.0% |
+| smollm2-135m | 128 | 530 | 384 | +38.3% |
+| smollm2-135m | 256 | 690 | 508 | +35.9% |
+| smollm2-135m | 512 | 861 | 771 | +11.6% |
+| smollm2-135m | 1024 | 1822 | 1819 | +0.2% |
 
-**12 points: mean |err| = 10.4%, median 8.2%, max 22.8%.** Per model: qwen 8.7% ·
-smollm2 8.3% · gpt2 14.1% (gpt2 is the smallest, overhead-dominated, and
-under-predicts at both seq extremes -- the large-vocab/overhead weak spot, same as
-v4; mid sizes/seqs are ~3-10%). Pipeline: export_stablehlo_v6e.py (fp32, shapes
-only) -> build_calib_v6e.py (JAX_PLATFORMS=cpu bypass sums) + measure_tiny_truth_v6e
-.py -> fit_compensation_v6e.py -> total_time_report.py.
+**12 points: mean |err| = 13.1%, median 7.1%** (in-sample fit 12.1%, leave-one-model-
+out 17.7%). The MAPE-min bounded fit (`--mape-min`) beats the WLS fit (13.5%/22.6%)
+on both metrics and is guaranteed physical (a0<1, a1>0). Remaining error concentrates
+in the device-busy noise of the seq-extreme points (gpt2/1024, qwen/128,512, smollm/
+128,256) -- device-busy at batch-1 is small and noisy (it's `median(full) −
+median(issue)`).
+
+**Why a0 is FREE for v6e (unlike v4's a0=1):** on the device-busy basis, `Sum(GEMM)`
+exceeds the truth for GEMM-heavy models (smollm2 has 272 GEMMs; 4/12 points violate
+`Sum(GEMM) < truth`) -- v6e is fast enough that the standalone GEMM-fusion floors
+over-count the *fused* device-busy time, so pinning a0=1 forces a1 negative. The
+bounded MAPE-min fit gives a0=0.73 (GEMM contributes ~73% of its standalone-fusion
+sum once fused) with a1>0. Reproduce: `fit_compensation_pure.py --gen tpuv6e
+--free-a0 --mape-min --tiny-truth 182.8`. Pipeline fully unified (calib_mlir +
+fit_compensation_pure + in-repo collectors); old v6e-specific scripts superseded.

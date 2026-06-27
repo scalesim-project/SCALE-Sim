@@ -1,4 +1,4 @@
-model,seq,batch,vocab,device_ms,device_minus_issue_ms,status
+model,seq,batch,vocab,wall_ms,device_ms,status
 gpt2,128,1,50257,0.7635,0.3121,ok
 gpt2,256,1,50257,0.7923,0.3903,ok
 gpt2,512,1,50257,0.9536,0.4993,ok

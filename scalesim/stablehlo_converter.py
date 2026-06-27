@@ -221,6 +221,9 @@ class NonComputeLatencyPredictor:
 
     # TimeLinearModel config value -> per-generation model subdir name
     _GENERATION_DIRS = {
+        # model/<gen> holds the PURE-device (xprof inner-span) per-op models for each
+        # generation (v4 and v6e both re-collected with the fixed collector + n=1000
+        # sampler; see CALIBRATION_RUNBOOK). Identity mapping -- no _pure suffix.
         "tpuv4": "tpuv4", "tpuv5e": "tpuv5e", "tpuv6e": "tpuv6e",
     }
 
