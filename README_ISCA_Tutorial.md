@@ -145,6 +145,97 @@ python3 tutorial_vit_sweep.py --force
 
 ---
 
+## 6. TPU LLM latency prediction (StableHLO → SCALE-Sim)
+
+A second flow in this repo ([`topologies/stablehlo/llm/`](topologies/stablehlo/llm))
+predicts a **real LLM's TPU device latency** from its StableHLO graph: SCALE-Sim
+simulates the matmuls, per-op models cover the non-compute ops, and a whole-model
+compensation produces a device-time estimate that is validated against a real TPU.
+
+Three stages: **(1)** measure real latency on a TPU (ground truth), **(2)** export the
+model to StableHLO MLIR, **(3)** run SCALE-Sim on the MLIR. For the big LLMs, stages 1–2
+are **shown in the talk for reference** — stage 1 needs a TPU VM, and the full sim on a
+real LLM is slow. In the hands-on you run the **tiny transformer**, which needs no TPU
+and finishes in a couple of minutes. All paths below are relative to the repo root.
+
+### A. Demo (presenter / reference — needs a TPU VM and is slow)
+
+```bash
+# 1. ground truth: measure gpt2's real device-busy latency on a TPU VM
+PJRT_DEVICE=TPU python3 topologies/stablehlo/llm/profile_model_on_tpu.py --models gpt2 --gen tpu_v4
+#    -> topologies/stablehlo/llm/measured_tpu_v4.json   (e.g. gpt2 ~500 us)
+
+# 2. export gpt2's forward graph to StableHLO MLIR (CPU; the committed
+#    gpt2.stablehlo.mlir is already provided, so this step is optional)
+python3 topologies/stablehlo/llm/export_LLM.py --models gpt2 --seq-len 128
+
+# 3. predict with SCALE-Sim  (full cycle-accurate sim -- LENGTHY for a real LLM)
+python3 -m scalesim.scale -c configs/tpuv4.cfg \
+    -t topologies/stablehlo/llm/gpt2.stablehlo.mlir -p results/gpt2
+```
+
+The predicted device latency is the `tuned_us` TOTAL of
+`results/gpt2/<run>/TIME_REPORT.csv` (compare it to the measured value from step 1).
+The full cycle-accurate gpt2 run takes **~40 minutes** (and step 1 needs a TPU).
+
+### B. Hands-on: the tiny transformer (no TPU, ~couple of minutes)
+
+```bash
+# (optional) regenerate the MLIR -- a committed copy is already in the repo:
+python3 topologies/stablehlo/llm/export_tiny_transformer_pytorch.py
+
+# run SCALE-Sim on it
+python3 -m scalesim.scale -c configs/tpuv4.cfg \
+    -t topologies/stablehlo/llm/tiny_transformer_pytorch.stablehlo.mlir -p results/tiny
+```
+
+(Use `-c configs/tpuv6e.cfg` for a TPU v6e estimate.)
+
+### C. Build / modify the model that generates the MLIR
+
+The export scripts in [`topologies/stablehlo/llm/`](topologies/stablehlo/llm) are small,
+self-contained examples of converting a full **PyTorch** or **JAX** model to StableHLO
+MLIR. You can edit any part — the model definition, its dimensions, or which checkpoint
+is loaded — and re-run to emit a new `.mlir`. (`export_tiny_transformer_*.py` define a
+small transformer inline, easy to tweak; `export_LLM.py` wraps a HuggingFace
+`AutoModelForCausalLM`.) They run on CPU — no TPU needed.
+
+The conversion itself is just a couple of lines:
+
+```python
+# PyTorch  (export_tiny_transformer_pytorch.py, export_LLM.py)
+from torch_xla.stablehlo import exported_program_to_stablehlo
+ep   = torch.export.export(model.eval(), (example_inputs,))       # trace the model
+text = exported_program_to_stablehlo(ep).get_stablehlo_text()     # -> StableHLO MLIR
+
+# JAX  (export_tiny_transformer_jax.py)
+text = jax.jit(forward).lower(params, example_inputs).as_text()   # -> StableHLO MLIR
+```
+
+Write `text` to a `.mlir` file and feed it to SCALE-Sim as in **B**.
+
+### D. Reading `TIME_REPORT.csv`
+
+One row per op (in program order) plus a final `TOTAL` row:
+
+| column | meaning |
+|--------|---------|
+| `OpID` | program-order index of the op |
+| `single_op_us` | the op's **standalone** predicted latency (GEMM from the cycle model; non-compute from the per-op models) |
+| `tuned_us` | the op's **compensated** contribution to fused whole-model device time |
+| `layer` | compute-layer id for GEMMs; `N/A` for non-compute ops |
+| `stablehlo` | short op signature (shapes) |
+
+The **`TOTAL` row's `tuned_us` is the whole-model predicted device latency** — the number
+to compare against the TPU measurement. Its last cell notes the once-per-forward overhead
+`C_forward` and the GEMM-kernel count. (Summed `single_op_us` is far larger: that is the
+naive pre-fusion sum, *before* the whole-model compensation.)
+
+> Full details of these graphs, the scripts, and the latency model:
+> [`topologies/stablehlo/llm/README.md`](topologies/stablehlo/llm/README.md).
+
+---
+
 ## Troubleshooting
 
 - **`Can not find an energy estimator for intmac ...`** — no estimator plug-in
