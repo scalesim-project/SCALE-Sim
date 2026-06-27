@@ -1,0 +1,88 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: buffet_collection_SRAM
+    attributes:
+      technology: 40nm
+      memory_depth: 12
+      memory_width: 16
+      n_rdwr_ports: 2
+      n_banks: 1
+      n_buffets: 1
+      scoreboard_depth: 12
+    subcomponents:
+      - name: buffet[0..n_buffets-1]
+        class: buffet
+        attributes:
+          technology: technology
+          depth: memory_depth
+          width: memory_width
+          scoreboard_depth: scoreboard_depth
+      - name: storage
+        class: SRAM
+        attributes:
+          technology: technology
+          width: memory_width
+          depth: memory_depth
+          n_rdwr_ports: n_rdwr_ports
+          n_banks: n_banks
+    actions:
+      - name: fill
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..n_banks
+        subcomponents:
+          - name: buffet[0]
+            actions:
+              - name: fill
+                arguments:
+                  address_delta: round(address_delta/n_banks)
+                  data_delta: data_delta
+          - name: storage
+            actions:
+              - name: write
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+      - name: read
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..n_banks
+        subcomponents:
+          - name: buffet[0]
+            actions:
+              - name: read
+                arguments:
+                  address_delta: round(address_delta/n_banks)
+                  data_delta: data_delta
+          - name: storage
+            actions:
+              - name: read
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+      - name: update
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..n_banks
+        subcomponents:
+          - name: buffet[0]
+            actions:
+              - name: update
+                arguments:
+                  address_delta: round(address_delta/n_banks)
+                  data_delta: data_delta
+          - name: storage
+            actions:
+              - name: write
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+      - name: idle
+        subcomponents:
+          - name: buffet[0..n_buffets-1]
+            actions:
+              - name: idle
+          - name: storage
+            actions:
+              - name: idle

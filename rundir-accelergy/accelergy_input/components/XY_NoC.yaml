@@ -1,0 +1,75 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: XY_NoC
+    attributes:
+      technology: 40nm
+      Y_comparator_width: 4  # compare rowID
+      X_comparator_width: 4  # compare colID
+      n_PE_rows: 12
+      n_PE_cols: 14
+      total_PEs: n_PE_cols * n_PE_rows
+      datawidth: 64
+      Y_X_wire_avg_length: 2mm
+    subcomponents:
+      - name: Y_memory_controller[0..n_PE_rows-1]
+        class: comparator
+        attributes:
+          technology: technology
+          datawidth: Y_comparator_width
+      - name: X_memory_controller[0..total_PEs-1]
+        class: comparator
+        attributes:
+          technology: technology
+          datawidth: X_comparator_width
+      - name: Y_X_wire
+        class: wire
+        attributes:
+          technology: technology
+          width: datawidth + X_comparator_width
+          length: Y_X_wire_avg_length
+    actions:
+      - name: transfer_random
+        arguments:
+          n_rows: 1..n_PE_rows
+          n_cols_per_row: 1..n_PE_cols
+        subcomponents:
+          - name: Y_memory_controller[0..n_rows-1]
+            actions:
+              - name: transfer_random
+          - name: X_memory_controller[0]
+            actions:
+              - name: transfer_random
+                repeat: n_cols_per_row * n_rows # alternative representation of repetitive actions of identical components
+          - name: Y_X_wire
+            actions:
+            - name: transfer_random
+
+      - name: transfer_repeated
+        arguments:
+          n_rows: 1..n_PE_rows
+          n_cols_per_row: 1..n_PE_cols
+        subcomponents:
+          - name: Y_memory_controller[0..n_rows-1]
+            actions:
+              - name: transfer_repeated
+          - name: X_memory_controller[0]
+            actions:
+              - name: transfer_repeated
+                repeat: n_cols_per_row * n_rows
+          - name: Y_X_wire
+            actions:
+            - name: idle
+
+
+      - name: idle
+        subcomponents:
+          - name: Y_memory_controller[0..n_PE_rows-1]
+            actions:
+              - name: idle
+          - name: X_memory_controller[0..total_PEs-1]
+            actions:
+              - name: idle
+          - name: Y_X_wire
+            actions:
+              - name: idle

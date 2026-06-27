@@ -1,0 +1,117 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: buffet
+    attributes:
+      technology: 40nm
+      depth: 12
+      width: 16
+      scoreboard_depth: 12
+      address_width: log(depth)
+    subcomponents:
+      - name: scoreboard
+        class: regfile
+        attributes:
+          technology: technology
+          depth: scoreboard_depth
+          width: 1
+      - name: data_fifos[0..2]
+        class: FIFO
+        attributes:
+          technology: technology
+          datawidth: width
+          width: width
+          depth: depth
+      - name: addr_fifos[0..2]
+        class: FIFO
+        attributes:
+          technology: technology
+          datawidth: address_width
+          width: width
+          depth: depth
+    actions:
+      - name: fill
+        arguments:
+          address_delta: 0..1
+          data_delta: 0..1
+        subcomponents:
+          - name: scoreboard
+            actions:
+              - name: access
+                arguments:
+                  address_delta: 1
+                  data_delta: 1
+                  action_latency_cycles: 1
+          - name: data_fifos[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+          - name: addr_fifos[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+      - name: read
+        arguments:
+          address_delta: 0..1
+          data_delta: 0..1
+        subcomponents:
+          - name: scoreboard
+            actions:
+              - name: access
+                arguments:
+                  address_delta: 0
+                  data_delta: 0  # 1 bit flag not related to actual data
+          - name: data_fifos[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+          - name: addr_fifos[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+      - name: update
+        arguments:
+          address_delta: 0..1
+          data_delta: 0..1
+        subcomponents:
+          - name: scoreboard
+            actions:
+              - name: access
+                arguments:
+                  address_delta: 1
+                  data_delta: 1
+                  action_latency_cycles: 1
+          - name: data_fifos[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+          - name: addr_fifos[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+                
+      - name: idle
+        subcomponents:
+          - name: scoreboard
+            actions:
+              - name: leak
+                arguments:
+                  action_latency_cycles: 1
+                  data_delta: 0
+                  address_delta: 0
+          - name: data_fifos[0..2]
+            actions:
+              - name: leak
+                arguments:
+                  action_latency_cycles: 1
+          - name: addr_fifos[0..2]
+            actions:
+              - name: leak
+                arguments:
+                  action_latency_cycles: 1

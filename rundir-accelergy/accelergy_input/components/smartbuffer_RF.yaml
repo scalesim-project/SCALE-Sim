@@ -1,0 +1,92 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: smartbuffer_RF
+    attributes:
+      technology: 40nm
+      memory_depth: 12
+      memory_width: 16
+      n_rdwr_ports: 2
+      n_banks: 1
+      n_buffets: 1
+      scoreboard_depth: memory_depth/n_banks
+      update_fifo_depth: 0
+
+    subcomponents:
+      - name: buffet_collection
+        class: buffet_collection_RF
+        attributes:
+          technology: technology
+          memory_depth: memory_depth
+          memory_width: memory_width
+          n_rdwr_ports: n_rdwr_ports
+          n_banks: n_banks
+          n_buffets: n_buffets
+          scoreboard_depth: scoreboard_depth
+      - name: address_generators[0..2]
+        class: counter
+        attributes:
+          technology: technology
+          width: log(memory_depth)
+
+    actions:
+      - name: fill
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..n_banks
+        subcomponents:
+          - name: buffet_collection
+            actions:
+              - name: fill
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+          - name: address_generators[0]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+
+      - name: read
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..n_banks
+        subcomponents:
+          - name: buffet_collection
+            actions:
+              - name: read
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+          - name: address_generators[1]
+            actions:
+              - name: access
+                arguments:
+                  action_latency_cycles: 1
+
+      - name: update
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..n_banks
+        subcomponents:
+          - name: buffet_collection
+            actions:
+              - name: update
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+          - name: address_generators[2]
+            actions:
+            - name: access
+              arguments:
+                action_latency_cycles: 1
+
+      - name: idle
+        subcomponents:
+          - name: buffet_collection
+            actions:
+              - name: idle
+          - name: address_generators[0..2]
+            actions:
+              - name: leak
+                

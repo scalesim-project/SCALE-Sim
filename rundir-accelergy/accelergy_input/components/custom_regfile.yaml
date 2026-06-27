@@ -1,0 +1,53 @@
+compound_components:
+  version: 0.3
+  classes:
+  - name: custom_regfile
+    attributes:
+      technology: 40nm
+      width: 1
+      depth: 1
+    subcomponents:
+      - name: regfile
+        class: regfile
+        attributes:
+          width: width
+          depth: depth
+          technology: 40nm
+          action_latency_cycles: 1
+    actions:
+      - name: leak
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..1
+        subcomponents:
+          - name: regfile
+            actions:
+              - name: leak
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+                  action_latency_cycles: 1
+      - name: read
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..1
+        subcomponents:
+          - name: regfile
+            actions:
+              - name: access
+                arguments:
+                  data_delta: data_delta
+                  address_delta: address_delta
+                  action_latency_cycles: 1
+      - name: write
+        arguments:
+          data_delta: 0..1
+          address_delta: 0..1
+        subcomponents:
+        - name: regfile
+          actions:
+            - name: access
+              arguments:
+                data_delta: data_delta
+                address_delta: address_delta
+                action_latency_cycles: 1
