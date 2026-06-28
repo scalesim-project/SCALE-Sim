@@ -7,8 +7,9 @@ Currently we integrate Ramulator [Link] DRAM simulator in this design.
 The memory interface can be easily evaluated by performing the following steps:
 
 ### * Step 1a: Installing the dev-ramulator branch of the SCALE-Sim repository*
-Follow the steps to get the SCALE-Sim source from github and then switch to the dev-ramulator branch <br />
-git clone https://github.com/scalesim-project/scale-sim.git <br />
+Follow the steps to get the SCALE-Sim source from github and then switch to the isca-tutorial branch <br />
+git clone (https://github.com/scalesim-project/SCALE-Sim.git) <br />
+git checkout isca-tuorial
 
 ### * Step 1b: Create a virtual environment and install python dependencies*
 python -m venv ./venv <br />
