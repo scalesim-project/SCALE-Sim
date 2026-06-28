@@ -9,13 +9,11 @@ The memory interface can be easily evaluated by performing the following steps:
 ### * Step 1a: Installing the dev-ramulator branch of the SCALE-Sim repository*
 Follow the steps to get the SCALE-Sim source from github and then switch to the dev-ramulator branch
 git clone https://github.com/scalesim-project/scale-sim-v2.git <br />
-git checkout dev-ramulator-merge <br />
 
 ### * Step 1b: Create a virtual environment and install python dependencies*
 python -m venv ./venv <br />
 source venv/bin/activate <br />
 pip install -r ./requirements.txt<br />
->>>>>>> 2401db77f7ea13df54c01df2d41263e1f62edf6c
 
 ### * Step 1b: Create a virtual environment and install python dependencies*
 python -m venv ./venv <br />
@@ -25,7 +23,7 @@ pip install -r ./requirements.txt<br />
 ### * Step 1c: Installing the ramulator package*
 
 # Get the latest source from ramulator github
-git submodule update --init --recursive<br />
+git submodule update --init<br />
 
 # Copy the patch files to the ramulator codebase 
 cd submodules<br />
