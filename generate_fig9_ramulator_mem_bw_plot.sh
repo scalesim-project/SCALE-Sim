@@ -4,9 +4,9 @@ git checkout configs/google.cfg
 git checkout configs/google_ramulator.cfg
 mkdir results
 mkdir results/dram_results
-mkdir results/dram_results/mem_bw
+mkdir results/dram_results/stall_cycles
 ramulator_path="./submodules/ramulator/configs"
-outpath="./results/dram_results/mem_bw"
+outpath="./results/dram_results/stall_cycles"
 sed -i "s/channels = [0-9]\+/channels = 1/g" $ramulator_path/DDR4-config.cfg
 echo "Running scalesimV3 with r1c1 configuration"
 ./run_ramulator.sh resnet18 512
