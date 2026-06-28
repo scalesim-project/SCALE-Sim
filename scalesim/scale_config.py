@@ -99,7 +99,7 @@ class scale_config:
         # Parse TimeLinearModel if present
         if config.has_option(section, 'TimeLinearModel'):
             self.time_linear_model = config.get(section, 'TimeLinearModel')
-            assert self.time_linear_model in ['None', 'TPUv4', 'TPUv5e', 'TPUv6e'], f"ERROR: Invalid time linear model '{self.time_linear_model}'. Must be one of: None, TPUv4, TPUv5e, TPUv6e"
+            assert self.time_linear_model in ['None', 'TPUv4', 'TPUv6e'], f"ERROR: Invalid time linear model '{self.time_linear_model}'. Must be one of: None, TPUv4, TPUv6e"
 
 
         # TODO Sarbartha: Should be bw

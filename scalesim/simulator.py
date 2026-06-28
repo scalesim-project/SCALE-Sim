@@ -9,7 +9,7 @@ from scalesim.scale_config import scale_config as cfg
 from scalesim.topology_utils import topologies as topo
 from scalesim.layout_utils import layouts as layout
 from scalesim.single_layer_sim import single_layer_sim as layer_sim
-from scalesim.linear_model.tpu import tpuv4_linear_model, tpuv5e_linear_model, tpuv6e_linear_model
+from scalesim.latency_model.linear_model.tpu import tpuv4_linear_model, tpuv6e_linear_model
 
 
 class simulator:
@@ -232,15 +232,23 @@ class simulator:
             # Get spatiotemporal dimensions for this layer
             dataflow = self.conf.get_dataflow()
             s_row, s_col, t_time = self.topo.get_spatiotemporal_dims(layer_id=lid, df=dataflow)
-            
-            
+
+            # GEMM dims (M,N,K) enable the TPUv4 roofline term; None for conv layers.
+            # get_transformed_mnk_dimensions() reports M as the total ofmap element
+            # count (ofmap_px * num_filters), i.e. inflated by N -- divide it back
+            # out to recover the true GEMM row count (matches bypass_compute).
+            M = N = K = None
+            try:
+                M_tot, N, K = self.topo.get_transformed_mnk_dimensions()[lid]
+                M = M_tot // N if N else M_tot
+            except Exception:
+                pass
+
             # Apply the appropriate linear model based on config
             if time_linear_model == 'TPUv4':
-                time_us = tpuv4_linear_model(total_cycles, s_row, s_col, t_time)
-            elif time_linear_model == 'TPUv5e':
-                time_us = tpuv5e_linear_model(total_cycles, s_row, s_col, t_time)
+                time_us = tpuv4_linear_model(total_cycles, s_row, s_col, t_time, M, N, K)
             elif time_linear_model == 'TPUv6e':
-                time_us = tpuv6e_linear_model(total_cycles, s_row, s_col, t_time)
+                time_us = tpuv6e_linear_model(total_cycles, s_row, s_col, t_time, M, N, K)
             else:
                 # Default: no conversion, just use cycles as time
                 time_us = total_cycles

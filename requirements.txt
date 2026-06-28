@@ -7,3 +7,8 @@ pandas
 cython
 setuptools
 matplotlib
+
+# Optional: For StableHLO MLIR file support
+# Uncomment the following lines to enable .mlir file input:
+# jax>=0.4.0
+# jaxlib>=0.4.0

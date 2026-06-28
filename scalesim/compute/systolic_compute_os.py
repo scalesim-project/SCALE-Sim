@@ -569,6 +569,14 @@ class systolic_compute_os:
 
     # get pe action counts (for Accelergy energy estimation)
     def get_pe_action_count(self):
+        # Dense-only model: under N:M sparsity the per-fold PE utilization is not
+        # tracked (row_used_fold/col_used_fold are not populated for every fold),
+        # and the dense formulas would not reflect the skipped MACs anyway.
+        # Return zeros so Accelergy estimation does not crash or report
+        # misleading PE energy for sparse runs.
+        if self.config.sparsity_support or \
+                len(self.row_used_fold) < self.col_fold * self.row_fold:
+            return 0, 0, 0, 0, 0, 0
         ifmap_write_action_count, ifmap_read_action_count = self.get_ifmap_action_count()
         filter_write_action_count, filter_read_action_count = self.get_filter_action_count()
         ofmap_write_action_count, ofmap_read_action_count = self.get_ofmap_action_count()
