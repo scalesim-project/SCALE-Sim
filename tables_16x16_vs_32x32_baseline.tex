@@ -1,0 +1,77 @@
+% Requires \usepackage{booktabs} and \usepackage{threeparttable} in the preamble.
+% Source data: mx_pe_eval_16x16_raw_metrics.txt, mx_pe_eval_16x16_results.txt,
+%              mx_pe_eval_raw_metrics.csv (32x32 N=1 baseline cycles)
+% N=1 per-PE synthesis: 0.56 ns, 6578.963965 um^2, 3.7319 mW
+% N=4 per-PE synthesis: 0.56 ns, 11302.577963 um^2, 7.027 mW
+% Both designs share the same clock period, so this comparison has no frequency
+% confound -- differences below are purely from architecture (PE count x N), not clock rate.
+
+% ------------------------------------------------------------------
+% Table 1: Configuration comparison
+% ------------------------------------------------------------------
+\begin{table}[t]
+\centering
+\begin{threeparttable}
+\caption{Array configuration: 32$\times$32 conventional (N=1) baseline vs.\ 16$\times$16 fused-PE (N=4) design.}
+\label{tab:config-comparison}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Parameter} & \textbf{32$\times$32, N=1} & \textbf{16$\times$16, N=4} \\
+\midrule
+Array size              & $32 \times 32$ & $16 \times 16$ \\
+PE count                 & 1024           & 256            \\
+MACs / PE / cycle (N)    & 1              & 4              \\
+Peak MACs / cycle        & 1024           & 1024           \\
+Dataflow                 & Output-Stationary & Output-Stationary \\
+IFMAP / Filter / OFMAP SRAM & 64\,KB each & 64\,KB each \\
+Bandwidth mode            & CALC (uncapped)\tnote{a} & CALC (uncapped)\tnote{a} \\
+Sparsity support          & Disabled       & Disabled       \\
+Technology node            & TSMC 28\,nm, TT/0.8V/25\textdegree{}C & TSMC 28\,nm, TT/0.8V/25\textdegree{}C \\
+Clock period               & 0.56\,ns (1.786\,GHz) & 0.56\,ns (1.786\,GHz) \\
+Area / PE                  & 6{,}578.96\,$\mu m^2$ & 11{,}302.58\,$\mu m^2$ \\
+Power / PE                  & 3.7319\,mW    & 7.027\,mW      \\
+Total array area            & 6.74\,mm$^2$  & 2.89\,mm$^2$   \\
+Total array power           & 3.82\,W       & 1.80\,W        \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item[a] SCALE-Sim estimates whatever bandwidth avoids stalling compute rather than enforcing a fixed cap; both configurations report zero stall cycles on every evaluated workload.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+
+% ------------------------------------------------------------------
+% Table 2: Per-workload comparison
+% ------------------------------------------------------------------
+\begin{table}[t]
+\centering
+\begin{threeparttable}
+\caption{Per-workload comparison: 32$\times$32/N=1 baseline vs.\ 16$\times$16/N=4 fused design. Cycle counts are independent SCALE-Sim simulations at each array's own native fold pattern, not derived from one another. Both designs share a 0.56\,ns clock period.}
+\label{tab:workload-comparison}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrc rr rr}
+\toprule
+& \multicolumn{2}{c}{\textbf{Cycles}} & & \multicolumn{2}{c}{\textbf{TOPS/W}} & \multicolumn{2}{c}{\textbf{TOPS/mm$^2$}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+\textbf{Workload} & \textbf{N=1} & \textbf{N=4} & \textbf{Speedup} & \textbf{N=1} & \textbf{N=4} & \textbf{N=1} & \textbf{N=4} \\
+\midrule
+ResNet-18            & 1{,}718{,}353 & 1{,}589{,}906 & 1.08$\times$ & 0.80 & 1.84 & 0.45 & 1.14 \\
+AlexNet               & 850{,}960     & 833{,}397     & 1.02$\times$ & 0.88 & 1.92 & 0.50 & 1.19 \\
+Transformer-Fwd       & 7{,}133{,}750 & 6{,}377{,}078 & 1.12$\times$ & 0.76 & 1.81 & 0.43 & 1.13 \\
+Transformer-InpGrad   & 5{,}899{,}178 & 4{,}993{,}848 & 1.18$\times$ & 0.65 & 1.63 & 0.37 & 1.01 \\
+ViT-S                 & 352{,}781     & 305{,}747     & 1.15$\times$ & 0.73 & 1.79 & 0.41 & 1.11 \\
+ViT-B                 & 1{,}169{,}093 & 1{,}051{,}271 & 1.11$\times$ & 0.79 & 1.86 & 0.45 & 1.15 \\
+ViT-L                 & 2{,}071{,}105 & 1{,}872{,}552 & 1.11$\times$ & 0.79 & 1.87 & 0.45 & 1.16 \\
+ViT-H                 & 3{,}711{,}547 & 3{,}600{,}360 & 1.03$\times$ & 0.91 & 1.99 & 0.51 & 1.23 \\
+ViT-bigG              & 1{,}611{,}004 & 1{,}562{,}760 & 1.03$\times$ & 0.90 & 1.98 & 0.51 & 1.23 \\
+\bottomrule
+\end{tabular}
+}
+\begin{tablenotes}
+\footnotesize
+\item Across all 9 workloads: N=4 delivers 2.17--2.51$\times$ the TOPS/W and 2.38--2.75$\times$ the TOPS/mm$^2$ of the N=1 baseline, on top of needing fewer cycles on every workload (1.02--1.18$\times$). Per-PE, N=4 is 1.72$\times$ the area and 1.88$\times$ the power of N=1 for 4$\times$ the peak MACs/cycle -- the observed efficiency gains are consistent with that per-PE ratio plus the real-workload speedup, not just the nominal 4$\times$ capacity match.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}

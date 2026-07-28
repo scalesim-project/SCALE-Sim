@@ -1,0 +1,121 @@
+PROMPT FOR AN INDEPENDENT REVIEW (paste into a fresh Claude Code session, ideally
+opened in this same repository so it can verify against the actual files rather
+than trusting this summary)
+
+CONTEXT
+
+I'm evaluating a custom RTL PE (processing element) design for a paper submission
+(ASP-DAC 2027). The PE is an N-way fused dot-product unit supporting Microscaling
+(MX) formats: INT8xINT8, FPxFP (MXFP8/6), and FPxINT (mixed precision), at a
+configurable fusion width N (N MACs fused per cycle via a pipelined tree with a
+double-pumped accumulator, giving an initiation interval of 1 cycle despite a
+4-stage pipeline). I used SCALE-Sim (a cycle-level systolic-array DNN accelerator
+simulator) to get system-level throughput/utilization on real workloads, combined
+with real PrimeTime PX synthesis results (TSMC 28nm, TT/0.8V/25C) for power and
+area, to produce TOPS, TOPS/W, and TOPS/mm^2 figures.
+
+I want a critical, skeptical review of the methodology and results below -- not
+validation. Please point out anything that looks unsound, any claim that overreaches
+what the evidence actually supports, any place a reviewer would push back, and
+whether this is ready to go into a paper as-is.
+
+METHODOLOGY (full detail in evaluation_methodology_paragraph.txt in this repo)
+
+- SCALE-Sim has no native notion of operand precision or per-PE fusion width; it
+  natively assumes 1 MAC/PE/cycle. So each workload is simulated once, unmodified,
+  to get a baseline per-layer cycle count C_l and stall-cycle count S_l. The
+  fused-N cycle count is then projected analytically:
+      C_l(N) = S_l + ceil((C_l - S_l) / N)
+  Stall cycles are left unchanged (memory traffic is independent of fusion width).
+  This is NOT the same as shrinking the array size to fake fusion -- that approach
+  was considered and rejected early on because it would also corrupt SCALE-Sim's
+  memory-bandwidth accounting.
+- Dataflow is output-stationary (OS), chosen because the PE's internally
+  accumulating output register (partial sums held and updated locally per PE)
+  matches OS semantics, not because it's the SCALE-Sim default (which is WS).
+- Power/area are NOT modeled by SCALE-Sim at all; they're introduced entirely in
+  post-processing from real per-PE synthesis figures, scaled by PE count:
+      Power_array(N) = Power_PE(N) x PE_count
+      Area_array(N)  = Area_PE(N) x PE_count / 1e6   [um^2 -> mm^2]
+- Two array configurations were evaluated:
+    (a) 32x32 (1024 PEs) at N=4, N=8, N=16 -- the primary evaluation.
+    (b) 16x16 (256 PEs) at N=4 specifically, because 256 x 4 = 1024, matching
+        32x32x1's total theoretical MAC/cycle capacity with fewer, wider PEs.
+        This is a genuinely independent SCALE-Sim simulation at 16x16's own
+        native fold pattern, not derived by rescaling the 32x32 numbers.
+- Workloads: ResNet-18, AlexNet, ViT-S/B/L/H/bigG, Transformer-Fwd/InpGrad,
+  MLPerf-Transformer (9-10 of these per configuration, see exclusions below).
+
+KEY RESULTS
+
+1. Realized fusion speedup vs. an analytical same-clock N=1 reference is exactly
+   4.00x / 8.00x / 16.00x on every evaluated workload at the 32x32 array -- not
+   approximately, exactly. This holds because every workload has zero stall
+   cycles (fully compute-bound), so the cycle-projection formula above is exact.
+
+2. 16x16 (256 PEs) x N=4 vs. 32x32 (1024 PEs) x N=1, using REAL synthesis for
+   both (N=1: 0.56ns/6578.96um^2/3.7319mW per PE; N=4: 0.56ns/11302.58um^2/
+   7.027mW per PE -- same clock period, so no frequency confound):
+   - 2-18% FEWER cycles on all 9 tested workloads (not just matching, beating).
+   - 2.17-2.51x better TOPS/W, 2.38-2.75x better TOPS/mm^2.
+   - Per-PE, N=4 costs 1.72x the area and 1.88x the power of N=1 for 4x the peak
+     MACs/cycle -- so the efficiency gain is that ratio compounded with the
+     real-workload speedup, not an unexplained number.
+
+3. Comparison against published MX designs (Cuyckens et al. ISLPED'25 and a
+   follow-up NPU-integration paper, Dacapo/ISCA'24, Islamoglu MXdotp/ASAP'25) --
+   competitive GOPS/W (full comparison table in evaluation_methodology_paragraph.txt),
+   though this design is on TSMC 28nm vs. their 12-22nm nodes, and that gap is
+   NOT normalized (raw numbers only, by explicit choice, not an oversight).
+
+4. Fusion width N is uniform across INT8xINT8/FPxFP/FPxINT per-cycle (confirmed
+   architectural property, not simulated) -- so throughput doesn't vary by
+   precision combination, in contrast to competitor designs which reconfigure
+   parallelism per mode (and show 6-9x energy swings between modes as a result).
+   A preliminary (vectorless/case-analysis-estimated, NOT real switching-activity
+   simulated) power breakdown suggests this design's power may also be much
+   flatter across modes (~1.18x spread) than competitors, but this specific claim
+   is explicitly not simulation-verified yet -- see
+   PRELIMINARY_mode_power_estimate_NOT_FOR_CITATION.txt.
+
+KNOWN LIMITATIONS / EXCLUSIONS (please check whether these are handled honestly,
+not swept under the rug)
+
+- LLaMA-3B-scale topology and a Transformer weight-gradient kernel were excluded
+  from all array configurations: individual layers (thousands of channels at
+  512x512, or a single 65536x8192x1024 GEMM) force SCALE-Sim to materialize
+  per-cycle demand matrices exceeding available host RAM (36GB), even in
+  isolation. This is stated as a scaling limitation of trace-based simulation,
+  not a property of the PE.
+- MLPerf-Transformer was excluded from the 16x16 comparison for runtime
+  (891 layers, projected ~9-10 hours at 16x16's per-layer rate) and separately
+  flagged as a utilization outlier in the 32x32 results (its topology decomposes
+  attention into ~890 narrow per-head GEMMs, most of which occupy 1 row/column of
+  a 32-wide array -- a benchmark artifact, not a PE deficiency, but real and
+  reported, not hidden).
+- The per-mode power breakdown (point 4 above) is vectorless/case-analysis
+  estimated (PrimeTime set_case_analysis + set_switching_activity with standard
+  0.5/0.5 random-data assumptions), not from real gate-level or RTL switching
+  activity simulation. It has NOT been used anywhere in the main results tables
+  or the comparison table -- only the single, real, per-N power figures have.
+- No independent (outside this project) verification of any of these numbers has
+  happened; I am the only party who has checked them, working alongside Claude
+  in this repo.
+
+WHAT I WANT FROM THIS REVIEW
+
+1. Is the cycle-projection methodology (dividing compute-bound cycles by N,
+   preserving stall cycles) defensible for a peer-reviewed venue, or does it need
+   a caveat/justification I'm missing?
+2. Is the 16x16/N=4 vs. 32x32/N=1 comparison a fair one, or is there a hidden
+   asymmetry (e.g. in how SCALE-Sim schedules a narrower vs. wider array) that
+   would make a reviewer skeptical of the "2-18% faster, not just equal" result?
+3. Are there claims above that are stated more strongly than the evidence
+   supports?
+4. What would you ask for before trusting this enough to cite in your own work?
+
+Repo files for verification if you have access: evaluation_methodology_paragraph.txt,
+mx_pe_eval_raw_metrics.csv, mx_pe_eval_results.txt, mx_pe_eval_16x16_raw_metrics.txt,
+mx_pe_eval_16x16_results.txt, mx_pe_16x16_headlines_and_analysis.txt,
+tables_16x16_vs_32x32_baseline.tex, PRELIMINARY_mode_power_estimate_NOT_FOR_CITATION.txt,
+recompute_ppa.py, configs/mx_fused_pe_32x32_os.cfg, configs/mx_fused_pe_16x16_os.cfg.

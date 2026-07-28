@@ -1,0 +1,91 @@
+PRELIMINARY ESTIMATE -- VECTORLESS/CASE-ANALYSIS BASIS, NOT SIMULATION-VERIFIED
+DO NOT CITE OR INSERT INTO THE PAPER AS-IS.
+
+SCALE-Sim array configuration (applies to the "array-level basis" figures below --
+same configuration used throughout evaluation_methodology_paragraph.txt and
+mx_pe_eval_raw_metrics.csv, restated here so this file is self-contained):
+    Array size:        32 x 32 (1024 PEs), configs/mx_fused_pe_32x32_os.cfg
+    Dataflow:           output-stationary (os)
+    SRAM:               64 KB each for IFMAP / Filter / OFMAP
+    Bandwidth:          nominal 10 (words/cycle); InterfaceBandwidth = CALC, i.e.
+                        SCALE-Sim estimates whatever bandwidth avoids stalling
+                        compute rather than enforcing a fixed cap -- this is why
+                        every workload in Table 1 reports zero stall cycles, and
+                        why the achieved-TOPS/W figures below are compute-bound
+                        figures, not memory-bandwidth-limited ones
+    Sparsity support:   disabled
+    Per-PE MAC model:   1 op/PE/cycle at N=1 baseline; fused-N cycles projected
+                        per Eq. (1) in evaluation_methodology_paragraph.txt, not
+                        simulated natively by SCALE-Sim (see that file for why)
+
+Source: PrimeTime PX, N=4 design, gate-level netlist (TSMC 28nm tt/0.8V/25C), with
+set_case_analysis pinning i_fp_a/i_fp_b per mode and set_switching_activity assuming
+0.5 static probability / 0.5 toggle rate on data vectors (standard random-data default)
+and 0.03 toggle rate on the shared-exponent ports (~1/32, matching MX block size).
+No real per-mode simulation (RTL or gate-level) has been run yet. This is a rough,
+self-consistent sanity check only, produced at the requester's explicit request for
+internal reference -- not a measurement, and it is understood it will not be presented
+as one until backed by real per-mode simulated switching activity.
+
+Raw per-PE power (from PrimeTime, this run):
+    INT8xINT8:        7.548 mW
+    FPxFP:            6.414 mW
+    FPxINT (mixed):   6.993 mW
+
+Peak/intrinsic basis (per-PE, 2 ops/MAC, N=4 ops/cycle -- this is the basis directly
+comparable to the competitor papers' MAC-level pJ/OP and Table III GOPS/W figures,
+since those are likewise measured at full-rate operation, not discounted by any
+specific workload's utilization):
+
+    Mode              Energy [pJ/OP]   GOPS/W (peak/intrinsic)
+    INT8xINT8         0.528            1893
+    FPxFP             0.449            2227
+    FPxINT (mixed)    0.490            2043
+
+Array-level basis (x1024 PEs), achieved TOPS/W range across the 9 non-outlier
+workloads from Table 1 (i.e. workload-utilization-discounted, not a peak figure --
+kept separately because it is not the same basis as the row above, and mixing the
+two would misrepresent both):
+
+    Mode              Array power   Achieved GOPS/W range
+    INT8xINT8         7.729 W       1281-1794
+    FPxFP             6.568 W       1508-2111
+    FPxINT (mixed)    7.161 W       1383-1936
+
+Correction to note for later: the existing Table 2(a) in
+evaluation_methodology_paragraph.txt used the achieved/per-workload range (bottom
+table's basis) as "This work"'s entry, set alongside the competitors' peak/intrinsic
+figures. That was a basis mismatch that wasn't flagged clearly enough at the time --
+once real per-mode numbers exist, the peak/intrinsic figure (top table's basis) is
+the one that belongs in that row for a fair comparison; the achieved range is still
+useful but as a separate, clearly-labeled "realized on our evaluated workloads" figure,
+not a substitute for the peak comparison point.
+
+HOW THIS COMPARES -- the one claim that holds up even at this preliminary stage:
+
+The distinguishing property visible here isn't the absolute GOPS/W (that number is
+still a rough estimate, on a different node than every design it would be compared
+against, and shouldn't be leaned on yet) -- it's how FLAT the efficiency is across
+precision modes, which is a direct, checkable consequence of the design's confirmed
+uniform-N-per-cycle behavior, not an artifact of this specific estimate:
+
+    Design                    Max/min ratio across its own modes
+    Cuyckens C1 (ISLPED'25)   8.74x   (2.43 pJ INT8 vs. 0.278 pJ FP4)
+    Dacapo (ISCA'24)          7.49x   (2.68 pJ INT8 vs. 0.358 pJ FP4)
+    Cuyckens C2 (2511.06313)  6.19x   (657 vs. 4065 GOPS/W)
+    This work (preliminary)   1.18x   (7.548 vs. 6.414 mW)
+
+Every published design surveyed here needs roughly an order of magnitude more energy
+budget for its most expensive mode than its cheapest one, because they all reconfigure
+parallelism per mode (1/4/8 or similar products-per-cycle depending on precision).
+This design's fusion width N does not change with precision mode, so its power (and
+therefore energy efficiency) stays within ~18% across INT8xINT8, FPxFP, and FPxINT --
+a real architectural consequence of the uniform-N design choice, not a coincidence of
+which toggle rates were asserted for this estimate. That claim is worth stating
+plainly once real numbers back it: a system built on this PE doesn't need to
+provision power delivery or thermal design for a worst-case mode that's 6-9x more
+expensive than its best case, unlike every design compared against here -- it can be
+designed close to one operating point regardless of which precision the workload uses.
+
+This flatness claim is the one worth carrying into the actual paper once the numbers
+behind it are real. The absolute GOPS/W numbers above are not ready for that yet.

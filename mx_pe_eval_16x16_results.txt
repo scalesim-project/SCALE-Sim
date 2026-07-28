@@ -1,0 +1,18 @@
+16x16 array (256 PEs) x N=4 fused PE -- results
+Compared against 32x32 array (1024 PEs) x N=1 (conventional scalar PE) baseline
+256 PEs x N=4 = 1024 total MACs/cycle, matching 32x32x1's total MAC/cycle capacity exactly
+
+workload             layers  total_macs  cycles_16x16_N4  latency_ms  achieved_TOPS  peak_TOPS  util_%   power_array_W  area_array_mm2  TOPS_per_W  TOPS_per_mm2  cycles_32x32_N1_baseline  speedup_vs_32x32x1
+ResNet18             21      1471181568  1589906          0.8903      3.3047         3.6571     90.3639  1.7989         2.8935          1.8371      1.1421        1718353                   1.0808            
+AlexNet              5       805118496   833397           0.4667      3.4502         3.6571     94.3426  1.7989         2.8935          1.9180      1.1924        850960                    1.0211            
+Transformer-Fwd      54      5826038528  6377078          3.5712      3.2628         3.6571     89.2178  1.7989         2.8935          1.8138      1.1277        7133750                   1.1187            
+Transformer-InpGrad  54      4089184256  4993848          2.7966      2.9244         3.6571     79.9653  1.7989         2.8935          1.6257      1.0107        5899178                   1.1813            
+ViT-S                5       275165184   305747           0.1712      3.2142         3.6571     87.8884  1.7989         2.8935          1.7867      1.1109        352781                    1.1538            
+ViT-B                5       983248896   1051271          0.5887      3.3403         3.6571     91.3374  1.7989         2.8935          1.8569      1.1544        1169093                   1.1121            
+ViT-L                5       1761378304  1872552          1.0486      3.3594         3.6571     91.8584  1.7989         2.8935          1.8675      1.1610        2071105                   1.1060            
+ViT-H                5       3601858560  3600360          2.0162      3.5729         3.6571     97.6969  1.7989         2.8935          1.9862      1.2348        3711547                   1.0309            
+ViT-bigG             4       1555562496  1562760          0.8751      3.5550         3.6571     97.2065  1.7989         2.8935          1.9762      1.2286        1611004                   1.0309            
+
+Excluded from this array-size comparison: llama3b, transformer_weightgrad (already
+failed at the larger 32x32 array), MLPerf-Transformer (891 layers, projected ~9-10
+hours at 16x16's per-layer rate, skipped by request).

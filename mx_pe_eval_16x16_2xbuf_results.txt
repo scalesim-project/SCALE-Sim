@@ -1,0 +1,14 @@
+16x16 array (256 PEs), N=4, IFMAP/Filter SRAM DOUBLED to 128KB each -- results
+Compared against: (a) 16x16/64KB N=4 (original), (b) 32x32/1024PE N=1 baseline
+Same PE synthesis in both 16x16 variants (0.56ns, 11302.58um^2, 7.027mW) -- only SRAM size differs
+
+workload             cycles_16x16_2xbuf_N4  cycles_16x16_64kb_N4  cycles_32x32_N1  delta_vs_64kb_%  speedup_vs_32x32x1  achieved_TOPS  util_%   TOPS_per_W  TOPS_per_mm2
+ResNet18             1589906                1589906               1718353          0.0000           1.0808              3.3047         90.3639  1.8371      1.1421      
+AlexNet              833397                 833397                850960           0.0000           1.0211              3.4502         94.3426  1.9180      1.1924      
+Transformer-Fwd      6377078                6377078               7133750          0.0000           1.1187              3.2628         89.2178  1.8138      1.1277      
+Transformer-InpGrad  4993848                4993848               5899178          0.0000           1.1813              2.9244         79.9653  1.6257      1.0107      
+ViT-S                305747                 305747                352781           0.0000           1.1538              3.2142         87.8884  1.7867      1.1109      
+ViT-B                1051271                1051271               1169093          0.0000           1.1121              3.3403         91.3374  1.8569      1.1544      
+ViT-L                1872552                1872552               2071105          0.0000           1.1060              3.3594         91.8584  1.8675      1.1610      
+ViT-H                3600360                3600360               3711547          0.0000           1.0309              3.5729         97.6969  1.9862      1.2348      
+ViT-bigG             1562760                1562760               1611004          0.0000           1.0309              3.5550         97.2065  1.9762      1.2286      

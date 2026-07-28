@@ -1,0 +1,10 @@
+workload,layers,total_macs,baseline_cycles_N1_16x16,baseline_stall_cycles_16x16,array_rows,array_cols,dataflow
+ResNet18,21,1471181568,6359601,0,16,16,os
+AlexNet,5,805118496,3333583,0,16,16,os
+Transformer-Fwd,54,5826038528,25508256,0,16,16,os
+Transformer-InpGrad,54,4089184256,19975338,0,16,16,os
+ViT-S,5,275165184,1222983,0,16,16,os
+ViT-B,5,983248896,4205079,0,16,16,os
+ViT-L,5,1761378304,7490201,0,16,16,os
+ViT-H,5,3601858560,14401435,0,16,16,os
+ViT-bigG,4,1555562496,6251036,0,16,16,os

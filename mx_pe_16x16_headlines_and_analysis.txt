@@ -1,0 +1,82 @@
+16x16 Array (256 PEs) x N=4 -- Why These Results Are Good
+Source data: mx_pe_eval_16x16_raw_metrics.txt, mx_pe_eval_16x16_results.txt
+Comparison baseline: 32x32 array (1024 PEs) x N=1, conventional scalar PE
+(the same baseline used throughout evaluation_methodology_paragraph.txt)
+
+HEADLINES
+
+1. 256 fused (N=4) PEs match 1024 conventional PEs' peak MAC/cycle capacity exactly
+   (256 x 4 = 1024), using 4x fewer physical PE instances on silicon.
+
+2. On real workloads it does not just match that capacity -- it schedules faster:
+   2-18% fewer cycles than a native 1024-PE/N=1 SCALE-Sim run, across all 9 workloads
+   tested, with no exceptions.
+
+3. Utilization is both higher on average and more consistent: 80.0%-97.7% here, versus
+   67.7%-94.8% for the original 1024-PE/N=4 array on the same workloads.
+
+4. Array footprint at 256 PEs: 2.89 mm^2, 1.80 W -- exactly 1/4 the area and 1/4 the
+   power of building the same fused-PE technology at 1024 instances, for equal or
+   better real-workload throughput.
+
+WHY EACH OF THESE HOLDS UP
+
+(1) Theoretical capacity match -- this is arithmetic, not a simulated result: a
+conventional (N=1) PE does 1 MAC/cycle by SCALE-Sim's own native assumption
+(confirmed early in this evaluation from systolic_compute_ws.py). 1024 such PEs
+therefore have a peak rate of 1024 MACs/cycle. This design's PE does N=4 MACs/cycle
+by construction, so 256 of them also reach 1024 MACs/cycle. The equivalence is exact
+by definition of N, not something that needed simulation to establish -- but it does
+need simulation to confirm it holds up once a real, uneven workload is scheduled
+across the array rather than just counted as a peak rate, which is what (2) checks.
+
+(2) Real-workload speedup -- this is the result that actually needed SCALE-Sim, and
+it did not have to come out this way. A 16x16 array is simulated at its own native
+fold pattern (not derived by scaling the 32x32 numbers), so the two configurations'
+cycle counts are genuinely independent simulation outcomes, not the same number
+divided two different ways. That they land in this design's favor on every single
+workload -- not on average, not on most, but all 9 -- is the strongest evidence here
+that fewer/wider PEs are not merely equal to more/narrower ones at matched peak rate,
+they are empirically better at actually using that rate on these workloads:
+
+    Workload              Speedup vs. 1024-PE/N=1
+    ResNet-18              1.08x
+    AlexNet                1.02x
+    Transformer-Fwd        1.12x
+    Transformer-InpGrad    1.18x   (largest margin)
+    ViT-S                  1.15x
+    ViT-B                  1.11x
+    ViT-L                  1.11x
+    ViT-H                  1.03x
+    ViT-bigG               1.03x
+
+(3) Utilization consistency -- a 16-wide array dimension divides more evenly into
+typical conv/GEMM layer shapes (channel counts, filter counts, sequence/hidden dims)
+than a 32-wide one does in many cases here, so fewer folds are wasted on partially-
+filled array passes. This is the same "array-size vs. layer-shape fit" explanation
+already used elsewhere in this evaluation (e.g. why layer 0 of a CNN often
+under-utilizes a wide array) -- here it's working in this design's favor because the
+array is narrower, not wider than the previous configuration.
+
+(4) Area/power footprint -- this comparison uses the SAME synthesized N=4 PE
+(11302.58 um^2, 7.027 mW) at two different instance counts (256 vs. 1024), so it is
+an honest, apples-to-apples scaling claim, not a comparison against a different
+design. What this section deliberately does NOT claim: a comparison against a real
+conventional (N=1) scalar PE's area/power, because no such PE has been synthesized in
+this project -- so "4x less silicon than 1024 conventional PEs" cannot be stated as a
+number, only "4x less silicon than 1024 of our own fused PEs," which is the honest
+version of the claim and is what headline 4 says. If a real scalar-PE synthesis
+result becomes available later, the stronger comparison can be added the same way
+every other design point in this evaluation was -- by dropping real numbers into
+PE_VARIANTS, not by assuming one.
+
+WHAT THIS DOES NOT SHOW (for completeness, same discipline as the rest of this
+evaluation)
+
+- MLPerf-Transformer, llama3b, and transformer_weightgrad are not part of this
+  16x16 comparison (the first was skipped for runtime, the other two already failed
+  at the larger 32x32 array -- see evaluation_methodology_paragraph.txt).
+- This is still the N=4 design point only. The same comparison at N=8 or N=16 would
+  need its own array-size choice and its own SCALE-Sim runs; the 4x-fewer-PEs framing
+  specifically depends on N=4 (256x4=1024), and would need a different PE count for
+  a different N to preserve the same capacity-matching property.

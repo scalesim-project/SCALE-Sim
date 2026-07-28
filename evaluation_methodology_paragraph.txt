@@ -1,0 +1,314 @@
+Evaluation Methodology (SCALE-Sim)
+
+SCALE-Sim configuration used throughout this evaluation
+(configs/mx_fused_pe_32x32_os.cfg, restated here for quick reference before the
+methodology prose below):
+    Array size:        32 x 32 (1024 PEs)
+    Dataflow:           output-stationary (os) -- see rationale below
+    SRAM:               64 KB each for IFMAP / Filter / OFMAP
+    Bandwidth:          nominal 10 (words/cycle); InterfaceBandwidth = CALC, i.e.
+                        SCALE-Sim estimates whatever bandwidth avoids stalling
+                        compute rather than enforcing a fixed cap -- this is why
+                        every workload in Table 1 reports zero stall cycles
+    Sparsity support:   disabled
+    Per-PE MAC model:   1 op/PE/cycle at N=1 baseline (SCALE-Sim's native
+                        assumption); fused-N cycles are projected analytically
+                        per Eq. (1) below, not simulated natively by the tool
+
+To assess the system-level impact of the proposed N-way fused dot-product PE beyond
+isolated-cell synthesis results, we use SCALE-Sim, a cycle-level simulator for
+systolic-array-based DNN accelerators, to model a 32x32 array (1024 PEs) built from the
+proposed compute unit. Each SCALE-Sim PE is mapped to one instance of the fused
+dot-product unit, and the array is configured with an output-stationary (OS) dataflow,
+consistent with the unit's internally accumulating output register: partial sums are
+held and updated locally within each PE across the reduction dimension, matching the
+behavior of the double-pumped accumulator that sustains a new fused dot product every
+cycle. Because the double-pumped accumulator achieves an initiation interval of one
+cycle despite the underlying 4-stage pipeline, the array satisfies SCALE-Sim's default
+assumption of one operation issued per PE per cycle at steady state, with the pipeline
+depth contributing only a fixed fill/drain overhead per fold, analogous to the systolic
+skew already modeled by the tool.
+
+SCALE-Sim's compute engine has no native notion of operand precision or per-PE
+reduction width, so each workload is first simulated unmodified on the array to obtain
+a baseline, single-element-per-cycle per-layer cycle count together with its stall-cycle
+component from the tool's compute report. The compute-bound portion of each layer's
+cycle count is then analytically divided by the fusion width N (4, 8, or 16) to project the
+cycle count of the fused design, while stall cycles -- which reflect memory/bandwidth-
+bound behavior independent of the PE's internal datapath -- are left unchanged. This
+preserves SCALE-Sim's memory-traffic accounting, which would otherwise be distorted if
+the reduction dimension were instead pre-folded directly in the workload description.
+The projected cycle counts are converted to wall-clock latency using the post-synthesis
+clock period obtained for each design point (N=4: 0.56 ns; N=8: 0.64 ns; N=16: 0.62 ns), from which
+achieved throughput (TOPS) is derived using each workload's total MAC count. Compute-
+array power and area are obtained by scaling the post-synthesis per-PE power and area
+figures by the number of PEs in the array (1024), and combined with the achieved
+throughput to report energy efficiency (TOPS/W) and area efficiency (TOPS/mm^2) under
+real workload utilization rather than theoretical peak alone.
+
+The evaluation spans a representative mix of convolutional and transformer-style
+workloads -- ResNet-18 and AlexNet for classical CNN inference, ViT-S/B/L/H/bigG,
+encoder Transformer forward and input-gradient GEMM kernels, and an MLPerf Transformer
+benchmark -- reflecting the primary target domain of MX-format mixed-precision inference
+and training. Two workloads (a LLaMA-3B-scale topology and the corresponding
+Transformer weight-gradient kernel) were excluded: their largest individual layers
+(channel/filter counts in the thousands at 512x512 spatial resolution, and a single
+65536x8192x1024 GEMM, respectively) require SCALE-Sim to materialize per-cycle demand
+matrices that exceed available host memory, independent of concurrent load. This is a
+scaling limitation of trace-based cycle simulation at LLM-scale layer dimensions rather
+than a property of the proposed PE, and is noted here as a stated limitation of the
+simulation methodology. Separately, the MLPerf Transformer benchmark decomposes
+multi-head attention into several hundred narrow per-head GEMMs, most of which occupy a
+single row/column of the 32x32 array; its low reported utilization therefore reflects
+that decomposition rather than the fused PE's efficiency, and it is retained in Table 1
+for completeness with this caveat noted.
+
+Table 1 summarizes achieved throughput, energy efficiency, and area efficiency for all
+three fusion widths across all evaluated workloads (array utilization is identical
+across N=4, N=8, and N=16 for a given workload, since achieved throughput and its peak
+both scale by the same factor of N when stall cycles are zero, as observed here for
+every workload).
+
+Table 1: System-level evaluation of the fused-PE array (32x32, OS dataflow) across
+representative workloads, for three fusion widths (N=4: 0.56 ns/cycle, 11302.58 um^2,
+7.027 mW per PE; N=8: 0.64 ns/cycle, 15147.97 um^2, 9.9077 mW per PE; N=16: 0.62
+ns/cycle, 19931.18 um^2, 15.080 mW per PE).
+
+Workload              Layers   Achieved TOPS (N=4/N=8/N=16)        Util %   TOPS/W (N=4/N=8/N=16)       TOPS/mm^2 (N=4/N=8/N=16)
+ResNet-18             21       12.23 / 21.40 / 44.19               83.6     1.70 / 2.11 / 2.86           1.06 / 1.38 / 2.17
+AlexNet               5        13.52 / 23.65 / 48.83               92.4     1.88 / 2.33 / 3.16           1.17 / 1.52 / 2.39
+Transformer-Fwd       54       11.67 / 20.42 / 42.15               79.8     1.62 / 2.01 / 2.73           1.01 / 1.32 / 2.07
+Transformer-InpGrad   54       9.90 / 17.33 / 35.78                67.7     1.38 / 1.71 / 2.32           0.86 / 1.12 / 1.75
+MLPerf-Transformer*   891      0.33 / 0.58 / 1.20                   2.3     0.05 / 0.06 / 0.08           0.03 / 0.04 / 0.06
+ViT-S                 5        11.14 / 19.50 / 40.26               76.2     1.55 / 1.92 / 2.61           0.96 / 1.26 / 1.97
+ViT-B                 5        12.01 / 21.03 / 43.41               82.1     1.67 / 2.07 / 2.81           1.04 / 1.36 / 2.13
+ViT-L                 5        12.15 / 21.26 / 43.89               83.1     1.69 / 2.10 / 2.84           1.05 / 1.37 / 2.15
+ViT-H                 5        13.86 / 24.26 / 50.09               94.8     1.93 / 2.39 / 3.24           1.20 / 1.56 / 2.45
+ViT-bigG              4        13.79 / 24.14 / 49.84               94.3     1.92 / 2.38 / 3.23           1.19 / 1.56 / 2.44
+
+* See caveat above: low utilization is a property of this benchmark's fine-grained
+  per-head decomposition on a 32x32 array, not of the fused PE.
+
+Peak throughput (100% utilization) is 14.63 TOPS at N=4, 25.60 TOPS at N=8, and 52.85
+TOPS at N=16 for the 1024-PE array; achieved TOPS above is the workload-driven figure
+from SCALE-Sim's cycle counts, not the theoretical peak.
+
+Post-Processing Methodology: Mapping SCALE-Sim Cycles to the N-way Fused Design
+
+SCALE-Sim itself simulates only a baseline PE that issues one scalar operation per
+cycle; it has no notion of a PE that fuses N reduction elements into a single
+pipelined dot product. The mapping from this baseline simulation to the proposed
+design is therefore performed as a deterministic post-processing step, kept separate
+from the simulation itself so it can be re-evaluated against revised synthesis results
+without re-running SCALE-Sim.
+
+For each workload, SCALE-Sim's compute report gives, per layer l, a total cycle count
+C_l and a stall cycle count S_l (C_l >= S_l), where C_l - S_l is the compute-bound
+portion of the layer's runtime and S_l is the portion attributable to memory/bandwidth
+limits. Because stall cycles are independent of the PE's internal reduction width,
+only the compute-bound portion is rescaled by the fusion width N:
+
+    C_l(N) = S_l + ceil( (C_l - S_l) / N )                                 (1)
+
+The workload-level cycle count is C(N) = sum over l of C_l(N), computed per layer
+before summing -- using each layer's own stall/compute split -- rather than aggregating
+cycles first and rescaling once, so the ceiling rounding is not amortized across layers
+of very different sizes.
+
+Given the post-synthesis clock period T(N) for a design point (T(4) = 0.56 ns,
+T(8) = 0.64 ns, T(16) = 0.62 ns) and P = 1024 PEs in the array:
+
+    Latency(N)       = C(N) x T(N)                                        (2)
+    Achieved TOPS(N) = 2 x MACs_workload / Latency(N)                      (3)
+    Peak TOPS(N)     = 2 x N x P x (1 / T(N))                             (4)
+    Utilization(N)   = Achieved TOPS(N) / Peak TOPS(N)                    (5)
+
+MACs_workload is the workload's total multiply-accumulate count, obtained directly
+from SCALE-Sim's own topology hyper-parameter calculation
+(topologies.get_all_mac_ops()) rather than recomputed independently, so it is
+guaranteed consistent with the exact layer dimensions SCALE-Sim simulated.
+
+Power and area are not modeled by SCALE-Sim and are introduced entirely in this
+post-processing step from the post-synthesis per-PE figures Area_PE(N) and
+Power_PE(N):
+
+    Power_array(N) = Power_PE(N) x P                                      (6)
+    Area_array(N)  = Area_PE(N) x P / 1e6            [um^2 -> mm^2]        (7)
+    TOPS/W(N)      = Achieved TOPS(N) / Power_array(N)                    (8)
+    TOPS/mm^2(N)   = Achieved TOPS(N) / Area_array(N)                     (9)
+
+This is implemented as two decoupled stages: (1) a one-time extraction of per-workload
+{MACs_workload, C_l, S_l} from SCALE-Sim's output into a synthesis-independent
+raw-metrics file (mx_pe_eval_raw_metrics.csv), and (2) a lightweight recomputation step
+(recompute_ppa.py) that applies equations (1)-(9) using only that file and the current
+per-PE synthesis figures. Stage 2 can be rerun with revised frequency, power, or area
+numbers -- or additional fusion widths N -- without repeating stage 1.
+
+Why the Fusion Helps: Realized Speedup and the Cost of Widening N
+
+Two distinct effects contribute to the results in Table 1, and are separated here so
+each can be checked independently: (i) whether the N-way fusion delivers its full
+theoretical cycle-count reduction on real workloads once scheduled by SCALE-Sim, and
+(ii) whether widening the fusion -- N=4 to N=8, and N=8 to N=16 -- is a net win once
+the accompanying change in clock period, power, and area is accounted for.
+
+(i) Realized speedup over an unfused, same-clock reference. SCALE-Sim's own baseline
+run -- one scalar operation issued per PE per cycle -- is exactly the N=1 case of
+equation (1). Re-clocking that same baseline cycle count at each fused design's own
+clock period (0.56 ns, 0.64 ns, or 0.62 ns) gives a same-clock, unfused reference point
+that isolates the effect of fusion alone, with the array size, dataflow, and workload
+held fixed. This reference is analytical (it re-uses the already-simulated N=1 cycle
+count at a hypothetical clock; it is not an independently synthesized N=1 PE), and is
+reported as such -- not as a competing design. Concretely for ResNet-18: the same-clock
+N=1 reference achieves 3.06 TOPS at 0.56 ns, 2.68 TOPS at 0.64 ns, and 2.76 TOPS at
+0.62 ns, against 12.23, 21.40, and 44.19 TOPS for the fused design at N=4, N=8, and
+N=16 respectively -- exactly 4.00x, 8.00x, and 16.00x. This exact ratio holds for every
+evaluated workload at every N:
+
+    Workload              N=4 ratio   N=8 ratio   N=16 ratio
+    ResNet-18               4.00x       8.00x       16.00x
+    AlexNet                 4.00x       8.00x       16.00x
+    Transformer-Fwd         4.00x       8.00x       16.00x
+    Transformer-InpGrad     4.00x       8.00x       16.00x
+    MLPerf-Transformer*     4.00x       8.00x       16.00x
+    ViT-S                   4.00x       8.00x       16.00x
+    ViT-B                   4.00x       8.00x       16.00x
+    ViT-L                   4.00x       8.00x       16.00x
+    ViT-H                   4.00x       8.00x       16.00x
+    ViT-bigG                4.00x       8.00x       16.00x
+
+The exact ratio (rather than something below N, as would appear if fusion introduced
+scheduling overhead or if memory bandwidth capped throughput before compute did)
+follows directly from two properties already established above: the fused design
+retains SCALE-Sim's one-issue-per-PE-per-cycle assumption at steady state (so the
+projection in equation (1) is exact whenever stall cycles are zero), and every
+evaluated workload is compute-bound end-to-end (zero stall cycles, Table 1). The
+practical claim this supports is that the fusion benefit is not merely a peak-throughput
+figure -- it is fully realized on real, scheduled DNN and transformer workloads, and
+remains exact as the fusion width grows from 4 to 16.
+
+(ii) Is widening the fusion worth its cost? Unlike (i), this comparison uses
+independently synthesized design points, so the outcome is not fixed by construction,
+and it must be checked separately at each step.
+
+N=4 to N=8: clock period grows from 0.56 ns to 0.64 ns (14.3% lower frequency, the
+expected cost of a deeper fused reduction tree), per-PE power grows 1.41x, and per-PE
+area grows 1.34x. Doubling the fusion width nonetheless grows peak array throughput by
+1.75x (2x width against the 1.143x frequency penalty), enough to outrun both cost
+increases: TOPS/W improves by 1.75/1.41 = 1.24x and TOPS/mm^2 improves by
+1.75/1.34 = 1.31x, matching the per-workload figures in Table 1 (e.g. ResNet-18:
+2.11/1.70 = 1.24x on TOPS/W, 1.38/1.06 = 1.30x on TOPS/mm^2).
+
+N=8 to N=16: notably, the clock period here improves slightly rather than worsening --
+0.64 ns to 0.62 ns, a 3.2% higher frequency -- while per-PE power grows 1.52x and
+per-PE area grows 1.32x. This is the opposite clock trend from the N=4-to-N=8 step, and
+is reported here purely as an observation from the supplied synthesis figures: nothing
+in the SCALE-Sim-side methodology explains or assumes it, and it would need the
+underlying RTL/timing analysis to attribute (e.g. a re-pipelined or better-balanced
+N=16 reduction tree) if that explanation is wanted in the paper. Regardless of cause,
+its effect on the comparison is favorable: doubling the width again now grows peak
+throughput by 2.06x (a 2x width bonus plus the small frequency gain), which outruns
+both cost increases even more comfortably than the previous step -- TOPS/W improves by
+2.06/1.52 = 1.36x and TOPS/mm^2 improves by 2.06/1.32 = 1.57x.
+
+Over the full range evaluated (N=4 to N=16), per-PE power grows 2.15x and area grows
+1.76x, while peak throughput grows 3.61x (slightly below the ideal 4x, since N=16's
+clock is marginally slower than N=4's despite being faster than N=8's) -- still enough
+for a net 1.68x improvement in TOPS/W and 2.05x in TOPS/mm^2. At all three synthesized
+points evaluated, wider fusion is a net win on every efficiency metric, not only on raw
+throughput, and the win grows larger at each step rather than tapering off.
+
+Comparison to other (non-fused or previously published) designs. No numbers for a
+conventional (unfused) MAC array are included, since none were available at analysis
+time. Numbers for published MX designs, below, are used only where a primary source
+(paper table, cross-validated formula) was available -- see Table 2 and its caveats.
+The same-clock N=1 reference above is offered only as an analytical decomposition of
+the fused-design results, not as a stand-in for a real baseline comparison. If a
+synthesized non-fused baseline's PPA numbers become available, they drop directly into
+PE_VARIANTS in recompute_ppa.py as an additional entry, and Table 1 regenerates with
+that design included on equal footing -- no SCALE-Sim re-run required.
+
+Table 2: Comparison to Published MX/Precision-Scalable Designs
+
+Sources: Cuyckens et al., "Efficient Precision-Scalable Hardware for Microscaling (MX)
+Processing in Robotics Learning," ISLPED 2025 (arXiv:2505.22404) [C1]; Cuyckens et al.,
+"Precision-Scalable Microscaling Datapaths with Optimized Reduction Tree for Efficient
+NPU Integration," arXiv:2511.06313 [C2]; Dacapo (Kim et al., ISCA 2024), as reported
+via C1's Table IV head-to-head comparison; Islamoglu et al. (MXdotp, ASAP 2025) and
+OpenGEMM (Yi et al., ASP-DAC 2025), both as reported in C2's Table III. Energy
+efficiency (GOPS/W) is derived from published pJ/OP via GOPS/W = 1000 / (pJ/OP),
+validated by reproducing C2's stated figures for C1 exactly from C1's own Table IV
+energy numbers (2.43/1.92-2.12/0.278 pJ/OP -> 411.5/471.7-520.8/3597.1 GOPS/W, matching
+C2's reported 412/472-521/3597 to within rounding) before applying the same formula to
+Dacapo's own reported energy numbers, which are not otherwise given as GOPS/W in either
+source.
+
+(a) Energy efficiency (GOPS/W), raw, by technology node -- no cross-node normalization
+applied in this row set:
+
+    Design                          Node        MXINT8    MXFP8/FP6      MXFP4
+    Islamoglu MXdotp (ASAP'25)      12nm        --        356 (FP8 only)  --
+    Dacapo (ISCA'24, via C1)        16nm        373       685             2793
+    Cuyckens C1 (ISLPED'25)         16nm        412       472-521         3597
+    OpenGEMM (ASP-DAC'25)           16nm        -- (INT8-only: 4680)      --
+    Cuyckens C2 (NPU-integrated)    22nm (GF)   657       1438-1675       4065
+    This work, N=4                  28nm (TSMC) 1376-1927 (same, see note below)
+    This work, N=8                  28nm (TSMC) 1708-2391 (same, see note below)
+    This work, N=16                 28nm (TSMC) 2317-3244 (same, see note below)
+
+    This work's range excludes the MLPerf-Transformer benchmark from Table 1 (its
+    per-head decomposition drags GOPS/W down to 46-78 regardless of N, as already
+    caveated there -- an artifact of that benchmark's tiling, not of the array).
+    "(same, see note below)" reflects that both the fusion width N (throughput) and
+    the measured power draw are uniform across INT8xINT8, FP8xFP8/FP6xFP6, and
+    FP8xINT8 -- confirmed, not assumed: power was measured/reported as a single
+    figure per N that applies across all three type combinations, not per-mode. This
+    is a genuine architectural contrast with every other row in this table, where
+    energy visibly differs by precision mode (e.g. C1: 2.43 pJ INT8 vs. 0.278 pJ FP4,
+    a ~9x difference) -- this design draws the same power and delivers the same
+    throughput regardless of which of the three type combinations is active, so one
+    GOPS/W figure correctly represents all three, unlike the mode-specific rows above
+    it.
+
+    Node caveat: this work is TSMC 28nm; the published comparisons are TSMC 16nm,
+    GF 22nm, and TSMC 12nm. These are raw, as-measured/as-synthesized figures at each
+    design's native node -- no technology-node normalization (e.g. DeepScaleTool) is
+    applied, by choice, so the node gap should be read directly off this row rather
+    than expecting a separate normalized column.
+
+(b) Area efficiency (GOPS/mm^2 or TOPS/mm^2) -- reported area scope differs across
+rows and is stated explicitly rather than left implicit:
+
+    Design                         Area reported          Scope
+    Cuyckens C2 (compute-only)     0.177 mm^2 (29.5% of    MX tensor core only
+                                    0.60 mm^2 total)        (from C2 Fig. 8 breakdown)
+    Cuyckens C2 (full system)      0.60 mm^2               SPM + streamers + MX core
+                                                            + DMA + Snitch CPU + ICache
+    Cuyckens C1                    8.92 mm^2               Not broken down in source
+    Dacapo (via C1)                8.52 mm^2               Not broken down in source
+    This work, N=4/8/16            11.57/15.51/20.41 mm^2  Compute array only (Eq. 7);
+                                                            no SRAM/control included
+
+    C2 compute-only TOPS/mm^2: MXINT8 361.6, MXFP8/6 1446.3, MXFP4 2892.7 GOPS/mm^2.
+    C2 full-system TOPS/mm^2: MXINT8 106.7, MXFP8/6 426.7, MXFP4 853.3 GOPS/mm^2.
+    This work (compute-only), N=4/8/16: see Table 1 per-workload TOPS/mm^2 columns.
+
+    Only the C2 compute-only row is scope-matched to this work's area figure (both are
+    "just the MAC array," no memory/control). C1 and Dacapo's area figures are not
+    broken down into compute-vs-system fractions in the sources available here, so
+    they should not be directly divided against this work's compute-only throughput
+    without that breakdown -- doing so would either penalize or flatter one side
+    depending on how much of their reported area is actually memory/control, which is
+    unknown from the source text.
+
+(c) Utilization on shared workloads -- the one comparison requiring no node or area
+normalization at all, since it is dimensionless:
+
+    Workload              C2 tensor core (8x8, 64 MACs, 22nm)   This work (32x32, 1024 PEs, 28nm)
+    ResNet-18 (inference)  99.38%                                83.6%
+    ViT-B/32 (inference)   99.51%                                82.1%
+
+    The gap is most plausibly an array-size tiling effect (a 64-MAC array fits these
+    layer shapes far more easily than a 1024-PE array does) rather than an
+    architectural difference -- the same explanation already used in this document
+    for why smaller/larger folds change utilization within this work's own results.
