@@ -1,0 +1,9 @@
+{
+  "core_hz": 1000000000,
+  "array_rows": 32,
+  "array_cols": 32,
+  "operand_staging_bytes": 32768,
+  "vector_staging_bytes": 32768,
+  "vector_lanes": 32,
+  "sfu_lanes": 4
+}

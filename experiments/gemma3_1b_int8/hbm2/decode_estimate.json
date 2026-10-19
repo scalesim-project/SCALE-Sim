@@ -1,0 +1,1414 @@
+{
+  "classification": "offline analytical ceilings; not measured LLM inference and not a closed-loop HBM simulation",
+  "model": {
+    "name": "google/gemma-3-1b-it",
+    "layers": 26,
+    "hidden": 1152,
+    "intermediate": 6912,
+    "query_heads": 4,
+    "kv_heads": 1,
+    "head_dim": 256,
+    "vocabulary": 262144,
+    "sliding_window": 512,
+    "global_every": 6,
+    "max_context": 32768,
+    "tied_embeddings": true
+  },
+  "workload": {
+    "batch": 1,
+    "prompt_tokens": 512,
+    "generated_tokens": 128,
+    "cached_decode_steps": 127,
+    "first_decode_context": 513,
+    "last_decode_context": 639
+  },
+  "arithmetic": "W8A8, INT8 KV",
+  "decode_mapping": "Baseline32x32 uses normal WS. Proposed points use C.T=B.T@A.T with original N tiled to512; WS demand cycles ceil(K/R)*ceil(N/C)*(M+2R+C-2)",
+  "mean_streamed_weight_plus_unique_KV_bytes_per_token": 1006698496.0,
+  "minimum_bandwidth_GB_s_for_30_TPS": 30.20095488,
+  "clocks": "250MHz shell reference and illustrative450MHz accelerator clock; neither proves this array's achievable Fmax",
+  "memory": "F2 16GiB,32PC,nominal460.8GB/s; 200/300GB/s are illustrative operating points, not measurements",
+  "limitations": [
+    "Excluded: non-GEMM work, quantization, activation/output layout conversions, metadata, KV writes, other activations, host and sampling.",
+    "The weight/KV traffic model does not account for repeated SRAM refills or actual HBM scheduling; use measured native replay separately.",
+    "Perfect overlap is optimistic; serialized matrix+traffic also excludes other overhead and is not a guaranteed lower bound.",
+    "Normal WS prefill with transposed decode needs both weight layouts or a conversion path; all-transposed prefill figures assume one prepacked layout.",
+    "9024-DSP comparison counts only one DSP per MAC as an assumption; it does not establish total resource fit, packing, routability, or achievable clock.",
+    "No synthesized or routed FPGA design and no complete Gemma execution has been measured."
+  ],
+  "points": [
+    {
+      "mapping": "normal_ws_baseline",
+      "implementation_status": "current default array/dataflow",
+      "rows": 32,
+      "columns": 32,
+      "processing_elements": 1024,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 0.512,
+      "decode_127_steps_demand_cycles": 11864123328,
+      "matrix_decode_mean_ms": 373.6731756850393,
+      "matrix_decode_TPS": 2.6761353639226098,
+      "normal_WS_matrix_TTFT_ms": 1828.336128,
+      "transposed_WS_matrix_TTFT_ms": 1806.309376,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 2.6761353639226098,
+          "serialized_matrix_plus_traffic_TPS": 2.640566126932317,
+          "serialized_margin_ms_to_30_TPS": -345.373334831706
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 2.6761353639226098,
+          "serialized_matrix_plus_traffic_TPS": 2.652317013890713,
+          "serialized_margin_ms_to_30_TPS": -343.69550400503937
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 2.6761353639226098,
+          "serialized_matrix_plus_traffic_TPS": 2.660580314337715,
+          "serialized_margin_ms_to_30_TPS": -342.5245179072616
+        }
+      ]
+    },
+    {
+      "mapping": "normal_ws_baseline",
+      "implementation_status": "current default array/dataflow",
+      "rows": 32,
+      "columns": 32,
+      "processing_elements": 1024,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 0.9216,
+      "decode_127_steps_demand_cycles": 11864123328,
+      "matrix_decode_mean_ms": 207.59620871391073,
+      "matrix_decode_TPS": 4.817043655060697,
+      "normal_WS_matrix_TTFT_ms": 1015.7422933333334,
+      "transposed_WS_matrix_TTFT_ms": 1003.5052088888889,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 4.817043655060697,
+          "serialized_matrix_plus_traffic_TPS": 4.703011829415287,
+          "serialized_margin_ms_to_30_TPS": -179.29636786057742
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 4.817043655060697,
+          "serialized_matrix_plus_traffic_TPS": 4.74041779415897,
+          "serialized_margin_ms_to_30_TPS": -177.61853703391074
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 4.817043655060697,
+          "serialized_matrix_plus_traffic_TPS": 4.766878562278758,
+          "serialized_margin_ms_to_30_TPS": -176.44755093613293
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 64,
+      "columns": 32,
+      "processing_elements": 2048,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 1.024,
+      "decode_127_steps_demand_cycles": 2683948592,
+      "matrix_decode_mean_ms": 84.53381392125983,
+      "matrix_decode_TPS": 11.829585743421722,
+      "normal_WS_matrix_TTFT_ms": 1042.544896,
+      "transposed_WS_matrix_TTFT_ms": 1011.584,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 11.829585743421722,
+          "serialized_matrix_plus_traffic_TPS": 11.164788137314513,
+          "serialized_margin_ms_to_30_TPS": -56.23397306792649
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 11.829585743421722,
+          "serialized_matrix_plus_traffic_TPS": 11.377926577241714,
+          "serialized_margin_ms_to_30_TPS": -54.55614224125983
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 11.829585743421722,
+          "serialized_matrix_plus_traffic_TPS": 11.53156617502378,
+          "serialized_margin_ms_to_30_TPS": -53.38515614348206
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 64,
+      "columns": 32,
+      "processing_elements": 2048,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 1.8432,
+      "decode_127_steps_demand_cycles": 2683948592,
+      "matrix_decode_mean_ms": 46.96322995625547,
+      "matrix_decode_TPS": 21.293254338159098,
+      "normal_WS_matrix_TTFT_ms": 579.1916088888889,
+      "transposed_WS_matrix_TTFT_ms": 561.9911111111111,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 21.293254338159098,
+          "serialized_matrix_plus_traffic_TPS": 19.23198142394328,
+          "serialized_margin_ms_to_30_TPS": -18.66338910292213
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 21.293254338159098,
+          "serialized_matrix_plus_traffic_TPS": 19.873251735327162,
+          "serialized_margin_ms_to_30_TPS": -16.985558276255468
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 21.293254338159098,
+          "serialized_matrix_plus_traffic_TPS": 20.3467470197623,
+          "serialized_margin_ms_to_30_TPS": -15.81457217847769
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 64,
+      "columns": 16,
+      "processing_elements": 1024,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 0.512,
+      "decode_127_steps_demand_cycles": 2614458288,
+      "matrix_decode_mean_ms": 82.34514292913386,
+      "matrix_decode_TPS": 12.144007095362005,
+      "normal_WS_matrix_TTFT_ms": 2020.901376,
+      "transposed_WS_matrix_TTFT_ms": 1944.844288,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 12.144007095362005,
+          "serialized_matrix_plus_traffic_TPS": 11.444445147462993,
+          "serialized_margin_ms_to_30_TPS": -54.04530207580053
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 12.144007095362005,
+          "serialized_matrix_plus_traffic_TPS": 11.668501887140762,
+          "serialized_margin_ms_to_30_TPS": -52.36747124913385
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 12.144007095362005,
+          "serialized_matrix_plus_traffic_TPS": 11.830144887642534,
+          "serialized_margin_ms_to_30_TPS": -51.19648515135608
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 64,
+      "columns": 16,
+      "processing_elements": 1024,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 0.9216,
+      "decode_127_steps_demand_cycles": 2614458288,
+      "matrix_decode_mean_ms": 45.747301627296586,
+      "matrix_decode_TPS": 21.85921277165161,
+      "normal_WS_matrix_TTFT_ms": 1122.7229866666667,
+      "transposed_WS_matrix_TTFT_ms": 1080.469048888889,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 21.85921277165161,
+          "serialized_matrix_plus_traffic_TPS": 19.692484483150533,
+          "serialized_margin_ms_to_30_TPS": -17.44746077396325
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 21.85921277165161,
+          "serialized_matrix_plus_traffic_TPS": 20.365369688278648,
+          "serialized_margin_ms_to_30_TPS": -15.769629947296586
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 21.85921277165161,
+          "serialized_matrix_plus_traffic_TPS": 20.862899024281308,
+          "serialized_margin_ms_to_30_TPS": -14.598643849518808
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 128,
+      "columns": 8,
+      "processing_elements": 1024,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 0.512,
+      "decode_127_steps_demand_cycles": 1567884088,
+      "matrix_decode_mean_ms": 49.382176,
+      "matrix_decode_TPS": 20.250221456421848,
+      "normal_WS_matrix_TTFT_ms": 2502.314496,
+      "transposed_WS_matrix_TTFT_ms": 2332.76416,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 20.250221456421848,
+          "serialized_matrix_plus_traffic_TPS": 18.377059915519393,
+          "serialized_margin_ms_to_30_TPS": -21.082335146666665
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 20.250221456421848,
+          "serialized_matrix_plus_traffic_TPS": 18.96171789547754,
+          "serialized_margin_ms_to_30_TPS": -19.40450432
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 20.250221456421848,
+          "serialized_matrix_plus_traffic_TPS": 19.392302803723624,
+          "serialized_margin_ms_to_30_TPS": -18.233518222222223
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 128,
+      "columns": 8,
+      "processing_elements": 1024,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 0.9216,
+      "decode_127_steps_demand_cycles": 1567884088,
+      "matrix_decode_mean_ms": 27.434542222222223,
+      "matrix_decode_TPS": 36.45039862155932,
+      "normal_WS_matrix_TTFT_ms": 1390.17472,
+      "transposed_WS_matrix_TTFT_ms": 1295.980088888889,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 36.45039862155932,
+          "serialized_matrix_plus_traffic_TPS": 30.79952356745376,
+          "serialized_margin_ms_to_30_TPS": 0.8652986311111093
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 36.45039862155932,
+          "serialized_matrix_plus_traffic_TPS": 32.47786224611209,
+          "serialized_margin_ms_to_30_TPS": 2.543129457777777
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 36.45039862155932,
+          "serialized_matrix_plus_traffic_TPS": 33.76186391898113,
+          "serialized_margin_ms_to_30_TPS": 3.714115555555555
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 128,
+      "columns": 16,
+      "processing_elements": 2048,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 1.024,
+      "decode_127_steps_demand_cycles": 1585257688,
+      "matrix_decode_mean_ms": 49.929376,
+      "matrix_decode_TPS": 20.0282895584355,
+      "normal_WS_matrix_TTFT_ms": 1267.204352,
+      "transposed_WS_matrix_TTFT_ms": 1186.921472,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 20.0282895584355,
+          "serialized_matrix_plus_traffic_TPS": 18.194101357062216,
+          "serialized_margin_ms_to_30_TPS": -21.62953514666666
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 20.0282895584355,
+          "serialized_matrix_plus_traffic_TPS": 18.766994339121826,
+          "serialized_margin_ms_to_30_TPS": -19.951704319999997
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 20.0282895584355,
+          "serialized_matrix_plus_traffic_TPS": 19.188682709383325,
+          "serialized_margin_ms_to_30_TPS": -18.78071822222222
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 128,
+      "columns": 16,
+      "processing_elements": 2048,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 1.8432,
+      "decode_127_steps_demand_cycles": 1585257688,
+      "matrix_decode_mean_ms": 27.73854222222222,
+      "matrix_decode_TPS": 36.0509212051839,
+      "normal_WS_matrix_TTFT_ms": 704.0024177777777,
+      "transposed_WS_matrix_TTFT_ms": 659.4008177777778,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 36.0509212051839,
+          "serialized_matrix_plus_traffic_TPS": 30.51382097835358,
+          "serialized_margin_ms_to_30_TPS": 0.5612986311111143
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 36.0509212051839,
+          "serialized_matrix_plus_traffic_TPS": 32.16033457560692,
+          "serialized_margin_ms_to_30_TPS": 2.2391294577777785
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 36.0509212051839,
+          "serialized_matrix_plus_traffic_TPS": 33.418865826075745,
+          "serialized_margin_ms_to_30_TPS": 3.4101155555555565
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 128,
+      "columns": 32,
+      "processing_elements": 4096,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 2.048,
+      "decode_127_steps_demand_cycles": 1620004888,
+      "matrix_decode_mean_ms": 51.023776,
+      "matrix_decode_TPS": 19.598706297236802,
+      "normal_WS_matrix_TTFT_ms": 649.64928,
+      "transposed_WS_matrix_TTFT_ms": 614.221312,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 19.598706297236802,
+          "serialized_matrix_plus_traffic_TPS": 17.83889988069572,
+          "serialized_margin_ms_to_30_TPS": -22.723935146666662
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 19.598706297236802,
+          "serialized_matrix_plus_traffic_TPS": 18.389303809556814,
+          "serialized_margin_ms_to_30_TPS": -21.046104319999998
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 19.598706297236802,
+          "serialized_matrix_plus_traffic_TPS": 18.794006793373576,
+          "serialized_margin_ms_to_30_TPS": -19.87511822222222
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 128,
+      "columns": 32,
+      "processing_elements": 4096,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 3.6864,
+      "decode_127_steps_demand_cycles": 1620004888,
+      "matrix_decode_mean_ms": 28.346542222222222,
+      "matrix_decode_TPS": 35.27767133502624,
+      "normal_WS_matrix_TTFT_ms": 360.9162666666667,
+      "transposed_WS_matrix_TTFT_ms": 341.23406222222224,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 35.27767133502624,
+          "serialized_matrix_plus_traffic_TPS": 29.958027573093766,
+          "serialized_margin_ms_to_30_TPS": -0.046701368888882655
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 35.27767133502624,
+          "serialized_matrix_plus_traffic_TPS": 31.543548326337795,
+          "serialized_margin_ms_to_30_TPS": 1.631129457777778
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 35.27767133502624,
+          "serialized_matrix_plus_traffic_TPS": 32.75336107712849,
+          "serialized_margin_ms_to_30_TPS": 2.802115555555556
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 256,
+      "columns": 8,
+      "processing_elements": 2048,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 1.024,
+      "decode_127_steps_demand_cycles": 1148329936,
+      "matrix_decode_mean_ms": 36.167871999999996,
+      "matrix_decode_TPS": 27.648848126867957,
+      "normal_WS_matrix_TTFT_ms": 1901.51296,
+      "transposed_WS_matrix_TTFT_ms": 1700.359168,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 27.648848126867957,
+          "serialized_matrix_plus_traffic_TPS": 24.27104084102411,
+          "serialized_margin_ms_to_30_TPS": -7.8680311466666595
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 27.648848126867957,
+          "serialized_matrix_plus_traffic_TPS": 25.301381419261386,
+          "serialized_margin_ms_to_30_TPS": -6.190200319999995
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 27.648848126867957,
+          "serialized_matrix_plus_traffic_TPS": 26.073887231387975,
+          "serialized_margin_ms_to_30_TPS": -5.019214222222217
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 256,
+      "columns": 8,
+      "processing_elements": 2048,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 1.8432,
+      "decode_127_steps_demand_cycles": 1148329936,
+      "matrix_decode_mean_ms": 20.093262222222222,
+      "matrix_decode_TPS": 49.76792662836232,
+      "normal_WS_matrix_TTFT_ms": 1056.396088888889,
+      "transposed_WS_matrix_TTFT_ms": 944.6439822222222,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 49.76792662836232,
+          "serialized_matrix_plus_traffic_TPS": 39.79821556150104,
+          "serialized_margin_ms_to_30_TPS": 8.20657863111111
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 49.76792662836232,
+          "serialized_matrix_plus_traffic_TPS": 42.645880267556954,
+          "serialized_margin_ms_to_30_TPS": 9.884409457777778
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 49.76792662836232,
+          "serialized_matrix_plus_traffic_TPS": 44.88745816488898,
+          "serialized_margin_ms_to_30_TPS": 11.055395555555556
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 256,
+      "columns": 16,
+      "processing_elements": 4096,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 2.048,
+      "decode_127_steps_demand_cycles": 1157701520,
+      "matrix_decode_mean_ms": 36.46304,
+      "matrix_decode_TPS": 27.425030935434894,
+      "normal_WS_matrix_TTFT_ms": 959.441536,
+      "transposed_WS_matrix_TTFT_ms": 862.590464,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 27.425030935434894,
+          "serialized_matrix_plus_traffic_TPS": 24.09839907664497,
+          "serialized_margin_ms_to_30_TPS": -8.163199146666663
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 27.425030935434894,
+          "serialized_matrix_plus_traffic_TPS": 25.113827384582418,
+          "serialized_margin_ms_to_30_TPS": -6.485368319999999
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 27.425030935434894,
+          "serialized_matrix_plus_traffic_TPS": 25.87475056740453,
+          "serialized_margin_ms_to_30_TPS": -5.314382222222221
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 256,
+      "columns": 16,
+      "processing_elements": 4096,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 3.6864,
+      "decode_127_steps_demand_cycles": 1157701520,
+      "matrix_decode_mean_ms": 20.257244444444442,
+      "matrix_decode_TPS": 49.36505568378281,
+      "normal_WS_matrix_TTFT_ms": 533.0230755555556,
+      "transposed_WS_matrix_TTFT_ms": 479.21692444444443,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 49.36505568378281,
+          "serialized_matrix_plus_traffic_TPS": 39.54016852049347,
+          "serialized_margin_ms_to_30_TPS": 8.04259640888889
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 49.36505568378281,
+          "serialized_matrix_plus_traffic_TPS": 42.34972162507818,
+          "serialized_margin_ms_to_30_TPS": 9.720427235555558
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 49.36505568378281,
+          "serialized_matrix_plus_traffic_TPS": 44.55946728265674,
+          "serialized_margin_ms_to_30_TPS": 10.891413333333336
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 384,
+      "columns": 4,
+      "processing_elements": 1536,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 0.768,
+      "decode_127_steps_demand_cycles": 897816848,
+      "matrix_decode_mean_ms": 28.277696000000002,
+      "matrix_decode_TPS": 35.3635600297846,
+      "normal_WS_matrix_TTFT_ms": 3085.173248,
+      "transposed_WS_matrix_TTFT_ms": 2750.654464,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 35.3635600297846,
+          "serialized_matrix_plus_traffic_TPS": 30.0199436174545,
+          "serialized_margin_ms_to_30_TPS": 0.02214485333333016
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 35.3635600297846,
+          "serialized_matrix_plus_traffic_TPS": 31.612199089293515,
+          "serialized_margin_ms_to_30_TPS": 1.6999756800000014
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 35.3635600297846,
+          "serialized_matrix_plus_traffic_TPS": 32.82738503061905,
+          "serialized_margin_ms_to_30_TPS": 2.870961777777776
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 384,
+      "columns": 4,
+      "processing_elements": 1536,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 1.3824,
+      "decode_127_steps_demand_cycles": 897816848,
+      "matrix_decode_mean_ms": 15.70983111111111,
+      "matrix_decode_TPS": 63.65440805361229,
+      "normal_WS_matrix_TTFT_ms": 1713.9851377777777,
+      "transposed_WS_matrix_TTFT_ms": 1528.1413688888888,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 63.65440805361229,
+          "serialized_matrix_plus_traffic_TPS": 48.20828232311422,
+          "serialized_margin_ms_to_30_TPS": 12.590009742222222
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 63.65440805361229,
+          "serialized_matrix_plus_traffic_TPS": 52.45078175293306,
+          "serialized_margin_ms_to_30_TPS": 14.26784056888889
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 63.65440805361229,
+          "serialized_matrix_plus_traffic_TPS": 55.883071750883694,
+          "serialized_margin_ms_to_30_TPS": 15.438826666666667
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 384,
+      "columns": 16,
+      "processing_elements": 6144,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 3.072,
+      "decode_127_steps_demand_cycles": 906582896,
+      "matrix_decode_mean_ms": 28.553792,
+      "matrix_decode_TPS": 35.021618144448205,
+      "normal_WS_matrix_TTFT_ms": 779.453312,
+      "transposed_WS_matrix_TTFT_ms": 700.473856,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 35.021618144448205,
+          "serialized_matrix_plus_traffic_TPS": 29.77317206443002,
+          "serialized_margin_ms_to_30_TPS": -0.2539511466666653
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 35.021618144448205,
+          "serialized_matrix_plus_traffic_TPS": 31.3386750793064,
+          "serialized_margin_ms_to_30_TPS": 1.4238796799999989
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 35.021618144448205,
+          "serialized_matrix_plus_traffic_TPS": 32.53252616424802,
+          "serialized_margin_ms_to_30_TPS": 2.594865777777777
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 384,
+      "columns": 16,
+      "processing_elements": 6144,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 5.5296,
+      "decode_127_steps_demand_cycles": 906582896,
+      "matrix_decode_mean_ms": 15.863217777777779,
+      "matrix_decode_TPS": 63.038912660006766,
+      "normal_WS_matrix_TTFT_ms": 433.0296177777778,
+      "transposed_WS_matrix_TTFT_ms": 389.1521422222222,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 63.038912660006766,
+          "serialized_matrix_plus_traffic_TPS": 47.854422426506055,
+          "serialized_margin_ms_to_30_TPS": 12.43662307555556
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 63.038912660006766,
+          "serialized_matrix_plus_traffic_TPS": 52.0321699079511,
+          "serialized_margin_ms_to_30_TPS": 14.114453902222223
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 63.038912660006766,
+          "serialized_matrix_plus_traffic_TPS": 55.40812888965064,
+          "serialized_margin_ms_to_30_TPS": 15.285440000000001
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 576,
+      "columns": 4,
+      "processing_elements": 2304,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 1.152,
+      "decode_127_steps_demand_cycles": 786396928,
+      "matrix_decode_mean_ms": 24.76840718110236,
+      "matrix_decode_TPS": 40.37401326165913,
+      "normal_WS_matrix_TTFT_ms": 2767.88736,
+      "transposed_WS_matrix_TTFT_ms": 2422.632448,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 40.37401326165913,
+          "serialized_matrix_plus_traffic_TPS": 33.55490795458273,
+          "serialized_margin_ms_to_30_TPS": 3.5314336722309747
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 40.37401326165913,
+          "serialized_matrix_plus_traffic_TPS": 35.556732771738176,
+          "serialized_margin_ms_to_30_TPS": 5.209264498897639
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 40.37401326165913,
+          "serialized_matrix_plus_traffic_TPS": 37.101507451685144,
+          "serialized_margin_ms_to_30_TPS": 6.380250596675417
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 576,
+      "columns": 4,
+      "processing_elements": 2304,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 2.0736,
+      "decode_127_steps_demand_cycles": 786396928,
+      "matrix_decode_mean_ms": 13.760226211723534,
+      "matrix_decode_TPS": 72.67322387098643,
+      "normal_WS_matrix_TTFT_ms": 1537.7152,
+      "transposed_WS_matrix_TTFT_ms": 1345.9069155555555,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 72.67322387098643,
+          "serialized_matrix_plus_traffic_TPS": 53.20926722396801,
+          "serialized_margin_ms_to_30_TPS": 14.539614641609802
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 72.67322387098643,
+          "serialized_matrix_plus_traffic_TPS": 58.4252483940118,
+          "serialized_margin_ms_to_30_TPS": 16.217445468276466
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 72.67322387098643,
+          "serialized_matrix_plus_traffic_TPS": 62.715971198525885,
+          "serialized_margin_ms_to_30_TPS": 17.388431566054244
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 576,
+      "columns": 8,
+      "processing_elements": 4608,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 2.304,
+      "decode_127_steps_demand_cycles": 788346624,
+      "matrix_decode_mean_ms": 24.82981492913386,
+      "matrix_decode_TPS": 40.27416244760883,
+      "normal_WS_matrix_TTFT_ms": 1387.588096,
+      "transposed_WS_matrix_TTFT_ms": 1217.779712,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 40.27416244760883,
+          "serialized_matrix_plus_traffic_TPS": 33.485909189487316,
+          "serialized_margin_ms_to_30_TPS": 3.4700259241994793
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 40.27416244760883,
+          "serialized_matrix_plus_traffic_TPS": 35.479265254718136,
+          "serialized_margin_ms_to_30_TPS": 5.1478567508661435
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 40.27416244760883,
+          "serialized_matrix_plus_traffic_TPS": 37.01717049102793,
+          "serialized_margin_ms_to_30_TPS": 6.318842848643921
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 576,
+      "columns": 8,
+      "processing_elements": 4608,
+      "one_MAC_per_DSP_count_within_9024": true,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 4.1472,
+      "decode_127_steps_demand_cycles": 788346624,
+      "matrix_decode_mean_ms": 13.794341627296587,
+      "matrix_decode_TPS": 72.4934924056959,
+      "normal_WS_matrix_TTFT_ms": 770.8822755555556,
+      "transposed_WS_matrix_TTFT_ms": 676.5442844444444,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 72.4934924056959,
+          "serialized_matrix_plus_traffic_TPS": 53.11285378345549,
+          "serialized_margin_ms_to_30_TPS": 14.505499226036747
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 72.4934924056959,
+          "serialized_matrix_plus_traffic_TPS": 58.30902674691907,
+          "serialized_margin_ms_to_30_TPS": 16.183330052703415
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 72.4934924056959,
+          "serialized_matrix_plus_traffic_TPS": 62.582071760530326,
+          "serialized_margin_ms_to_30_TPS": 17.35431615048119
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 576,
+      "columns": 16,
+      "processing_elements": 9216,
+      "one_MAC_per_DSP_count_within_9024": false,
+      "assumed_core_hz": 250000000,
+      "ideal_INT8_TOPS": 4.608,
+      "decode_127_steps_demand_cycles": 792246016,
+      "matrix_decode_mean_ms": 24.95263042519685,
+      "matrix_decode_TPS": 40.07593520041128,
+      "normal_WS_matrix_TTFT_ms": 697.438464,
+      "transposed_WS_matrix_TTFT_ms": 615.37792,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 40.07593520041128,
+          "serialized_matrix_plus_traffic_TPS": 33.348759463221285,
+          "serialized_margin_ms_to_30_TPS": 3.347210428136485
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 40.07593520041128,
+          "serialized_matrix_plus_traffic_TPS": 35.325338498906774,
+          "serialized_margin_ms_to_30_TPS": 5.025041254803153
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 40.07593520041128,
+          "serialized_matrix_plus_traffic_TPS": 36.8496416228371,
+          "serialized_margin_ms_to_30_TPS": 6.196027352580931
+        }
+      ]
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "implementation_status": "proposed array and operand/output remapping; not implemented here",
+      "rows": 576,
+      "columns": 16,
+      "processing_elements": 9216,
+      "one_MAC_per_DSP_count_within_9024": false,
+      "assumed_core_hz": 450000000,
+      "ideal_INT8_TOPS": 8.2944,
+      "decode_127_steps_demand_cycles": 792246016,
+      "matrix_decode_mean_ms": 13.862572458442694,
+      "matrix_decode_TPS": 72.1366833607403,
+      "normal_WS_matrix_TTFT_ms": 387.46581333333336,
+      "transposed_WS_matrix_TTFT_ms": 341.87662222222224,
+      "traffic_scenarios": [
+        {
+          "bandwidth_GB_s": 200.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 198.66921505761343,
+          "traffic_ms": 5.0334924800000005,
+          "perfect_overlap_ceiling_TPS": 72.1366833607403,
+          "serialized_matrix_plus_traffic_TPS": 52.921071305463784,
+          "serialized_margin_ms_to_30_TPS": 14.43726839489064
+        },
+        {
+          "bandwidth_GB_s": 300.0,
+          "kind": "illustrative sustained bandwidth, not measured",
+          "traffic_only_TPS": 298.00382258642014,
+          "traffic_ms": 3.355661653333333,
+          "perfect_overlap_ceiling_TPS": 72.1366833607403,
+          "serialized_matrix_plus_traffic_TPS": 58.07796511002672,
+          "serialized_margin_ms_to_30_TPS": 16.11509922155731
+        },
+        {
+          "bandwidth_GB_s": 460.8,
+          "kind": "nominal F2 aggregate peak",
+          "traffic_only_TPS": 457.73387149274134,
+          "traffic_ms": 2.1846755555555557,
+          "perfect_overlap_ceiling_TPS": 72.1366833607403,
+          "serialized_matrix_plus_traffic_TPS": 62.31598085401841,
+          "serialized_margin_ms_to_30_TPS": 17.286085319335086
+        }
+      ]
+    }
+  ],
+  "native_demand_validation": [
+    {
+      "mapping": "normal_ws_baseline",
+      "rows": 32,
+      "columns": 32,
+      "original_mnk": [
+        4,
+        519,
+        39
+      ],
+      "native_demand_rows": [
+        3332,
+        3332,
+        3332
+      ],
+      "expected": 3332,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 64,
+      "columns": 32,
+      "original_mnk": [
+        4,
+        519,
+        71
+      ],
+      "native_demand_rows": [
+        1670,
+        1670,
+        1670
+      ],
+      "expected": 1670,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 64,
+      "columns": 16,
+      "original_mnk": [
+        4,
+        519,
+        71
+      ],
+      "native_demand_rows": [
+        1606,
+        1606,
+        1606
+      ],
+      "expected": 1606,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 128,
+      "columns": 8,
+      "original_mnk": [
+        4,
+        519,
+        135
+      ],
+      "native_demand_rows": [
+        2086,
+        2086,
+        2086
+      ],
+      "expected": 2086,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 128,
+      "columns": 16,
+      "original_mnk": [
+        4,
+        519,
+        135
+      ],
+      "native_demand_rows": [
+        2118,
+        2118,
+        2118
+      ],
+      "expected": 2118,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 128,
+      "columns": 32,
+      "original_mnk": [
+        4,
+        519,
+        135
+      ],
+      "native_demand_rows": [
+        2182,
+        2182,
+        2182
+      ],
+      "expected": 2182,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 256,
+      "columns": 8,
+      "original_mnk": [
+        4,
+        519,
+        263
+      ],
+      "native_demand_rows": [
+        3110,
+        3110,
+        3110
+      ],
+      "expected": 3110,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 256,
+      "columns": 16,
+      "original_mnk": [
+        4,
+        519,
+        263
+      ],
+      "native_demand_rows": [
+        3142,
+        3142,
+        3142
+      ],
+      "expected": 3142,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 384,
+      "columns": 4,
+      "original_mnk": [
+        4,
+        519,
+        391
+      ],
+      "native_demand_rows": [
+        4118,
+        4118,
+        4118
+      ],
+      "expected": 4118,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 384,
+      "columns": 16,
+      "original_mnk": [
+        4,
+        519,
+        391
+      ],
+      "native_demand_rows": [
+        4166,
+        4166,
+        4166
+      ],
+      "expected": 4166,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 576,
+      "columns": 4,
+      "original_mnk": [
+        4,
+        519,
+        583
+      ],
+      "native_demand_rows": [
+        5654,
+        5654,
+        5654
+      ],
+      "expected": 5654,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 576,
+      "columns": 8,
+      "original_mnk": [
+        4,
+        519,
+        583
+      ],
+      "native_demand_rows": [
+        5670,
+        5670,
+        5670
+      ],
+      "expected": 5670,
+      "passed": true
+    },
+    {
+      "mapping": "transposed_ws_tile512",
+      "rows": 576,
+      "columns": 16,
+      "original_mnk": [
+        4,
+        519,
+        583
+      ],
+      "native_demand_rows": [
+        5702,
+        5702,
+        5702
+      ],
+      "expected": 5702,
+      "passed": true
+    }
+  ],
+  "source_sha256": {
+    "experiments/gemma3_1b_int8/study.py": "feaea94f6ddb6066b2c4fe5df3ded72f476ae76ab40e78e585dc4ffb02fe43c4",
+    "experiments/gemma3_1b_int8/hbm2/decode_estimate.py": "eb56b0bc719b34f6192931ee58b490df9f2607266c0879b7a9a673035c845fdd",
+    "scalesim/compute/systolic_compute_ws.py": "7fbee035914b3063a3ca6203f51ae7a891ca84d829e2e4979ca2d57cb9a3eb0e"
+  },
+  "reproduce": "env -u PYTHONPATH .venv/bin/python experiments/gemma3_1b_int8/hbm2/decode_estimate.py"
+}

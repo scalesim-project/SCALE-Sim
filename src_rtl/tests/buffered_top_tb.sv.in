@@ -1,0 +1,288 @@
+`timescale 1ns/1ps
+module tb;
+localparam @PARAMETERS@;
+localparam ER=@MAX_ROWS@, EP=@MAX_PACKETS@, NA=@NEXT_A@, NB=@NEXT_B@;
+reg clk=0; always #5 clk=~clk;
+reg rst=1,cmd_valid=0,cmd_page=0,out_ready=0;
+reg [31:0] cmd_m=0,cmd_k=0,cmd_n=0,cmd_a_base=0,cmd_b_base=0,cmd_c_base=0;
+wire cmd_ready,busy,done,error,cycle_fire;
+reg a_load_valid=0,a_load_page=0,b_load_valid=0,b_load_page=0;
+reg [31:0] a_load_addr=0,b_load_addr=0;
+reg [7:0] a_load_data=0,b_load_data=0;
+wire a_load_ready,b_load_ready,out_valid,out_final;
+wire [C-1:0] out_mask;
+wire [C*32-1:0] out_addr,out_data;
+wire [1:0] page_busy;
+wire [63:0] logical_cycle,core_elapsed_cycles,core_stall_cycles,transaction_cycles;
+scalesim_ws_buffered_top #(.ROWS(R),.COLS(C),.MAX_M(MAXM),.A_BANKS(AB),.B_BANKS(BB),
+  .A_PAGE_WORDS(AW),.B_PAGE_WORDS(BW),.OUTPUT_DEPTH(DEPTH)) dut(.*);
+reg [7:0] amem[0:AW-1],bmem[0:BW-1],next_a[0:NA-1],next_b[0:NB-1];
+reg [R*32-1:0] ea[0:ER-1];
+reg [C*32-1:0] eb[0:ER-1],ec[0:ER-1],ev[0:ER-1],pa[0:EP-1],pv[0:EP-1];
+reg [31:0] va[0:ER-1],vb[0:ER-1],vc[0:ER-1],ef[0:ER-1],pm[0:EP-1],pf[0:EP-1];
+reg [63:0] et[0:ER-1];
+integer expected_rows,expected_packets,a_words,b_words,row_count=0,packet_count=0,busy_clocks=0;
+integer completed=0,aborted=0,rejected=0,blocked_packets=0,active_page=0,simultaneous=0,faulted=0;
+reg checking=0,held=0,check_timing=0;
+reg [C-1:0] held_mask;
+reg [C*32-1:0] held_addr,held_data;
+reg held_final;
+reg [31:0] rng=32'haf156321;
+integer lane;
+
+always @(posedge clk) begin
+  if(rst) begin
+    if(cycle_fire || (out_valid&&out_ready) || cmd_ready || a_load_ready || b_load_ready)
+      $fatal(1,"Transfer accepted while reset asserted");
+    held=0;
+  end else begin
+    if(held && (!out_valid || out_mask!==held_mask || out_addr!==held_addr ||
+                out_data!==held_data || out_final!==held_final))
+      $fatal(1,"Output packet changed under backpressure");
+    held=out_valid&&!out_ready;
+    if(held) begin
+      held_mask=out_mask; held_addr=out_addr; held_data=out_data; held_final=out_final;
+      blocked_packets=blocked_packets+1;
+    end
+    if(checking) begin
+      if(busy) begin
+        busy_clocks=busy_clocks+1;
+        if(page_busy !== (2'b01 << active_page)) $fatal(1,"Incorrect page ownership while busy");
+        if(cmd_ready) $fatal(1,"Command ready during transaction");
+      end
+      if(cycle_fire) begin
+        if(check_timing && busy_clocks!=et[row_count])
+          $fatal(1,"Independent latency oracle row=%0d got=%0d expected=%0d",row_count,busy_clocks,et[row_count]);
+        if(row_count>=expected_rows || logical_cycle!==64'(row_count)) $fatal(1,"Logical row count mismatch");
+        if(dut.core.a_valid!==va[row_count][R-1:0] || dut.core.b_valid!==vb[row_count][C-1:0] ||
+           dut.core.c_valid!==vc[row_count][C-1:0]) $fatal(1,"Core masks row=%0d",row_count);
+        for(lane=0;lane<R;lane=lane+1)
+          if(dut.core.a_valid[lane] && dut.core.a_addr[lane*32+:32]!==ea[row_count][lane*32+:32])
+            $fatal(1,"Core A address row=%0d lane=%0d",row_count,lane);
+        for(lane=0;lane<C;lane=lane+1) begin
+          if(dut.core.b_valid[lane] && dut.core.b_addr[lane*32+:32]!==eb[row_count][lane*32+:32])
+            $fatal(1,"Core B address row=%0d lane=%0d",row_count,lane);
+          if(dut.core.c_valid[lane] && (dut.core.c_addr[lane*32+:32]!==ec[row_count][lane*32+:32] ||
+             dut.core.c_data[lane*32+:32]!==ev[row_count][lane*32+:32] || dut.core.c_final!==ef[row_count][0]))
+            $fatal(1,"Core C row=%0d lane=%0d got=%0d expected=%0d",row_count,lane,
+                   $signed(dut.core.c_data[lane*32+:32]),$signed(ev[row_count][lane*32+:32]));
+        end
+        row_count=row_count+1;
+      end
+      if(cycle_fire && (|dut.core.c_valid) && out_valid && out_ready) simultaneous=simultaneous+1;
+      if(out_valid&&out_ready) begin
+        if(packet_count>=expected_packets || out_mask!==pm[packet_count][C-1:0] || out_final!==pf[packet_count][0])
+          $fatal(1,"Output packet mask/final/order index=%0d",packet_count);
+        for(lane=0;lane<C;lane=lane+1)
+          if(out_mask[lane] && (out_addr[lane*32+:32]!==pa[packet_count][lane*32+:32] ||
+                               out_data[lane*32+:32]!==pv[packet_count][lane*32+:32]))
+            $fatal(1,"Output value/address index=%0d lane=%0d",packet_count,lane);
+        packet_count=packet_count+1;
+      end
+    end else if(cycle_fire || out_valid) $fatal(1,"Unexpected stale transaction outside checked command");
+  end
+end
+
+task select_case(input integer index);
+  begin
+    case(index)
+@CASES@
+    endcase
+  end
+endtask
+
+task load_page(input integer page);
+  integer ai,bi,steps;
+  begin
+    ai=0; bi=0; steps=0;
+    while(ai<a_words || bi<b_words) begin
+      @(negedge clk);
+      a_load_valid=ai<a_words; a_load_page=page; a_load_addr=ai; a_load_data=amem[ai<AW?ai:0];
+      b_load_valid=bi<b_words; b_load_page=page; b_load_addr=bi; b_load_data=bmem[bi<BW?bi:0];
+      @(posedge clk);
+      if(a_load_valid&&a_load_ready) ai=ai+1;
+      if(b_load_valid&&b_load_ready) bi=bi+1;
+      steps=steps+1; if(steps>AW+BW+20) $fatal(1,"Host load timeout");
+    end
+    @(negedge clk); a_load_valid=0; b_load_valid=0;
+  end
+endtask
+
+task launch(input integer index,input integer page);
+  begin
+    @(negedge clk); select_case(index); cmd_page=page; active_page=page;
+    if(!cmd_ready || page_busy) $fatal(1,"Not idle before command");
+    cmd_valid=1; out_ready=0; checking=1;
+    row_count=0; packet_count=0; busy_clocks=0;
+    check_timing=0;
+    // A simultaneous write to the selected page must lose to the command.
+    a_load_valid=1; a_load_page=page; a_load_addr=0; a_load_data=~amem[0];
+    b_load_valid=1; b_load_page=page; b_load_addr=0; b_load_data=~bmem[0];
+    #1; if(a_load_ready || b_load_ready) $fatal(1,"Host load won over simultaneous command");
+    @(posedge clk); #1; if(!busy || error) $fatal(1,"Valid command rejected");
+    @(negedge clk); cmd_valid=0; a_load_valid=0; b_load_valid=0;
+    cmd_m=0; cmd_k=0; cmd_n=0; cmd_page=~page;
+    cmd_a_base=32'hffffffff; cmd_b_base=32'hfeedbeef; cmd_c_base=32'hdeadbeef;
+  end
+endtask
+
+task run_complete(input integer fill_next,input integer always_ready);
+  integer steps,ai,bi,held_cycles;
+  reg seen_output;
+  begin
+    steps=0; ai=0; bi=0; held_cycles=0; seen_output=0;
+    check_timing=always_ready;
+    while(!done) begin
+      rng=rng^(rng<<13); rng=rng^(rng>>17); rng=rng^(rng<<5);
+      if(out_valid) seen_output=1;
+      if(seen_output && held_cycles<16) held_cycles=held_cycles+1;
+      out_ready=always_ready || (seen_output && held_cycles>=16 && rng[2:0]>2);
+      if(steps<2) begin
+        a_load_valid=1; a_load_page=active_page; a_load_addr=0; a_load_data=~amem[0];
+        b_load_valid=1; b_load_page=active_page; b_load_addr=0; b_load_data=~bmem[0];
+      end else begin
+        a_load_valid=fill_next && ai<NA; a_load_page=!active_page; a_load_addr=ai; a_load_data=next_a[ai<NA?ai:0];
+        b_load_valid=fill_next && bi<NB; b_load_page=!active_page; b_load_addr=bi; b_load_data=next_b[bi<NB?bi:0];
+      end
+      #1; if(steps<2 && (a_load_ready || b_load_ready)) $fatal(1,"Active page writable");
+      @(posedge clk);
+      if(steps>=2) begin
+        if(a_load_valid&&a_load_ready) ai=ai+1;
+        if(b_load_valid&&b_load_ready) bi=bi+1;
+      end
+      #1; steps=steps+1;
+      if(steps>expected_rows*(R+C+20)+2000) $fatal(1,"Compute/drain timeout rows=%0d packets=%0d",row_count,packet_count);
+      if(!done) @(negedge clk);
+    end
+    if(error || busy || page_busy || out_valid || row_count!=expected_rows || packet_count!=expected_packets)
+      $fatal(1,"Completion before all work/drain rows=%0d/%0d packets=%0d/%0d",row_count,expected_rows,packet_count,expected_packets);
+    if(logical_cycle!=expected_rows || core_elapsed_cycles!=logical_cycle+core_stall_cycles ||
+       transaction_cycles!=busy_clocks || transaction_cycles<core_elapsed_cycles || core_stall_cycles==0)
+      $fatal(1,"Counter mismatch logical=%0d elapsed=%0d stall=%0d transaction=%0d clocks=%0d",
+             logical_cycle,core_elapsed_cycles,core_stall_cycles,transaction_cycles,busy_clocks);
+    if(fill_next && (ai!=NA || bi!=NB)) $fatal(1,"Inactive page not loaded during compute");
+    if(always_ready && (core_elapsed_cycles!=et[expected_rows-1] || transaction_cycles!=et[expected_rows-1]+1))
+      $fatal(1,"No-backpressure completion disagrees with independent oracle");
+    checking=0; completed=completed+1;
+    @(negedge clk); a_load_valid=0; b_load_valid=0; out_ready=1;
+    @(posedge clk); #1; if(done || error || busy || out_valid || page_busy || !cmd_ready) $fatal(1,"Completion pulse/idle mismatch");
+  end
+endtask
+
+task abort_command(input integer phase);
+  integer steps;
+  begin
+    launch(0,0); steps=0; out_ready=0;
+    if(phase==0) begin
+      // First B read has been issued but the row has not committed yet.
+      @(posedge clk); #1;
+      if(logical_cycle!=0) $fatal(1,"Expected initial synchronous read stall");
+      @(negedge clk);
+    end else begin
+      while(!out_valid) begin
+        @(posedge clk); #1; steps=steps+1;
+        if(steps>expected_rows*(R+C+20)+2000) $fatal(1,"No output before abort");
+        @(negedge clk);
+      end
+      repeat(3) begin @(posedge clk); @(negedge clk); end
+    end
+    rst=1; checking=0; cmd_valid=1; out_ready=1; a_load_valid=1; b_load_valid=1;
+    #1; if(cycle_fire || out_valid || cmd_ready || a_load_ready || b_load_ready) $fatal(1,"Reset did not mask acceptance");
+    @(posedge clk); #1;
+    if(busy || done || error || page_busy || logical_cycle || core_elapsed_cycles || core_stall_cycles || transaction_cycles)
+      $fatal(1,"Reset failed to clear pending transaction/counters");
+    @(negedge clk); rst=0; cmd_valid=0; a_load_valid=0; b_load_valid=0;
+    repeat(4) begin @(posedge clk); #1; if(out_valid || cycle_fire || busy || done) $fatal(1,"Stale response after reset"); end
+    aborted=aborted+1;
+    // SRAM survives reset. Run the original data again without reloading it.
+    launch(0,0); run_complete(0,0);
+  end
+endtask
+
+task inject_response_error;
+  integer steps;
+  begin
+    launch(0,0); steps=0;
+    while(!(dut.b_rsp_valid && dut.b_rsp_ready)) begin
+      @(posedge clk); #1; steps=steps+1;
+      if(steps>R+C+20) $fatal(1,"No read response for fault injection");
+      @(negedge clk);
+    end
+    // A valid command cannot naturally generate an invalid local address;
+    // inject a failed first weight response to exercise defensive flushing.
+    force dut.b_rsp_error=1'b1;
+    checking=0;
+    @(posedge clk); #1;
+    if(cycle_fire || out_valid) $fatal(1,"Faulted read was committed");
+    @(negedge clk); release dut.b_rsp_error;
+    while(!done) begin
+      @(posedge clk); #1; steps=steps+1;
+      if(steps>R+C+25) $fatal(1,"Fault abort did not complete");
+      if(!done) @(negedge clk);
+    end
+    if(!error || busy || page_busy || out_valid || logical_cycle || core_elapsed_cycles || core_stall_cycles)
+      $fatal(1,"Fault abort failed to flush ownership/core/queue");
+    faulted=faulted+1;
+    @(negedge clk); @(posedge clk); #1;
+    if(done || error || !cmd_ready) $fatal(1,"Fault completion pulse/ready mismatch");
+    launch(0,0); run_complete(0,0);
+  end
+endtask
+
+task reject_command(input integer kind);
+  integer count;
+  begin
+    @(negedge clk); select_case(0); cmd_page=0;
+    case(kind)
+      0: cmd_m=0;
+      1: cmd_m=MAXM+1;
+      2: begin cmd_m=1; cmd_k=AW+1; cmd_n=1; end
+      3: begin cmd_m=1; cmd_k=1; cmd_n=BW+1; end
+      4: cmd_a_base=32'hffffffff;
+      5: cmd_b_base=32'hffffffff;
+      6: cmd_c_base=32'hffffffff;
+    endcase
+    cmd_valid=1;
+    @(posedge clk); #1;
+    @(negedge clk); cmd_valid=0; count=0;
+    while(!done) begin
+      @(posedge clk); #1; count=count+1;
+      if(count>8) $fatal(1,"Invalid command not rejected kind=%0d",kind);
+      if(!done) @(negedge clk);
+    end
+    if(!error || busy || cycle_fire || out_valid || page_busy) $fatal(1,"Bad rejection kind=%0d",kind);
+    rejected=rejected+1;
+    @(negedge clk); @(posedge clk); #1; if(done || error || !cmd_ready) $fatal(1,"Invalid rejection pulse");
+  end
+endtask
+
+integer kind;
+initial begin
+  $readmemh("1_a.hex",next_a); $readmemh("1_b.hex",next_b);
+  repeat(2) @(posedge clk);
+  @(negedge clk); rst=0; select_case(0);
+  a_load_valid=1; a_load_addr=AW-1; a_load_data=8'h91;
+  b_load_valid=1; b_load_addr=BW-1; b_load_data=8'he3;
+  #1; if(!a_load_ready || !b_load_ready) $fatal(1,"Last valid host address rejected");
+  @(posedge clk); @(negedge clk);
+  // Addresses are page-relative words; both interfaces must reject one-past-end.
+  a_load_valid=1; a_load_addr=AW; b_load_valid=1; b_load_addr=BW;
+  #1; if(a_load_ready || b_load_ready) $fatal(1,"Out-of-range host write accepted");
+  @(posedge clk); @(negedge clk); a_load_valid=0; b_load_valid=0;
+  load_page(0);
+  launch(0,0); run_complete(1,0);
+  launch(1,1); run_complete(0,0);
+  launch(0,0); run_complete(0,1);
+  abort_command(0);
+  abort_command(1);
+  inject_response_error;
+  for(kind=0;kind<7;kind=kind+1) reject_command(kind);
+  launch(1,1); run_complete(0,0);
+  if(completed!=7 || aborted!=2 || rejected!=7 || faulted!=1 || blocked_packets==0) $fatal(1,"Missing coverage");
+  if(R==4 && C==3 && DEPTH==1 && simultaneous==0) $fatal(1,"Depth-one simultaneous FIFO push/pop not exercised");
+  $display("PASS buffered integration R=%0d C=%0d banks=%0d/%0d depth=%0d complete=%0d abort=%0d reject=%0d blocked=%0d simultaneous=%0d faulted=%0d",
+           R,C,AB,BB,DEPTH,completed,aborted,rejected,blocked_packets,simultaneous,faulted);
+  $finish;
+end
+initial begin #20000000; $fatal(1,"Global timeout"); end
+endmodule

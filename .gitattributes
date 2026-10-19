@@ -1,0 +1,2 @@
+# Preserve the exact portability patch for the pinned CRLF vendor header.
+experiments/gemma3_1b_int8/hbm2/patches/*.patch -text whitespace=cr-at-eol

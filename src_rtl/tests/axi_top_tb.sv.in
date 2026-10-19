@@ -1,0 +1,347 @@
+`timescale 1ns/1ps
+module tb;
+localparam @PARAMS@;
+localparam MAXM=@MMAX@, BUS=DW/8, SHIFT=$clog2(BUS), MEMSIZE=65536;
+reg clk=0; always #5 clk=~clk;
+reg rst=1,cmd_valid=0,cmd_page=0;
+reg [31:0] cmd_m=0,cmd_k=0,cmd_n=0;
+reg [63:0] cmd_a_addr=0,cmd_b_addr=0,cmd_c_addr=0;
+wire cmd_ready,busy,done,error,cycle_fire;
+wire [3:0] error_code;
+wire [63:0] logical_cycle,core_elapsed_cycles,core_stall_cycles,total_cycles,operand_bytes,result_bytes;
+wire [63:0] m_axi_araddr,m_axi_awaddr;
+wire [7:0] m_axi_arlen,m_axi_awlen;
+wire [2:0] m_axi_arsize,m_axi_awsize;
+wire [1:0] m_axi_arburst,m_axi_awburst;
+wire m_axi_arvalid,m_axi_rready,m_axi_awvalid,m_axi_wvalid,m_axi_wlast,m_axi_bready;
+reg m_axi_arready=0,m_axi_rvalid=0,m_axi_rlast=0,m_axi_awready=0,m_axi_wready=0,m_axi_bvalid=0;
+reg [DW-1:0] m_axi_rdata=0;
+wire [DW-1:0] m_axi_wdata;
+wire [BUS-1:0] m_axi_wstrb;
+reg [1:0] m_axi_rresp=0,m_axi_bresp=0;
+scalesim_ws_axi_top #(.ROWS(R),.COLS(C),.MAX_M(MAXM),.A_BANKS(AB),.B_BANKS(BB),
+  .A_PAGE_WORDS(WORDS),.B_PAGE_WORDS(WORDS),.OUTPUT_DEPTH(2),.AXI_DATA_WIDTH(DW),
+  .MAX_BURST_BEATS(BURST),.WRITE_INTERMEDIATES(INTERMEDIATES)) dut(.*);
+
+reg [7:0] memory[0:MEMSIZE-1],golden[0:MEMSIZE-1],a_mem[0:WORDS-1],b_mem[0:WORDS-1];
+reg [31:0] final_mem[0:MAXM*WORDS-1],ewaddr[0:@WMAX@-1],ewdata[0:@WMAX@-1];
+reg [R*32-1:0] ea[0:@DMAX@-1];
+reg [C*32-1:0] eb[0:@DMAX@-1],ec[0:@DMAX@-1],ev[0:@DMAX@-1];
+reg [63:0] memory_base=64'h100000000,c_base;
+integer expected_rows,expected_writes,a_words,b_words,c_words,row_count,write_count;
+integer completed=0,rejected=0,faults=0,resets=0,aw_first=0,w_first=0,simultaneous=0,boundaries=0;
+integer full256=0;
+integer busy_clocks,read_seen,read_requested,ar_count,write_responses;
+integer fault_kind=0,reset_phase=-1,inject_read_at,steps;
+reg checking=0;
+reg [31:0] rng=32'hf0571a81;
+reg reading=0,r_hold=0,b_hold=0,aw_have=0,w_have=0,b_active=0;
+reg [63:0] read_base,aw_address;
+reg [DW-1:0] w_value;
+reg [BUS-1:0] w_strobe;
+integer read_index,read_length,b_delay;
+reg [1:0] b_response;
+reg ar_stalled=0,aw_stalled=0,w_stalled=0;
+reg [63:0] prev_araddr,prev_awaddr;
+reg [7:0] prev_arlen;
+reg [DW-1:0] prev_wdata;
+reg [BUS-1:0] prev_wstrb;
+
+function integer address_index(input [63:0] address);
+  begin
+    if(address<memory_base || address-memory_base>=MEMSIZE)
+      $fatal(1,"AXI address outside mapped memory: %h",address);
+    address_index=32'(address-memory_base);
+  end
+endfunction
+
+// Slave channel drivers update only at falling edges. Responses remain stable
+// while stalled, and AW/W can arrive in either order with independent delays.
+always @(negedge clk) begin
+  rng=rng^(rng<<13);rng=rng^(rng>>17);rng=rng^(rng<<5);
+  if(rst) begin
+    m_axi_arready=0;m_axi_rvalid=0;m_axi_awready=0;m_axi_wready=0;m_axi_bvalid=0;
+    m_axi_rdata=0;m_axi_rresp=0;m_axi_rlast=0;m_axi_bresp=0;
+  end else begin
+    m_axi_arready=!reading && rng[1:0]!=0;
+    if(!r_hold) begin
+      m_axi_rvalid=reading && rng[3:2]!=0;
+      m_axi_rdata=0;m_axi_rresp=0;m_axi_rlast=0;
+      if(m_axi_rvalid) begin
+        for(integer j=0;j<BUS;j=j+1)
+          m_axi_rdata[j*8+:8]=memory[address_index(read_base+64'(read_index*BUS+j))];
+        m_axi_rlast=read_index==read_length-1;
+        if(fault_kind==1 && read_seen+1==inject_read_at) m_axi_rresp=2'b10;
+        if(fault_kind==4 && read_seen+1==inject_read_at) m_axi_rlast=~m_axi_rlast;
+      end
+    end
+    m_axi_awready=0;m_axi_wready=0;
+    if(!b_active) begin
+      case(write_count%3)
+        0: begin m_axi_awready=!aw_have && rng[5:4]!=0;
+                 m_axi_wready=!w_have && aw_have && rng[7:6]!=0; end
+        1: begin m_axi_wready=!w_have && rng[5:4]!=0;
+                 m_axi_awready=!aw_have && w_have && rng[7:6]!=0; end
+        2: begin m_axi_awready=!aw_have; m_axi_wready=!w_have; end
+      endcase
+    end
+    if(!b_hold) begin
+      m_axi_bvalid=b_active && b_delay==0;
+      m_axi_bresp=b_response;
+    end
+  end
+end
+
+always @(posedge clk) begin : slave_and_monitors
+  reg take_aw,take_w;
+  reg [63:0] expected_address;
+  reg [BUS-1:0] expected_strobe;
+  integer offset,index;
+  if(rst) begin
+    reading=0;r_hold=0;b_hold=0;aw_have=0;w_have=0;b_active=0;
+    read_index=0;read_length=0;b_delay=0;b_response=0;
+    ar_stalled=0;aw_stalled=0;w_stalled=0;
+  end else begin
+    if(ar_stalled && (!m_axi_arvalid || m_axi_araddr!==prev_araddr || m_axi_arlen!==prev_arlen))
+      $fatal(1,"AR changed while stalled");
+    if(aw_stalled && (!m_axi_awvalid || m_axi_awaddr!==prev_awaddr)) $fatal(1,"AW changed while stalled");
+    if(w_stalled && (!m_axi_wvalid || m_axi_wdata!==prev_wdata || m_axi_wstrb!==prev_wstrb || !m_axi_wlast))
+      $fatal(1,"W changed while stalled");
+    ar_stalled=m_axi_arvalid&&!m_axi_arready;
+    aw_stalled=m_axi_awvalid&&!m_axi_awready;
+    w_stalled=m_axi_wvalid&&!m_axi_wready;
+    prev_araddr=m_axi_araddr;prev_arlen=m_axi_arlen;
+    prev_awaddr=m_axi_awaddr;prev_wdata=m_axi_wdata;prev_wstrb=m_axi_wstrb;
+    if(!checking && (m_axi_arvalid || m_axi_awvalid || m_axi_wvalid || cycle_fire))
+      $fatal(1,"Unexpected transfer outside command");
+    if(checking && busy) busy_clocks=busy_clocks+1;
+    if(checking && busy && cmd_ready) $fatal(1,"Descriptor ready while busy");
+    if(m_axi_arvalid&&m_axi_arready) begin
+      if(reading || m_axi_araddr%BUS || m_axi_arsize!=SHIFT || m_axi_arburst!=1 ||
+         m_axi_arlen+1>BURST || (m_axi_araddr%4096)+(m_axi_arlen+1)*BUS>4096)
+        $fatal(1,"Bad AXI read burst address=%h len=%0d",m_axi_araddr,m_axi_arlen);
+      if((m_axi_araddr%4096)+(m_axi_arlen+1)*BUS==4096) boundaries=boundaries+1;
+      if(m_axi_arlen==255) full256=full256+1;
+      reading=1;read_base=m_axi_araddr;read_length=m_axi_arlen+1;read_index=0;
+      read_requested=read_requested+read_length;ar_count=ar_count+1;
+    end
+    r_hold=m_axi_rvalid&&!m_axi_rready;
+    if(m_axi_rvalid&&m_axi_rready) begin
+      if(!reading) $fatal(1,"R accepted without outstanding read");
+      read_seen=read_seen+1;read_index=read_index+1;
+      if(read_index==read_length) reading=0;
+    end
+    take_aw=m_axi_awvalid&&m_axi_awready;
+    take_w=m_axi_wvalid&&m_axi_wready;
+    if(take_aw) begin
+      if(aw_have || m_axi_awaddr%BUS || m_axi_awlen!=0 || m_axi_awsize!=SHIFT || m_axi_awburst!=1)
+        $fatal(1,"Bad AXI write address");
+      if(!w_have && !take_w) aw_first=aw_first+1;
+      aw_have=1;aw_address=m_axi_awaddr;
+    end
+    if(take_w) begin
+      if(w_have || !m_axi_wlast) $fatal(1,"Bad AXI W beat");
+      if(!aw_have && !take_aw) w_first=w_first+1;
+      w_have=1;w_value=m_axi_wdata;w_strobe=m_axi_wstrb;
+    end
+    if(take_aw&&take_w) simultaneous=simultaneous+1;
+    b_hold=m_axi_bvalid&&!m_axi_bready;
+    if(m_axi_bvalid&&m_axi_bready) begin
+      if(!b_active) $fatal(1,"B accepted without write");
+      b_active=0;aw_have=0;w_have=0;write_count=write_count+1;write_responses=write_responses+1;
+    end
+    if(b_active && b_delay>0) b_delay=b_delay-1;
+    if(aw_have&&w_have&&!b_active) begin
+      if(write_count>=expected_writes) $fatal(1,"Too many external writes");
+      expected_address=c_base+64'(ewaddr[write_count])*4;
+      offset=32'(expected_address%BUS);
+      expected_strobe=BUS'(15)<<offset;
+      if(aw_address!==(expected_address & ~(64'(BUS)-1)) || w_strobe!==expected_strobe ||
+         w_value[offset*8+:32]!==ewdata[write_count])
+        $fatal(1,"AXI write mismatch index=%0d addr=%h expected=%h data=%h expected=%h strobe=%h",
+          write_count,aw_address,expected_address,w_value[offset*8+:32],ewdata[write_count],w_strobe);
+      for(integer j=0;j<BUS;j=j+1) if(w_strobe[j]) begin
+        index=address_index(aw_address+64'(j));memory[index]=w_value[j*8+:8];
+      end
+      b_active=1;b_delay=(reset_phase==2)?12:32'(rng[11:8]);
+      b_response=(fault_kind==2 && write_count==0)?2'b11:2'b00;
+    end
+    if(checking && cycle_fire) begin
+      if(row_count>=expected_rows) $fatal(1,"Too many core rows");
+      for(integer lane=0;lane<R;lane=lane+1) begin
+        if(dut.engine.core_a_valid[lane] !== (ea[row_count][lane*32+:32]!=32'hffffffff)) $fatal(1,"A mask");
+        if(dut.engine.core_a_valid[lane] && dut.engine.core_a_addr[lane*32+:32]!==ea[row_count][lane*32+:32])
+          $fatal(1,"A address");
+      end
+      for(integer lane=0;lane<C;lane=lane+1) begin
+        if(dut.engine.core_b_valid[lane] !== (eb[row_count][lane*32+:32]!=32'hffffffff)) $fatal(1,"B mask");
+        if(dut.engine.core_b_valid[lane] && dut.engine.core_b_addr[lane*32+:32]!==eb[row_count][lane*32+:32])
+          $fatal(1,"B address");
+        if(dut.engine.core_c_valid[lane] !== (ec[row_count][lane*32+:32]!=32'hffffffff)) $fatal(1,"C mask");
+        if(dut.engine.core_c_valid[lane] &&
+          (dut.engine.core_c_addr[lane*32+:32]!==ec[row_count][lane*32+:32] ||
+           dut.engine.core_c_data[lane*32+:32]!==ev[row_count][lane*32+:32]))
+          $fatal(1,"Core C value/address row=%0d lane=%0d",row_count,lane);
+      end
+      row_count=row_count+1;
+    end
+  end
+end
+
+task load_case(input integer which);
+  begin case(which)
+    @CASES@
+  endcase end
+endtask
+
+task prepare(input integer which,input integer high_end,input integer fault,input integer reset_at);
+  integer ai,bi,ci;
+  begin
+    @(negedge clk);
+    load_case(which);fault_kind=fault;reset_phase=reset_at;
+    memory_base=high_end?64'hffffffffffff0000:64'h100000000;
+    ai=(fault==1 || fault==4)?512:4089;bi=8190;ci=high_end?65532:12284;
+    if(high_end==2) begin ai=65535;bi=65535;end
+    cmd_a_addr=memory_base+64'(ai);cmd_b_addr=memory_base+64'(bi);
+    cmd_c_addr=memory_base+64'(ci);c_base=cmd_c_addr;
+    cmd_page=~cmd_page;
+    for(integer i=0;i<MEMSIZE;i=i+1) begin memory[i]=8'((i*17+59)%256);golden[i]=memory[i];end
+    for(integer i=0;i<a_words;i=i+1) begin memory[ai+i]=a_mem[i];golden[ai+i]=a_mem[i];end
+    for(integer i=0;i<b_words;i=i+1) begin memory[bi+i]=b_mem[i];golden[bi+i]=b_mem[i];end
+    for(integer i=0;i<c_words;i=i+1)
+      for(integer j=0;j<4;j=j+1) golden[ci+i*4+j]=final_mem[i][j*8+:8];
+    row_count=0;write_count=0;busy_clocks=0;read_seen=0;read_requested=0;ar_count=0;write_responses=0;
+    inject_read_at=(BURST>1)?2:1;checking=1;
+  end
+endtask
+
+task start_command;
+  begin
+    if(!cmd_ready) $fatal(1,"Not ready for next command");
+    cmd_valid=1;
+    @(posedge clk);#1;if(!busy || done || error) $fatal(1,"Valid descriptor rejected");
+    @(negedge clk);cmd_valid=0;
+    // Descriptor pins can change immediately after acceptance.
+    cmd_m=0;cmd_k=32'hffffffff;cmd_n=0;
+    cmd_a_addr=0;cmd_b_addr=0;cmd_c_addr=0;cmd_page=~cmd_page;
+  end
+endtask
+
+task finish_command(input integer expected_error);
+  begin
+    steps=0;
+    while(!done) begin
+      @(posedge clk);#1;steps=steps+1;
+      if(steps>200000) $fatal(1,"DMA timeout state=%0d reads=%0d writes=%0d",dut.state,read_seen,write_count);
+    end
+    if(busy || !cmd_ready || error!==(expected_error!=0) || error_code!=expected_error ||
+       reading || aw_have || w_have || b_active || read_seen!=read_requested || total_cycles!=busy_clocks)
+      $fatal(1,"Bad completion code=%0d expected=%0d cycles=%0d expected=%0d outstanding=%b%b%b%b reads=%0d/%0d",
+        error_code,expected_error,total_cycles,busy_clocks,reading,aw_have,w_have,b_active,read_seen,read_requested);
+    if(expected_error==0) begin
+      if(row_count!=expected_rows || logical_cycle!=expected_rows || write_count!=expected_writes ||
+         result_bytes!=expected_writes*4 || operand_bytes!=a_words+b_words ||
+         core_elapsed_cycles!=logical_cycle+core_stall_cycles || total_cycles<=core_elapsed_cycles)
+        $fatal(1,"Success counters mismatch rows=%0d/%0d writes=%0d/%0d",row_count,expected_rows,write_count,expected_writes);
+      for(integer i=0;i<MEMSIZE;i=i+1) if(memory[i]!==golden[i])
+        $fatal(1,"Memory/guard-byte mismatch index=%0d value=%h expected=%h",i,memory[i],golden[i]);
+      completed=completed+1;
+    end else begin
+      if((expected_error==2 || expected_error==3) && (row_count!=0 || result_bytes!=0 || ar_count!=1))
+        $fatal(1,"Read failure did not drain/stop");
+      if(expected_error==4 && (write_count!=1 || result_bytes!=0)) $fatal(1,"Write failure did not stop");
+      if(expected_error==5 && (write_count!=1 || result_bytes!=4)) $fatal(1,"Core fault abandoned pending write");
+      faults=faults+1;
+    end
+    checking=0;
+    @(negedge clk);@(posedge clk);#1;
+    if(done || error || !cmd_ready || busy || m_axi_arvalid || m_axi_awvalid || m_axi_wvalid || cycle_fire)
+      $fatal(1,"Stale transaction or completion pulse");
+  end
+endtask
+
+task run_success(input integer which,input integer high_end);
+  begin prepare(which,high_end,0,-1);start_command;finish_command(0);end
+endtask
+
+task run_fault(input integer kind);
+  begin
+    prepare(2,0,kind,-1);start_command;
+    if(kind==3) begin
+      steps=0;
+      while(!(aw_have ^ w_have)) begin
+        @(negedge clk);steps=steps+1;if(steps>200000) $fatal(1,"No pending write for core fault");
+      end
+      force dut.core_done=1'b1;force dut.core_error=1'b1;
+      @(posedge clk);#1;
+      @(negedge clk);release dut.core_done;release dut.core_error;
+    end
+    finish_command(kind==1?2:kind==2?4:kind==3?5:3);
+    run_success(1,0);
+  end
+endtask
+
+task run_reset(input integer phase);
+  begin
+    prepare(0,0,0,phase);start_command;steps=0;
+    while(!((phase==0 && reading) || (phase==1 && (aw_have^w_have)) ||
+            (phase==2 && b_active && !m_axi_bvalid))) begin
+      @(negedge clk);steps=steps+1;if(steps>200000) $fatal(1,"Reset phase unavailable");
+    end
+    rst=1;
+    #1;if(m_axi_arvalid || m_axi_awvalid || m_axi_wvalid || m_axi_rready || m_axi_bready || cycle_fire)
+      $fatal(1,"Reset did not suppress transfers");
+    repeat(2) @(posedge clk);
+    #1;if(busy || done || error || total_cycles || operand_bytes || result_bytes || logical_cycle)
+      $fatal(1,"Reset state/counters");
+    checking=0;
+    @(negedge clk);rst=0;resets=resets+1;
+    repeat(3) begin @(posedge clk);#1;if(busy || done || m_axi_arvalid || m_axi_awvalid || m_axi_wvalid || cycle_fire)
+      $fatal(1,"Stray transaction after reset");end
+    run_success(0,0);
+  end
+endtask
+
+task reject_command(input integer kind);
+  begin
+    @(negedge clk);cmd_m=1;cmd_k=1;cmd_n=1;
+    cmd_a_addr=64'h100000100;cmd_b_addr=64'h100000200;cmd_c_addr=64'h100000300;
+    case(kind)
+      0: cmd_m=0;
+      1: cmd_k=0;
+      2: cmd_n=0;
+      3: cmd_m=MAXM+1;
+      4: cmd_k=WORDS+1;
+      5: cmd_n=WORDS+1;
+      6: cmd_c_addr=64'h100000301;
+      7: begin cmd_k=2;cmd_a_addr=64'hffffffffffffffff;end
+      8: begin cmd_k=2;cmd_b_addr=64'hffffffffffffffff;end
+      9: begin cmd_n=2;cmd_c_addr=64'hfffffffffffffffc;end
+    endcase
+    if(!cmd_ready) $fatal(1,"Not ready for bad command");
+    cmd_valid=1;@(posedge clk);#1;
+    if(!done || !error || error_code!=1 || busy || total_cycles || operand_bytes || result_bytes ||
+       m_axi_arvalid || m_axi_awvalid || m_axi_wvalid || cycle_fire || logical_cycle)
+      $fatal(1,"Invalid descriptor accepted kind=%0d",kind);
+    rejected=rejected+1;@(negedge clk);cmd_valid=0;
+    @(posedge clk);#1;if(done || error || !cmd_ready) $fatal(1,"Bad command completion pulse");
+  end
+endtask
+
+initial begin
+  repeat(2) @(posedge clk);
+  @(negedge clk);rst=0;
+  run_success(0,0);run_success(1,0);run_success(1,1);run_success(1,2);
+  run_fault(1);run_fault(2);run_fault(3);run_fault(4);
+  run_reset(0);run_reset(1);run_reset(2);
+  for(integer i=0;i<10;i=i+1) reject_command(i);
+  run_success(0,0);
+  if(completed!=12 || rejected!=10 || faults!=4 || resets!=3 || aw_first==0 || w_first==0 || simultaneous==0 || boundaries==0)
+    $fatal(1,"Missing coverage completed=%0d rejects=%0d faults=%0d resets=%0d AW/W=%0d/%0d/%0d boundaries=%0d",
+      completed,rejected,faults,resets,aw_first,w_first,simultaneous,boundaries);
+  if(BURST==256 && full256==0) $fatal(1,"Maximum AXI burst length not exercised");
+  $display("PASS AXI complete=%0d rejected=%0d faults=%0d resets=%0d aw_first=%0d w_first=%0d simultaneous=%0d boundaries=%0d full256=%0d",
+    completed,rejected,faults,resets,aw_first,w_first,simultaneous,boundaries,full256);
+  $finish;
+end
+endmodule

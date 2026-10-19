@@ -1,0 +1,150 @@
+{
+  "purpose": "Traceable public AWS F2 HBM IP snapshot and explicit Ramulator HBM2 modeling assumptions; no claim of AMD controller timing equivalence.",
+  "aws_hdk_commit": "c34f88e97eaf8a9b6ea7a3516ab65ee64690ab82",
+  "aws_ip_submodule_commit": "6d32be972e6da854e61a8d3d6ec0466ab491c1b3",
+  "source_url": "https://github.com/aws/aws-fpga-resources/blob/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.srcs/sources_1/ip/cl_hbm/cl_hbm.xci",
+  "source_raw_url": "https://raw.githubusercontent.com/aws/aws-fpga-resources/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.srcs/sources_1/ip/cl_hbm/cl_hbm.xci",
+  "source_sha256": "1f8994d1ba76dc3bd81168de89b8a985fb3ab46602e60c12c25ef347231b0ac9",
+  "ip_component": "xilinx.com:ip:hbm:1.0",
+  "ip_revision": "18",
+  "selected_component_parameters": {
+    "USER_HBM_DENSITY": "16GB",
+    "USER_HBM_STACK": "2",
+    "USER_MEMORY_DISPLAY": "16384",
+    "USER_HBM_TCK_0": "900",
+    "USER_HBM_TCK_1": "900",
+    "USER_HBM_TCK_0_PERIOD": "1.1111111111111112",
+    "USER_HBM_TCK_1_PERIOD": "1.1111111111111112",
+    "USER_HBM_REF_CLK_0": "100",
+    "USER_HBM_REF_CLK_1": "100",
+    "USER_SWITCH_ENABLE_00": "TRUE",
+    "USER_SWITCH_ENABLE_01": "TRUE",
+    "USER_MC0_ADDR_BIT": "SID,RA13,RA12,RA11,RA10,RA9,RA8,RA7,RA6,RA5,RA4,RA3,RA2,RA1,RA0,BG1,BA1,BA0,CA5,CA4,CA3,CA2,CA1,BG0",
+    "USER_MC0_BG_INTERLEAVE_EN": "true",
+    "USER_MC0_REF_CMD_PERIOD": "0x0DB6",
+    "USER_MC0_EN_SBREF": "true",
+    "USER_MC0_SBREF_ISSUE_PER": "0x01E",
+    "USER_MC0_LOOKAHEAD_SBRF": "true",
+    "USER_MC0_REORDER_EN": "true",
+    "USER_MC0_REORDER_QUEUE_EN": "true",
+    "USER_MC0_Q_AGE_LIMIT": "0x7F",
+    "USER_MC0_REF_TEMP_COMP": "false",
+    "USER_MC0_ENABLE_ECC_CORRECTION": "false",
+    "USER_MC0_ECC_BYPASS": "false",
+    "USER_MC0_RMW_EN": "false",
+    "USER_MC0_TRAFFIC_OPTION": "Linear",
+    "USER_tRC_0": "0x2B",
+    "USER_tRAS_0": "0x1E",
+    "USER_tRCDRD_0": "0x0D",
+    "USER_tRCDWR_0": "0x09",
+    "USER_tRRDL_0": "0x04",
+    "USER_tRRDS_0": "0x04",
+    "USER_tFAW_0": "0x00F",
+    "USER_tRTP_0": "0x05",
+    "USER_tRP_0": "0x0D",
+    "USER_tWR_0": "0x0F",
+    "USER_tWTRL_0": "0x8",
+    "USER_tWTRS_0": "0x4",
+    "USER_tXP_0": "0x07",
+    "USER_tRFC_0": "0x13B",
+    "USER_tRFCSB_0": "0x90",
+    "USER_tRREFD_0": "0x8",
+    "USER_RL_0": "0x16",
+    "USER_WL_0": "0x07"
+  },
+  "selected_model_parameters": {
+    "AXI_CLK_FREQ": "450",
+    "AXI_CLK1_FREQ": "450",
+    "HBM_CLK_FREQ_0": "900",
+    "HBM_CLK_FREQ_1": "900"
+  },
+  "device": "xcvu47p",
+  "verified_organization": {
+    "total_bytes": 17179869184,
+    "stacks": 2,
+    "bytes_per_stack": 8589934592,
+    "physical_channels_per_stack": 8,
+    "pseudochannels_per_physical_channel": 2,
+    "bytes_per_pseudochannel": 536870912,
+    "pseudochannel_width_bits": 64,
+    "burst_length": 4,
+    "transaction_bytes": 32,
+    "sid_per_pseudochannel": 2,
+    "bank_groups_per_sid": 4,
+    "banks_per_bank_group": 4,
+    "rows_per_bank": 16384,
+    "column_addresses_per_row": 32,
+    "column_prefetch": 4
+  },
+  "physical_byte_address_map": {
+    "stack": "bit 33",
+    "pseudochannel_in_stack": "bits 32:29",
+    "pseudochannel_local": "bits 28:5 = SID,RA13..RA0,BG1,BA1,BA0,CA5..CA1,BG0",
+    "byte_in_burst": "bits 4:0"
+  },
+  "timing_units_evidence": "USER_HBM_TCK_0_PERIOD=1.1111111111111112 ns; USER_tRFC_0=0x13B=315 memory cycles gives350ns, matching AMD PG2768H tRFC. USER_MC0_REF_CMD_PERIOD=0xDB6=3510 memory cycles gives3.9us.",
+  "model_choices": {
+    "nCL": "Use nCL=22 as an explicit interpretation of XCI USER_RL_0=0x16, not independently verified against the initialization ROM. The public HBM_xsim model decodes raw MR2 RL bits as raw+2, but the inspected wrappers do not establish whether USER_RL is already decoded. This excludes AMD AXI, crossbar and CDC latency.",
+    "nCWL": "Use nCWL=7 as an explicit interpretation of XCI USER_WL_0=0x07, not independently verified against the initialization ROM. The public HBM_xsim model decodes raw MR2 WL bits as raw+1, but the inspected wrappers do not establish whether USER_WL is already decoded. This is not physical per-request write completion.",
+    "tCK_ps": "1111 integerps approximates exact10000/9ps; modeled clock is about100ppm faster.",
+    "nBL": "2 DRAM cycles from fixed BL4 and DDR transfer.",
+    "nCCDS": "2 nCK from the pinned AMD hbm_parameter.v.",
+    "nCCDL": "4 nCK from the pinned AMD hbm_parameter.v.",
+    "nCCDR": "3 nCK from the pinned AMD hbm_parameter.v; replaces the upstream Ramulator SID2 estimate of 2.",
+    "nRTW": "21 from the upstream expression 22+2-7+ceil(0.3+(3500+tDQSQ_ps)/1111). Both neighboring 1600/2000 Mbps tDQSQ=106/85 ps yield 21; the upstream table does not specify 1800 Mbps.",
+    "nREFIpb": "floor3510/32=109 theoretical per-bank interval; not used by selected AllBank manager.",
+    "refresh": "Ramulator AllBank policy differs from AWS XCI enabled single-bank refresh/lookahead and SBREF_ISSUE_PER30.",
+    "address_mapping": "Selected adapter stripes32B across physical channels then uses RoBaRaCoCh; this differs from the AWS address map above.",
+    "controller": "Ramulator HBM12 FRFCFS/open page/32-entry read+write queues. AMD AXI IDs, reorder queue, crossbar contention, ingress port rate, CDC, ECC and PHY behavior are not reproduced."
+  },
+  "sources": [
+    {
+      "url": "https://github.com/aws/aws-fpga-resources/blob/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.srcs/sources_1/ip/cl_hbm/cl_hbm.xci",
+      "supports": "Device, capacity, clocks, selected raw timings and controller/address settings."
+    },
+    {
+      "url": "https://github.com/aws/aws-fpga-resources/blob/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.gen/sources_1/ip/cl_hbm/verif/model/hbm_parameter.v",
+      "supports": "Published simulation timing constants tCCDS=2, tCCDL=4, tCCDR=3 nCK."
+    },
+    {
+      "url": "https://docs.amd.com/r/en-US/pg276-axi-hbm/HBM-Topology",
+      "supports": "Eight physical channels/stack, two64-bit pseudochannels/channel, BL4."
+    },
+    {
+      "url": "https://docs.amd.com/r/en-US/pg276-axi-hbm/HBM-Address-Map-and-Protocol-Considerations",
+      "supports": "8H geometry SID2,RA14,32banks/PC and contiguous512MiB pseudochannels."
+    },
+    {
+      "url": "https://docs.amd.com/r/en-US/pg276-axi-hbm/Raw-Throughput-Evaluation",
+      "supports": "900MHzDRAM/450MHzAXI,460.8GB/sdualstack nominal peak,350ns8H refresh and3.9usbase interval."
+    },
+    {
+      "url": "https://docs.amd.com/r/en-US/pg276-axi-hbm/Lateral-AXI-Switch-Access-Throughput-Loss",
+      "supports": "AMD crossbar and backpressure losses absent from generic DRAM replay."
+    },
+    {
+      "url": "https://github.com/CMU-SAFARI/ramulator2/blob/c6c7a5de0cef35935d6fad7369e6271406798865/python/ramulator/dram/hbm2.py",
+      "supports": "Native HBM2 hierarchy,32Bpayload, timing-resolution formula and explicit guessed timings."
+    }
+  ],
+  "generated_model_sources": [
+    {
+      "url": "https://github.com/aws/aws-fpga-resources/blob/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.gen/sources_1/ip/cl_hbm/verif/model/hbm_parameter.v",
+      "sha256": "817f0f99b11fc8dbcb4011f2cf367e650f2b5f3cf5f752da87a5e459997048ad"
+    },
+    {
+      "url": "https://github.com/aws/aws-fpga-resources/blob/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.gen/sources_1/ip/cl_hbm/verif/model/hbm_model.sv",
+      "sha256": "31e3e6115f863d20d8f1e7408aedd1ac20986544e735d6a2478e0cbc2cc2719e"
+    },
+    {
+      "url": "https://github.com/aws/aws-fpga-resources/blob/6d32be972e6da854e61a8d3d6ec0466ab491c1b3/cl_ip/cl_ip.gen/sources_1/ip/cl_hbm/verif/model/HBM_xsim.sv",
+      "sha256": "66a0726ed6429a48f5abe3f5d85696abe95d572189c793fd49c448f5f9e66be0"
+    }
+  ],
+  "selected_model_timing_parameters": {
+    "tCCDS": 2,
+    "tCCDL": 4,
+    "tCCDR": 3,
+    "unit": "nCK"
+  }
+}
