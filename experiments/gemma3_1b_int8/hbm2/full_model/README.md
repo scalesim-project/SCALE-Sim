@@ -7,6 +7,98 @@ The numerical and timing runs are separate: numerical outputs establish the
 workload, while dependent memory callbacks determine its simulated schedule.
 This is not a full-transformer RTL implementation or a hardware benchmark.
 
+## Decode-focused architecture: 112.38 simulated tokens/s
+
+`configs/decode_100tps.json` reaches **112.3817 decode tokens/s**, averaging
+**8.8982 ms/token** over contexts 513–515. Individual steps are 112.3756,
+112.4007 and 112.3689 TPS. This is a completed native Ramulator2 run, not the
+previous analytical projection. It is **2.6988x** the 41.6419 TPS configuration.
+The core clock, numerical token trace, HBM2 configuration, 512-request window
+and 16-request-per-DRAM-tick admission limit are unchanged.
+
+| Measured configuration | TPS | Compute ms/token | Exposed memory wait ms/token |
+| --- | ---: | ---: | ---: |
+| Previous 256x256 WS, 128 vector lanes | 41.6419 | 13.5693 | 10.4450 |
+| 1x256 OS, 32 vector lanes, balanced tiles | 56.4884 | 7.1275 | 10.5753 |
+| OS plus callback-gated double buffering | 79.3113 | 7.1275 | 5.4811 |
+| OS plus double buffering and V-cache fusion | **112.3817** | **7.5930** | **1.3052** |
+
+The new design uses **256 MACs**, **32 FP32 vector lanes**, **four SFU lanes**
+and **640 KiB staging SRAM**. Compared with the previous fast configuration,
+that is 256x fewer MACs, four times fewer vector lanes, and the same SRAM size.
+These counts are architectural assumptions; SRAM port width and SFU area are
+not included in a synthesized resource or timing-closure estimate.
+
+The implementation adds three explicit configuration switches and OS dataflow:
+
+- `dataflow: "os"` selects native output-stationary demand schedules. Each
+  staged K tile pays its complete fill/drain schedule. INT32 partial sums
+  persist across K tiles; all input elements and outputs are accounted for.
+- `balance_k_tiles: true` balances K chunks within the configured capacity.
+  For example, K=1152 uses 576+576 instead of 1024+128. The latter left the
+  short compute tile unable to hide the following large weight fetch; an
+  initial unbalanced fused run reached only 90.9104 TPS.
+- `gemm_prefetch: true` reuses the former A/B banks as two 256 KiB weight
+  banks. A and INT32 partials occupy the 128 KiB shared scratch. The graph
+  checks live capacity. `P0/P1` queue reads, `J` waits for actual callbacks,
+  and `F` releases a consumed bank. Foreground stores and both banks share
+  one admission budget and one outstanding-request window. Write recovery,
+  refresh, rejected admissions and operator-boundary drains remain modeled.
+- `fuse_value_cache: true` computes feature maxima/scales and requantizes V
+  in two bounded streaming passes. It preserves the original FP32
+  dequantization, per-feature scaling and round-to-even semantics. FP32 V
+  and both transpose intermediates stay off HBM; final INT8 V and scales
+  are still written to HBM. The model charges scratch bandwidth and
+  four-lane FP32 division throughput, so fusion **increases** modeled
+  compute time while reducing exposed memory waits.
+
+The two operand banks assume 256-byte array reads per core cycle and a
+512-byte DMA fill port per DRAM tick. Fused vector scratch is limited to
+128 bytes/core cycle (32 lanes x 4 bytes). These are explicit hardware port
+assumptions, not measurements of the existing RTL DMA. No asynchronous work
+crosses an operator's lifetime. Operators still execute in dependency order.
+Long contexts that cannot retain A and partials in scratch are rejected;
+this profile does not implement general long-context attention tiling.
+
+The completed run contains 3,228 physical operations covering the same logical
+decode computation, 123,783 commands, 97,836,267 memory callbacks and
+26,694,736 core cycles. Physical HBM traffic falls from 1,116,987,637 to
+1,043,586,848 bytes/token. The previous default remains available as
+`configs/fast_decode.json`; select the new architecture explicitly.
+
+### Reproduce the architecture study
+
+From the repository root, with the existing Python environment and pinned
+Ramulator dependency:
+
+```sh
+env -u PYTHONPATH .venv/bin/python experiments/gemma3_1b_int8/hbm2/full_model/run.py --config experiments/gemma3_1b_int8/hbm2/full_model/configs/decode_100tps.json
+env -u PYTHONPATH .venv/bin/python experiments/gemma3_1b_int8/hbm2/full_model/test_timing.py --run-dir experiments/gemma3_1b_int8/hbm2/full_model/build/decode_100tps
+env -u PYTHONPATH .venv/bin/python experiments/gemma3_1b_int8/hbm2/full_model/test_decode_architecture.py
+env -u PYTHONPATH .venv/bin/python experiments/gemma3_1b_int8/hbm2/full_model/validate_decode_fusion.py
+```
+
+Use `configs/decode_os.json` and `configs/decode_overlap.json` with `run.py`
+to reproduce the two intermediate stages. Run `test_timing.py --run-dir`
+for each stage, then `summarize_decode_study.py` to verify input/source hashes,
+correctness reports and the >100 TPS threshold. It retains
+[`decode_100tps_result.json`](decode_100tps_result.json) and
+[`decode_100tps_study.json`](decode_100tps_study.json).
+
+`test_decode_architecture.py` checks bounded scratch, all three physical
+weight layouts, partial K/N tiles, independent INT64 arithmetic, and native
+OS wavefront arithmetic for single-row and four-head matrices. Native DMA
+tests check overlap, real callback waits, bank reuse, write recovery and
+invalid lifetimes. The old baseline command stream remains byte-for-byte
+identical. `validate_decode_fusion.py` executes the fused numerical operation
+on the real checkpoint and routes every decode GEMM through the generated
+tile addresses, checking each INT32 result and all saved logits exactly.
+
+These correctness checks establish numerical and schedule contracts separately.
+Ramulator transports timing requests; it does not execute a data-carrying
+full-transformer RTL datapath. The TPS measurement covers batch-one cached
+decode on this three-step workload, excluding prefill/TTFT and host IO.
+
 ## Configurations and measurements
 
 The completed default run reports **41.6419 decode tokens/s**, or

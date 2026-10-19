@@ -1,0 +1,8844 @@
+{
+  "status": "passed",
+  "target_tps": 100,
+  "configuration_and_architecture_tests": 11,
+  "real_checkpoint_fusion_validation": {
+    "status": "passed",
+    "checkpoint_sha256": "3d4ef8d71c14db7e448a09ebe891cfb6bf32c57a9b44499ae0d1c098e48516b6",
+    "cache_checks": [
+      {
+        "layer": 0,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 1,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 2,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 3,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 4,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 5,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 6,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 7,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 8,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 9,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 10,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 11,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 12,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 13,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 14,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 15,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 16,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 17,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 18,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 19,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 20,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 21,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 22,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 23,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 24,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 25,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 0,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 1,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 2,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 3,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 4,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 5,
+        "context": 513,
+        "bit_exact": true
+      },
+      {
+        "layer": 6,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 7,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 8,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 9,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 10,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 11,
+        "context": 513,
+        "bit_exact": true
+      },
+      {
+        "layer": 12,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 13,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 14,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 15,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 16,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 17,
+        "context": 513,
+        "bit_exact": true
+      },
+      {
+        "layer": 18,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 19,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 20,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 21,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 22,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 23,
+        "context": 513,
+        "bit_exact": true
+      },
+      {
+        "layer": 24,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 25,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 0,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 1,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 2,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 3,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 4,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 5,
+        "context": 514,
+        "bit_exact": true
+      },
+      {
+        "layer": 6,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 7,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 8,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 9,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 10,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 11,
+        "context": 514,
+        "bit_exact": true
+      },
+      {
+        "layer": 12,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 13,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 14,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 15,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 16,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 17,
+        "context": 514,
+        "bit_exact": true
+      },
+      {
+        "layer": 18,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 19,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 20,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 21,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 22,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 23,
+        "context": 514,
+        "bit_exact": true
+      },
+      {
+        "layer": 24,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 25,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 0,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 1,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 2,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 3,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 4,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 5,
+        "context": 515,
+        "bit_exact": true
+      },
+      {
+        "layer": 6,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 7,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 8,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 9,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 10,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 11,
+        "context": 515,
+        "bit_exact": true
+      },
+      {
+        "layer": 12,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 13,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 14,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 15,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 16,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 17,
+        "context": 515,
+        "bit_exact": true
+      },
+      {
+        "layer": 18,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 19,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 20,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 21,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 22,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 23,
+        "context": 515,
+        "bit_exact": true
+      },
+      {
+        "layer": 24,
+        "context": 512,
+        "bit_exact": true
+      },
+      {
+        "layer": 25,
+        "context": 512,
+        "bit_exact": true
+      }
+    ],
+    "prefill_logits_bit_exact": true,
+    "decode_logits_bit_exact": 3,
+    "output_tokens": [
+      7217,
+      5724,
+      3730
+    ],
+    "tiled_gemm_checks": [
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 513,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 513,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 262144,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 514,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 514,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 262144,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 515,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 515,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 1024,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 256,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 256,
+        "n": 512,
+        "layout": "key_transpose",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 512,
+        "n": 256,
+        "layout": "row_major",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1024,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 6912,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 6912,
+        "n": 1152,
+        "layout": "packed",
+        "bit_exact": true
+      },
+      {
+        "m": 1,
+        "k": 1152,
+        "n": 262144,
+        "layout": "packed",
+        "bit_exact": true
+      }
+    ],
+    "configuration": {
+      "core_hz": 1000000000,
+      "array_rows": 1,
+      "array_cols": 256,
+      "operand_staging_bytes": 262144,
+      "vector_staging_bytes": 131072,
+      "vector_lanes": 32,
+      "sfu_lanes": 4,
+      "dataflow": "os",
+      "balance_k_tiles": true,
+      "gemm_prefetch": true,
+      "fuse_value_cache": true
+    },
+    "sources": {
+      "numerical.py": "fdc3368944054e8cdefce7f1bd370160d9c265ea7c0c743907d87f7ba4360254",
+      "fused_value_cache.py": "b6fb4ebd12257411849fd0514be75967b6f4ca8615a9348635f0b6909e725ecd",
+      "tiled_gemm_reference.py": "0e9f16a58e31e5e7557f68b5ec03249f30c3a994234210070bbdd51c2facc641",
+      "workload.py": "28b5c4ab172ca0f2033cc008b4b23abdabc70aefc8ed148274a8eeb808edf15e",
+      "config.py": "50a07db2f4a70909914067b85a61d97ea5a2711b8f5539ee564aa1d3c115f077",
+      "validate_decode_fusion.py": "9e807d9ecea9bd5aec835293e5f719fb534ade53cc32854320c7b20cff871d50"
+    }
+  },
+  "measurements": [
+    {
+      "dataflow": "ws",
+      "array": [
+        256,
+        256
+      ],
+      "vector_lanes": 128,
+      "gemm_prefetch": false,
+      "fuse_value_cache": false,
+      "total_staging_KiB": 640.0,
+      "decode_tps": 41.641947543916295,
+      "milliseconds": 24.01424666666667,
+      "compute_ms": 13.569263,
+      "exposed_memory_wait_ms": 10.444983666666666,
+      "physical_HBM_bytes_per_token": 1116987637.3333333
+    },
+    {
+      "dataflow": "os",
+      "array": [
+        1,
+        256
+      ],
+      "vector_lanes": 32,
+      "gemm_prefetch": false,
+      "fuse_value_cache": false,
+      "total_staging_KiB": 640.0,
+      "decode_tps": 56.48839444053273,
+      "milliseconds": 17.70275133333333,
+      "compute_ms": 7.127451,
+      "exposed_memory_wait_ms": 10.575300333333335,
+      "physical_HBM_bytes_per_token": 1116987637.3333333
+    },
+    {
+      "dataflow": "os",
+      "array": [
+        1,
+        256
+      ],
+      "vector_lanes": 32,
+      "gemm_prefetch": true,
+      "fuse_value_cache": false,
+      "total_staging_KiB": 640.0,
+      "decode_tps": 79.31134487983141,
+      "milliseconds": 12.608536666666666,
+      "compute_ms": 7.127451,
+      "exposed_memory_wait_ms": 5.481085666666667,
+      "physical_HBM_bytes_per_token": 1116987637.3333333
+    },
+    {
+      "dataflow": "os",
+      "array": [
+        1,
+        256
+      ],
+      "vector_lanes": 32,
+      "gemm_prefetch": true,
+      "fuse_value_cache": true,
+      "total_staging_KiB": 640.0,
+      "decode_tps": 112.3817070151958,
+      "milliseconds": 8.898245333333334,
+      "compute_ms": 7.593041,
+      "exposed_memory_wait_ms": 1.3052043333333332,
+      "physical_HBM_bytes_per_token": 1043586848.0
+    }
+  ],
+  "speedup_over_41tps": 2.6987620330839754,
+  "mac_count_reduction": 256,
+  "vector_lane_reduction": 4,
+  "scope": "Batch 1, 512-token prompt, contexts 513-515, three cached greedy decode steps; simulated 1 GHz, native HBM2 timing, separate real numerical execution.",
+  "numerical_trace_sha256": "fc634fb4f7fd16e1efd9524277e2391ed145ca50553153185cc74098ee641c14",
+  "hbm_config_sha256": "4d3672a1fc91df85575e3901d20da1afecefabda13d5f2a4d40c0fdcf3063af1"
+}

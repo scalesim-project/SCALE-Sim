@@ -2,7 +2,7 @@
 """Build and run whole-decode dependency-ordered Ramulator timing from real tokens.
 
 Numerical execution is run_numerical.py. This command requires its successful
-report and emits a finite-buffer, serial-load/compute/store accelerator model.
+report and emits a finite-buffer accelerator model with optional two-bank DMA overlap.
 It is not stock SCALE-Sim memory policy or full-transformer RTL equivalence.
 """
 import argparse,csv,hashlib,json,platform,subprocess,sys,time
@@ -28,7 +28,9 @@ def build():
 
 
 def verify_trace(numerical,manifest,events):
-    steps=numerical['decode_steps'];count=manifest['counts']
+    steps=numerical['decode_steps'];count=defaultdict(int,manifest['counts'])
+    for op in manifest['ops']:
+        for kind,number in op.get('logical_kinds',{}).items():count[kind]+=number
     assert count['gemm']==235*steps and count['rmsnorm']==157*steps
     assert count['gelu']==26*steps and count['residual']==52*steps and count['kv_write']==26*steps
     assert count['softmax']==26*steps and count['argmax']==steps
@@ -58,7 +60,7 @@ def verify_trace(numerical,manifest,events):
 
 def summarize(folder,manifest,numerical,architecture,profile,validation):
     hz=architecture.core_hz
-    assert manifest['configuration']==architecture.to_dict()
+    assert Architecture(**manifest['configuration'])==architecture
     with (folder/'timing.csv').open() as f:rows=list(csv.DictReader(f))
     assert len(rows)==len(manifest['ops']), (len(rows),len(manifest['ops']))
     tokens=defaultdict(lambda:dict(total_cycles=0,compute_cycles=0,reads=0,writes=0,retries=0,stages=defaultdict(int)))
@@ -79,7 +81,7 @@ def summarize(folder,manifest,numerical,architecture,profile,validation):
                            memory_wait_cycles=t['total_cycles']-t['compute_cycles'],
                            dram_transaction_bytes=(t['reads']+t['writes'])*32,
                            input_token_id=numerical['decode_input_token_ids'][index],output_token_id=numerical['decode_output_token_ids'][index]))
-    sources=[HERE/'runner.cpp',HERE/'workload.py',HERE/'config.py',Path(__file__),ROOT/'src_rtl/cosim/native_bridge.cpp']
+    sources=[HERE/'runner.cpp',HERE/'workload.py',HERE/'config.py',HERE/'fused_value_cache.py',Path(__file__),ROOT/'src_rtl/cosim/native_bridge.cpp']
     report=dict(status='passed',classification='Real numerical W8A8+KV8 decode paired with dependency-ordered native Ramulator2 memory timing and explicit compute models',
                 assumed_core_clock_hz=hz,decode_steps=len(tokens),mean_decode_tps=len(tokens)*hz/end,
                 mean_decode_ms=end/len(tokens)/hz*1000,tokens=result,total_cycles=end,operator_coverage=validation,
@@ -135,7 +137,7 @@ def main():
     profile_config,profile=make_f2_config(16)
     # This harness supplies dependency/finite-buffer timing absent from offline replay.
     profile['unmodeled']=['AMD proprietary controller, crossbar, physical mapping and CDC','ECC and PHY/calibration']
-    profile['frontend']='Aggregate model: up to 16 native 32B admissions/DRAM tick, max 512 outstanding, blocking dependencies'
+    profile['frontend']='Aggregate model: up to 16 native 32B admissions/DRAM tick, max 512 outstanding, callback-gated dependencies and optional two-bank read prefetch'
     validation={}
     if not args.summarize_only:
         (args.out/'result.json').unlink(missing_ok=True)

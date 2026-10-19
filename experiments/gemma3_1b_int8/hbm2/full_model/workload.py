@@ -1,8 +1,8 @@
 """Complete Gemma3-1B cached-decode operator graph for performance simulation.
 
 This is a timing/traffic model, not numerical inference. Matrix schedules use
-SCALE-Sim WS; vector/SFU timing is an explicit architecture assumption. All
-inter-operator tensors live in HBM; array and finite staging sizes are configured.
+SCALE-Sim WS/OS; vector/SFU timing is an explicit architecture assumption. All
+inter-operator tensors live in HBM except fused V-cache temporaries; array and finite staging sizes are configured.
 """
 from dataclasses import dataclass
 from collections import Counter
@@ -111,6 +111,8 @@ class Graph:
             self.vector(cols,[x.view(row*cols,cols),a,sb],out.view(row*cols,cols),alu=2)
         return out
     def gemm(self,name,a,m,k,n,b,layout='packed'):
+        if self.architecture.dataflow == 'os':
+            return self.os_gemm(name,a,m,k,n,b,layout)
         self.begin(name,'gemm',m=m,n=n,k=k,layout=layout,native_ws_cycles=demand_cycles(m,n,k,self.rows,self.cols))
         assert a.size==m*k and a.width==1 and a.size<=self.operand_bytes
         c=self.tensor(name+'.int32',m*n)
@@ -133,6 +135,82 @@ class Graph:
             self.memory(Tensor(c.address+n0*4,nt,4,c.name),True,count=m,stride=n*4)
         assert cycles==self.op['native_ws_cycles']
         return c
+    def os_gemm(self,name,a,m,k,n,b,layout):
+        arch=self.architecture
+        self.begin(name,'gemm',m=m,n=n,k=k,layout=layout,dataflow='os',
+                   uninterrupted_array_cycles=arch.demand_cycles(m,n,k),native_array_cycles=0)
+        # Two old operand banks become B ping-pong banks. A and C partial sums
+        # share vector scratch; explicit bounds prevent a hidden third bank.
+        assert a.width==1 and a.size==m*k
+        live=a.size+m*min(n,self.cols)*4
+        if arch.gemm_prefetch:assert live<=self.vector_bytes
+        else:
+            assert a.size<=self.operand_bytes
+            assert m*min(n,self.cols)*4<=self.vector_bytes
+        self.op['scratch_live_bytes']=live
+        c=self.tensor(name+'.int32',m*n)
+        self.bulk(a,capacity=self.vector_bytes if arch.gemm_prefetch else self.operand_bytes)
+        tiles=[(n0,min(self.cols,n-n0),k0,kt)
+               for n0 in range(0,n,self.cols) for k0,kt in arch.k_tiles(k)]
+        def load(tile,bank=None):
+            n0,nt,k0,kt=tile
+            if layout=='packed': address,size,count,stride=b.address+n0*k+k0*nt,kt*nt,1,0
+            elif layout=='key_transpose':
+                assert k==256
+                if kt==k: address,size,count,stride=b.address+n0*k,nt*k,1,0
+                else: address,size,count,stride=b.address+n0*k+k0,kt,nt,k
+            elif layout=='row_major': address,size,count,stride=b.address+k0*n+n0,nt,kt,n
+            else: raise ValueError(layout)
+            assert size*count<=self.operand_bytes
+            self.command('R' if bank is None else f'P{bank}',address,size,count,stride)
+            self.op['read_bytes']+=size*count
+        if arch.gemm_prefetch: load(tiles[0],0)
+        for i,tile in enumerate(tiles):
+            n0,nt,k0,kt=tile
+            if arch.gemm_prefetch:
+                self.command('J',i%2)
+                if i+1<len(tiles):load(tiles[i+1],(i+1)%2)
+            else:load(tile)
+            if layout=='key_transpose':self.compute(math.ceil(nt*kt/self.lanes))
+            duration=arch.demand_cycles(m,nt,kt)
+            self.op['native_array_cycles']+=duration
+            self.compute(duration)
+            if arch.gemm_prefetch:self.command('F',i%2)
+            if k0+kt==k:
+                self.memory(Tensor(c.address+n0*4,nt,4,c.name),True,count=m,stride=n*4)
+        return c
+
+    def fused_value_cache(self,name,vc,vs,length):
+        # Exact two-pass dynamic quantization along the context dimension.
+        # Only a row chunk, 256 maxima/scales, and its INT8 output are live.
+        # FP32 V and transposes never leave scratch; final INT8 V remains HBM.
+        fixed=256*4*2
+        chunk=max(1,(self.vector_bytes-fixed)//(256*(1+4+1)+4))
+        self.begin(name+'.value_cache_fused','value_cache_fused',elements=length*256,
+                   logical_kinds={'dequantize':1,'quantize':1,'layout':2},
+                   scratch_live_bytes=fixed+chunk*(256*6+4),passes=2,
+                   sram_bytes_per_cycle=self.lanes*4)
+        out=self.tensor(name+'.value_cache_requantized',length*256,1)
+        scales=self.tensor(name+'.value_cache_feature_scales',256)
+        self.compute(math.ceil(256/self.lanes)) # initialize maxima
+        for phase in range(2):
+            for row in range(0,length,chunk):
+                rows=min(chunk,length-row);elements=rows*256
+                self.bulk(vc.view(row*256,elements));self.bulk(vs.view(row,rows))
+                # Lane ALU and scratch ports are pipelined. Charge the slower
+                # resource: one shared 4-byte port per lane, including temp
+                # stores/loads and FP32 maxima/scales. No free SRAM traffic.
+                alu=3 if phase==0 else 4
+                scratch_bytes=elements*(21 if phase==0 else 22)+rows*4
+                self.compute(max(math.ceil(elements/self.lanes)*alu,
+                                 math.ceil(scratch_bytes/(self.lanes*4)),
+                                 math.ceil(elements/self.sfu_lanes)+8 if phase==1 else 0))
+                if phase==1:self.bulk(out.view(row*256,elements),True)
+            if phase==0:
+                self.compute(math.ceil(256/self.lanes)*2+math.ceil(256/self.sfu_lanes)+8)
+                self.memory(scales,True)
+        return out,scales
+
     def linear(self,name,x,scale,layer,which,k,n):
         w=self.weights['head'] if which=='head' else self.weights[layer,which]
         ws=self.scales['head'] if which=='head' else self.scales[layer,which]
@@ -205,12 +283,15 @@ class Graph:
                 kc=self.cache[layer,'k'].view(offset,length*256);vc=self.cache[layer,'v'].view(offset,length*256)
                 ks=self.kv_scales[layer,'k'].view(context-length,length)
                 vs=self.kv_scales[layer,'v'].view(context-length,length)
-                self.begin(p+'.value_cache_dequant','dequantize',elements=length*256)
-                vf=self.tensor(p+'.value_cache_fp32',length*256)
-                for row in range(length):self.vector(256,[vc.view(row*256,256),vs.view(row,1)],vf.view(row*256,256),alu=1)
-                vt=self.transpose(p+'.value_cache_transpose',vf,length,256)
-                vqt,vs=self.quant(p+'.value_cache_requant',vt,256)
-                vc=self.transpose(p+'.value_cache_untranspose',vqt,256,length)
+                if self.architecture.fuse_value_cache:
+                    vc,vs=self.fused_value_cache(p,vc,vs,length)
+                else:
+                    self.begin(p+'.value_cache_dequant','dequantize',elements=length*256)
+                    vf=self.tensor(p+'.value_cache_fp32',length*256)
+                    for row in range(length):self.vector(256,[vc.view(row*256,256),vs.view(row,1)],vf.view(row*256,256),alu=1)
+                    vt=self.transpose(p+'.value_cache_transpose',vf,length,256)
+                    vqt,vs=self.quant(p+'.value_cache_requant',vt,256)
+                    vc=self.transpose(p+'.value_cache_untranspose',vqt,256,length)
                 scores=self.gemm(p+'.qk',qi,4,256,length,kc,'key_transpose')
                 scores=self.dequant(p+'.qk.dequant',scores,4,length,qs,ks)
                 scores=self.element(p+'.scale_and_causal_window_mask','attention_mask',[scores],alu=3)

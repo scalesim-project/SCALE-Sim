@@ -1,0 +1,12 @@
+{
+  "core_hz": 1000000000,
+  "array_rows": 1,
+  "array_cols": 256,
+  "operand_staging_bytes": 262144,
+  "vector_staging_bytes": 131072,
+  "vector_lanes": 32,
+  "sfu_lanes": 4,
+  "dataflow": "os",
+  "gemm_prefetch": true,
+  "balance_k_tiles": true
+}

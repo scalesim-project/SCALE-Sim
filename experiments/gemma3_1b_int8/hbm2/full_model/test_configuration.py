@@ -17,7 +17,9 @@ class ConfigurationChecks(unittest.TestCase):
     def test_invalid_sizes(self):
         for values in (dict(array_rows=0), dict(array_cols=True), dict(core_hz=-1),
                        dict(operand_staging_bytes=31), dict(vector_staging_bytes=1),
-                       dict(array_rows=256, array_cols=256)):
+                       dict(array_rows=256, array_cols=256), dict(dataflow='is'),
+                       dict(gemm_prefetch=1), dict(balance_k_tiles=1), dict(fuse_value_cache=1),
+                       dict(gemm_prefetch=True), dict(fuse_value_cache=True,vector_staging_bytes=4096)):
             with self.subTest(values=values), self.assertRaises(ValueError):
                 Architecture(**values)
 

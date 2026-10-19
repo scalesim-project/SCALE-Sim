@@ -7,6 +7,7 @@ from run import verify_trace
 from config import Architecture
 from scalesim.scale_config import scale_config
 from scalesim.compute.systolic_compute_ws import systolic_compute_ws
+from scalesim.compute.systolic_compute_os import systolic_compute_os
 from experiments.gemma3_1b_int8.study import demand_cycles
 from src_rtl.cosim.build import ensure
 from src_rtl.cosim.runtime import Library,HBM
@@ -22,15 +23,15 @@ def main():
     for op in manifest['ops']:
         if op['kind']!='gemm':continue
         for n0 in range(0,op['n'],architecture.array_cols):
-            for k0 in range(0,op['k'],architecture.k_chunk):
-                shapes.add((op['m'],min(architecture.k_chunk,op['k']-k0),min(architecture.array_cols,op['n']-n0)))
+            for k0,kt in architecture.k_tiles(op['k']):
+                shapes.add((op['m'],kt,min(architecture.array_cols,op['n']-n0)))
     checks=[]
     for m,k,n in sorted(shapes):
         cfg=scale_config();cfg.valid_conf_flag=True;cfg.array_rows=architecture.array_rows;cfg.array_cols=architecture.array_cols
-        engine=systolic_compute_ws();engine.set_params(config_obj=cfg,ifmap_op_mat=np.arange(m*k).reshape(m,k),
+        engine=(systolic_compute_os() if architecture.dataflow=='os' else systolic_compute_ws());engine.set_params(config_obj=cfg,ifmap_op_mat=np.arange(m*k).reshape(m,k),
                      filter_op_mat=np.arange(k*n).reshape(k,n),ofmap_op_mat=np.arange(m*n).reshape(m,n))
-        assert all(len(mat)==demand_cycles(m,n,k,cfg.array_rows,cfg.array_cols) for mat in engine.get_demand_matrices())
-        checks.append(dict(check='native_WS_tile',m=m,k=k,n=n,array=[cfg.array_rows,cfg.array_cols]))
+        assert all(len(mat)==architecture.demand_cycles(m,n,k) for mat in engine.get_demand_matrices())
+        checks.append(dict(check='native_'+architecture.dataflow.upper()+'_tile',m=m,k=k,n=n,array=[cfg.array_rows,cfg.array_cols]))
     validation=verify_trace(json.loads((folder/'numerical_result.json').read_text()),manifest,
                             json.loads((folder/'numerical_operator_trace.json').read_text()))
     checks.append(dict(check='executed_numerical_matrix_shapes_match_every_timing_GEMM',**validation))
