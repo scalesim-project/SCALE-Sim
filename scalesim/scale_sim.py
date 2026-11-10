@@ -22,7 +22,8 @@ class scalesim:
                  config='',
                  topology='',
                  layout='',
-                 input_type_gemm=False):
+                 input_type_gemm=False,
+                 ncu_metrics=''):
         """
         __init__ method
         """
@@ -46,6 +47,7 @@ class scalesim:
         self.verbose_flag = verbose
         self.run_done_flag = False
         self.logs_generated_flag = False
+        self.ncu_metrics = ncu_metrics
 
         self.set_params(config_filename=config, topology_filename=topology, layout_filename=layout)
 
@@ -121,7 +123,8 @@ class scalesim:
             layout_obj=self.layout,
             top_path=self.top_path,
             verbosity=self.verbose_flag,
-            save_trace=save_trace
+            save_trace=save_trace,
+            ncu_metrics=self.ncu_metrics
         )
         self.run_once()
 
